@@ -1,0 +1,11 @@
+# 项目目标平台为 Linux（Ubuntu 22.04），统一 LF 行尾
+* text=auto
+
+*.sh text eol=lf
+*.py text eol=lf
+*.xml text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.md text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
