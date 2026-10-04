@@ -10,11 +10,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS_DIR="$(cd "$SCRIPT_DIR/../../qianli_ws" && pwd)"
 
-if [ -f /opt/ros/humble/setup.bash ]; then
+if [ -d /opt/ros/jazzy ]; then
+  # shellcheck disable=SC1091
+  source /opt/ros/jazzy/setup.bash
+elif [ -f /opt/ros/humble/setup.bash ]; then
   # shellcheck disable=SC1091
   source /opt/ros/humble/setup.bash
 else
-  echo "[WARN] 未找到 /opt/ros/humble/setup.bash，请先安装 ROS 2 Humble。"
+  echo "[WARN] 未找到 /opt/ros/jazzy（或 humble）setup.bash，请先安装 ROS 2。"
 fi
 
 if [ -f "$WS_DIR/install/setup.bash" ]; then

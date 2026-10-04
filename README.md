@@ -31,13 +31,13 @@ QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义�
 
 | 项 | 内容 |
 |---|---|
-| 操作系统 | Ubuntu 22.04 |
-| ROS 版本 | ROS 2 Humble |
+| 操作系统 | Ubuntu 24.04 |
+| ROS 版本 | ROS 2 Jazzy |
 | 主要语言 | C++ / Python |
 | 核心框架 | ROS2、RViz2、URDF/Xacro、TF2、ros2_control、MoveIt2、Gazebo、Nav2、robot_localization |
 | 未来 | FAST-LIO2/LIO-SAM、Frontier Exploration、YOLO、AprilTag、OCR、Semantic Mapping、VLM、LLM Agent、Behavior Tree、Multi-floor Navigation |
 
-> 注意：当前开发机为 Windows 11，ROS 2 工具链需在 Ubuntu 22.04 环境运行，详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+> 注意：当前开发机为 Windows 11，ROS 2 工具链运行在 VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）中，详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ## 目录结构
 
@@ -55,14 +55,14 @@ QianLi/
 
 ## 快速开始
 
-工作区基于 **Ubuntu 22.04 + ROS 2 Humble**：
+工作区基于 **Ubuntu 24.04 + ROS 2 Jazzy**（虚拟机 `192.168.26.128`，用户 `ros`）：
 
 ```bash
-# 1. 在 Ubuntu 22.04 上安装 ROS 2 Humble（基础环境）
-bash scripts/setup/install_ros2_humble.sh
+# 1. 在 Ubuntu 24.04 上安装 ROS 2 Jazzy（基础环境，一般已装好）
+bash scripts/setup/install_ros2_jazzy.sh
 
 # 2. 构建工作区
-source /opt/ros/humble/setup.bash
+source /opt/ros/jazzy/setup.bash
 bash scripts/tools/build.sh            # 等价于: cd qianli_ws && colcon build --symlink-install
 
 # 3. 加载工作区环境

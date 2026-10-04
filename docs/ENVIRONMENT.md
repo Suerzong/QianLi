@@ -3,68 +3,79 @@
 > 记录 QianLi 开发环境检查结果、与目标平台的差异、缺失依赖与安装指引。
 > 原则：缺少大型依赖时**不盲目安装**，先记录于此文档，再决定安装方案。
 
-## 1. 目标平台
+## 1. 目标平台（已定版）
 
 | 项 | 值 |
 |---|---|
-| 操作系统 | Ubuntu 22.04 |
-| ROS | ROS 2 Humble |
-| 构建工具 | colcon、CMake（ROS 2 Humble 依赖 3.22） |
-| 语言 | C++（GCC）、Python 3.10 |
+| 操作系统 | Ubuntu 24.04 |
+| ROS | ROS 2 Jazzy |
+| 构建工具 | colcon、CMake（ROS 2 Jazzy 依赖 3.28） |
+| 语言 | C++（GCC）、Python 3.12 |
 
-## 2. 当前开发机检查结果（2026-10-04）
+> **2026-10-04 决策**：因开发虚拟机为 Ubuntu 24.04（"Ubuntu 24.04 ROS2 Jazzy"），项目目标平台由 Ubuntu 22.04 + Humble 调整为 **Ubuntu 24.04 + ROS 2 Jazzy**（见 [DEVLOG.md](DEVLOG.md)）。
 
-| 检查项 | 结果 | 说明 |
-|---|---|---|
-| 操作系统 | Windows 11 家庭版 中文版（10.0.26100，64 位） | ⚠️ 与目标平台（Ubuntu 22.04）不一致 |
-| 主机名 / 用户 | SUERZONG / sez18，HOME = C:\Users\sez18 | |
-| 磁盘 | C: 剩余 59.1 GB；D: 剩余 198.9 GB；E: 剩余 46.3 GB | QianLi 位于 D:\projects（空间充足） |
-| Git | 2.53.0.windows.2（E:\Git\cmd\git.exe） | ✅ 身份已配置：Suerzong / suerzong2007@gmail.com |
-| ROS 2 | ❌ 未安装（无 ros2 命令、无 ROS_DISTRO、无 /opt/ros 或 C:\ros 等路径） | 见 §3 |
-| colcon | ❌ 未安装（无 colcon 命令） | 随 ROS 2 环境安装 |
-| Python | 3.13.12（miniconda3，E:\Applications\miniconda3）；py 启动器另见 3.14.5 | ⚠️ 本机 conda 环境，与 Ubuntu 侧系统 Python 3.10 无关 |
-| pip | 26.0.1（miniconda） | |
-| CMake | 4.3.1 | ⚠️ 远高于 ROS 2 Humble 的 3.22；仅用于 Windows 侧其他工程 |
-| WSL | wsl.exe 存在但**未注册任何发行版**；E:\Applications\WSL 下有 Ubuntu-24.04 目录（未注册） | 见 §3 选项 B |
-| VS Code | ✅ E:\Applications\Microsoft VS Code（code 命令可用） | 建议安装 ROS 2 扩展 |
-| CLion | ✅ E:\Applications\JetBrains\CLion 2026.2.1 | |
-| 嵌入式工具链 | STM32CubeIDE / STM32CubeMX / STM32CubeProgrammer / STM32CubeCLT / Keil5 / Arduino IDE / OpenOCD | ✅ 适合后续 firmware/stm32 开发 |
-| 其他 | PCL、Docker Desktop、Ninja、Tailscale 等 | |
+## 2. 开发环境实况（2026-10-04 更新）
 
-## 3. 关键差异：本机无 ROS 2 / colcon
+### 2.1 主机（Windows 11，开发编辑机）
 
-当前开发机为 Windows 11，无法直接运行 ROS 2 Humble 工具链，因此：
+| 检查项 | 结果 |
+|---|---|
+| 操作系统 | Windows 11 家庭版 中文版（10.0.26100，64 位） |
+| 主机名 / 用户 | SUERZONG / sez18，HOME = C:\Users\sez18 |
+| 磁盘 | C: 剩余 59.1 GB；D: 剩余 198.9 GB；E: 剩余 46.3 GB |
+| Git | 2.53.0.windows.2（E:\Git\cmd\git.exe），身份已配置 |
+| Python | 3.13.12（miniconda）+ 3.14.5（py） | 
+| CMake | 4.3.1（Windows 侧其他工程用） |
+| IDE | VS Code（E:\Applications\Microsoft VS Code）；CLion 2026.2.1 |
+| 嵌入式工具链 | STM32CubeIDE/MX/Programmer/CLT、Keil5、Arduino、OpenOCD |
+| 虚拟化 | VMware Workstation（运行 1 台虚拟机，见 §2.2） |
 
-- `colcon build` **无法在本机验证**（属已知环境限制，非错误）；
-- 工作区结构、package 元数据（package.xml / CMakeLists.txt）已按 ROS 2 Humble 标准编写，待 Ubuntu 环境执行首次构建；
-- 初始化过程**未安装任何软件、未修改系统全局配置**（PATH / shell 启动脚本等）。
+> 主机不参与 ROS 2 构建；ROS 2 工具链全部在虚拟机内运行。
 
-**构建验证路径（三选一，需用户决策，未擅自执行）：**
+### 2.2 开发虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）
 
-| 选项 | 说明 | 备注 |
-|---|---|---|
-| A. 专用 Ubuntu 22.04 主机 / 双系统 | 与目标平台完全一致 | 推荐；安装脚本 scripts/setup/install_ros2_humble.sh |
-| B. WSL2 + Ubuntu（本机有 Ubuntu-24.04 目录未注册） | 注册后可用，但发行版为 24.04，对应 **ROS 2 Jazzy**（非 Humble） | 若采用需统一 ROS 版本策略 |
-| C. Docker（本机已装 Docker Desktop） | 可用 ros:humble 镜像快速验证构建 | 仅验证编译，RViz / Gazebo GUI 受限 |
+| 检查项 | 结果 |
+|---|---|
+| VM 名称 | Ubuntu 24.04 ROS2 Jazzy（`D:\Ubuntu-VM\ubuntu24-ros2.vmx`） |
+| 系统 | Ubuntu 24.04.4 LTS（Noble Numbat），内核 7.0.0-34-generic |
+| 网络 | VMware NAT：**192.168.26.128**（hostname `ros2-ubuntu`，MAC 00:0c:29:bd:0b:9c） |
+| SSH | 22 端口开放；用户 `ros`（密码认证） |
+| ROS 2 | ✅ `/opt/ros/jazzy`，`.bashrc` 已自动 source |
+| colcon | ✅ /usr/bin/colcon |
+| Python | ✅ 3.12.3（系统） |
+| CMake | ✅ 3.28.3 |
+| Git | ✅ 2.43.0 |
+| 磁盘 | / 剩余约 13 GB（83% 已用）——注意空间，构建产物及时清理 |
+| 关键包 | ✅ urdf / xacro / rviz2 / robot-state-publisher / joint-state-publisher / ros2-control / moveit |
+| 待装包 | ⏳ nav2-bringup / robot-localization / gazebo-ros-pkgs（后续 Milestone 需要时再装） |
+| 已有工作区 | ~/arm_ws、~/arm-final 等（机械臂相关，与 QianLi 互不影响） |
 
-## 4. 缺失依赖清单（不在本机安装）
+## 3. 构建验证状态
 
-| 依赖 | 目标环境 | 安装方式 |
-|---|---|---|
-| ROS 2 Humble | Ubuntu 22.04 | scripts/setup/install_ros2_humble.sh（基础：ros-humble-desktop + ros-dev-tools + colcon + rosdep） |
-| Nav2 | Ubuntu 22.04 | 后续 Milestone 需要时在 Ubuntu 侧按需安装（ros-humble-nav2-*） |
-| MoveIt2 | Ubuntu 22.04 | 后续 Milestone 3 时安装（ros-humble-moveit-*） |
-| Gazebo | Ubuntu 22.04 | ros-humble-desktop 自带（ros-ign / gazebo） |
+- ✅ **Milestone 0 已在虚拟机内验证**：`colcon build --symlink-install` 通过（见 [DEVLOG.md](DEVLOG.md)）；
+- 构建命令：`source /opt/ros/jazzy/setup.bash && cd qianli_ws && colcon build --symlink-install`；
+- 辅助脚本：`bash scripts/tools/build.sh`（自动定位 qianli_ws）。
 
-> 后续加入的大型依赖，先在本文档登记，再在 Ubuntu 环境安装，不污染当前开发机。
+## 4. 缺失依赖清单（按需安装，不预装）
 
-## 5. 本机环境注意事项
+| 依赖 | 目标环境 | 安装方式 | 引入时机 |
+|---|---|---|---|
+| nav2 全套 | Ubuntu 24.04 | `sudo apt install ros-jazzy-nav2-*`（按需子集） | 并行路线（虚拟底盘） |
+| robot_localization | Ubuntu 24.04 | `sudo apt install ros-jazzy-robot-localization` | 并行路线 |
+| gazebo / 仿真 | Ubuntu 24.04 | `sudo apt install ros-jazzy-gazebo-ros-pkgs` | 并行路线 |
+| MoveIt2 | ✅ 已装（ros-jazzy-moveit） | — | Milestone 3 |
+| 3D LiDAR 驱动 | 真实硬件到位后 | 按厂商 SDK | 真实 LiDAR 到位 |
 
-- Python 3.13 / 3.14 为 conda 环境，**不要**用于安装 ROS 工具（版本不兼容 ROS 2 Humble 的 Python 3.10 约束）；
-- CMake 4.3.1 仅供 Windows 侧工程使用，不影响 Ubuntu 侧构建；
-- D:\projects 下已有其他项目（如 TALOS26 秋季招新考核题），QianLi 为独立 Git 仓库，互不影响；
-- 环境扫描与初始化全程非破坏性：未删除任何已有文件，未覆盖已有配置。
+> 新依赖加入前，先在本文档登记，再安装。
+
+## 5. 本机/虚拟机环境注意事项
+
+- 主机 conda Python（3.13/3.14）**不要**用于 ROS 工具；虚拟机内使用系统 Python 3.12；
+- 虚拟机磁盘紧张（剩 13 GB），构建后及时 `bash scripts/tools/clean.sh` 清理；
+- 虚拟机无 VMware hgfs 共享文件夹，仓库通过 **scp / git** 同步；
+- D:\projects 下已有其他项目（如 TALOS26 秋季招新考核题），QianLi 独立 Git 仓库，互不影响；
+- 虚拟机内已有机械臂相关工作区（~/arm_ws 等），与本项目隔离。
 
 ## 6. 更新记录
 
-- 2026-10-04：首次环境扫描并记录（见 [DEVLOG.md](DEVLOG.md)）。
+- 2026-10-04：首次环境扫描（Windows 11 主机）；随后接入 VMware 虚拟机（Ubuntu 24.04 + Jazzy），目标平台定版为 24.04/Jazzy，Milestone 0 构建验证通过。

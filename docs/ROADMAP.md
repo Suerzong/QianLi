@@ -10,7 +10,7 @@
 - [x] 文档体系（PROJECT / ARCHITECTURE / ROADMAP / ENVIRONMENT / HARDWARE / DEVLOG）
 - [x] qianli_ws 工作区骨架 + 基础 package（qianli_interfaces / qianli_description / qianli_bringup）
 - [x] setup / build / clean / status 辅助脚本
-- [ ] 在 Ubuntu 22.04 上验证首次 `colcon build`（当前开发机为 Windows，无 ROS 2）
+- [x] 在 Ubuntu 24.04 虚拟机（ROS 2 Jazzy，192.168.26.128）上验证首次 `colcon build`
 
 ## Milestone 1 — 机械臂 ROS2/RViz 建模
 
@@ -53,7 +53,7 @@ YOLO → Semantic Mapping → Natural Language Agent → Multi-floor Navigation 
 
 | Milestone | 内容 | 状态 |
 |---|---|---|
-| M0 | 可 colcon build 的工作区 | 结构完成，Ubuntu 侧构建验证待办 |
+| M0 | 可 colcon build 的工作区 | ✅ 结构完成 + VM 构建验证通过（Ubuntu 24.04 / Jazzy） |
 | M1 | 机械臂 ROS2/RViz 建模 | 未开始 |
 | M2 | 真实机械臂接入 | 未开始 |
 | M3 | MoveIt2 | 未开始 |

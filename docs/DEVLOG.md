@@ -35,5 +35,40 @@
 
 ### 待办
 
-- [ ] 在 Ubuntu 22.04 安装 ROS 2 Humble 并执行首次 `colcon build`（验证 Milestone 0 达成）
 - [ ] Milestone 1：qianli_description 中机械臂 URDF / Xacro 建模（见 ROADMAP.md）
+
+## 2026-10-04（续）— 接入开发虚拟机并验证构建（Milestone 0 达成）
+
+### 虚拟机接入
+
+- 通过 VMware 识别运行中虚拟机：`D:\Ubuntu-VM\ubuntu24-ros2.vmx`（"Ubuntu 24.04 ROS2 Jazzy"）；
+- 从 VMware DHCP 租约确认 VM IP：**192.168.26.128**（hostname `ros2-ubuntu`）；
+- SSH 登录成功（用户 `ros`，Windows OpenSSH + SSH_ASKPASS 密码认证）；
+- VM 环境确认：Ubuntu 24.04.4 LTS、ROS 2 **Jazzy**（/opt/ros/jazzy）、colcon、Python 3.12.3、CMake 3.28.3、Git 2.43.0；
+- 已装关键包：urdf / xacro / rviz2 / robot-state-publisher / joint-state-publisher / ros2-control / moveit；
+- 待装包（后续 Milestone 需要时）：nav2-bringup / robot-localization / gazebo-ros-pkgs。
+
+### 决策记录（续）
+
+| 决策 | 说明 |
+|---|---|
+| 目标平台变更 | **Ubuntu 24.04 + ROS 2 Jazzy**（原 22.04 + Humble），因开发虚拟机为 24.04/Jazzy；文档（README/PROJECT/ENVIRONMENT/ROADMAP/scripts）已同步更新 |
+| 安装脚本 | install_ros2_humble.sh 由 install_ros2_jazzy.sh 取代；source_env.sh 自动检测 jazzy/humble |
+| 仓库同步 | 虚拟机无 hgfs 共享，使用 scp 传输（保留 .git，虚拟机内可直接 git 操作） |
+
+### 构建验证（Milestone 0）
+
+- [x] 工作区传输至虚拟机 `~/QianLi`；
+- [x] 首次构建失败：`Unknown CMake command "ament_package"` —— 根因：CMakeLists.txt 缺少显式 `find_package(ament_cmake REQUIRED)`（colcon 只注入路径，不注入宏加载）；
+- [x] 三个 CMakeLists.txt 补上 `find_package(ament_cmake REQUIRED)` 后重建，**全部通过**：
+
+  ```
+  Summary: 3 packages finished [4.55s]
+  ```
+
+- [x] `ros2 pkg list` 识别：qianli_bringup / qianli_description / qianli_interfaces；
+- [x] 构建产物 install/ 生成完整。
+
+### 待办
+
+- [ ] Milestone 1：机械臂 URDF / Xacro 建模（qianli_description，见 ROADMAP.md）
