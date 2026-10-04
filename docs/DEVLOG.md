@@ -120,3 +120,34 @@
 
 - [ ] Milestone 1 收尾：虚拟机桌面运行 `ros2 launch qianli_description display.launch.py` 确认 RViz 显示
 - [ ] Milestone 2：qianli_arm 接入真实机械臂（参考 ~/arm-final 的 so101_bringup 驱动栈）
+
+## 2026-10-04（续 3）— 拖动示教工具 qianli_teach
+
+### 背景
+
+用户询问"能否自然进入拖动示教"。现状：机械臂（SO-101，direct 只读模式）可自由拖动，
+`/joint_states` 实时反映真实姿态（绝对式编码器），但缺"记录"和"回放"两个环节。
+
+### 完成内容
+
+- 新建 `qianli_ws/src/qianli_teach`（ament_python 包）：
+  - `teach_node.py`：record（订阅 /joint_states + 键盘触发录制，存 YAML）/ playback（读 YAML，按原间隔发布 /joint_commands，--speed 倍率）
+- 修复记录：
+  - `setup.cfg` 中 `install_scripts=$base/lib/qianli_teach`（初版缺 `$base` 键导致 colcon 构建失败）
+  - 录制 dt 防御：第一帧仅作起点；`dt>1s` 帧跳过（避免消息源切换/时钟跳变污染轨迹）
+- VM 验证（模拟数据）：
+  - 录制 79 帧 / 3.95s，dt 干净（最大 0.0536s）
+  - 回放完整发出 79 帧 /joint_commands（时长与录制一致）
+
+### 闭环说明
+
+```
+拖（人手搬动，扭矩关闭）→ 记（teach_node record）→ 放（teach_node playback → /joint_commands → driver）
+```
+
+安全：record 零风险；playback 是否动真臂由 driver `allow_motion` 决定（sim 仅 RViz 演示）。
+
+### 待办（下一步）
+
+- [ ] 真实硬件拖动示教演练：record 录一段真实拖动轨迹 → sim 回放确认 → （确认校准后）direct 回放
+- [ ] Milestone 2：把 so101 驱动栈整合进 QianLi（qianli_arm），teach 工具直接对接
