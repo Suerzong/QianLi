@@ -6,8 +6,16 @@
 
 | 硬件 | 型号 / 规格 | 接口 | 状态 |
 |---|---|---|---|
-| 机械臂 | [待补充]（真实机械臂，可开发） | 待确认（串口 / USB / CAN） | ✅ 在役 |
-| 开发上位机 | 开发机（Windows 11）→ 目标 Linux 主机 | — | 规划中 |
+| 机械臂 | **SO-ARM101**（6 DOF：shoulder_pan/lift、elbow_flex、wrist_flex/roll、gripper） | 舵机总线（Feetech SCS/STS 兼容），USB 芯片 CH343P → /dev/ttyACM0 | ✅ 在役 |
+| 机械臂舵机 | HX-30HM ×6（Model 777，映射 STS3215，12V，1 Mbps） | 串口总线（SYNC_WRITE 0x83 / GroupSyncRead 0x84） | ✅ 在役 |
+| 开发上位机 | 开发机（Windows 11）→ 开发虚拟机（Ubuntu 24.04 + Jazzy，192.168.26.128） | SSH | ✅ 使用中 |
+
+### 机械臂关键参数（实测，详见 [mechanical_arm/docs/joint_limits.md](../hardware/mechanical_arm/docs/joint_limits.md)）
+
+- 舵机 raw 0–4095，中心 2048；角度换算 `(raw-2048)×360/4096`；
+- 6 关节 ±10° 往返全部通过，跟随误差 0.2°–1.6°（gripper 齿轮间隙正常）；
+- 12.0–12.3V（12V 5A 适配器），温度 36–39℃ 空载；
+- 通信特性：WRITE 指令 fire-and-forget（不回状态包）；SYNC_WRITE/GroupSyncRead 稳定可用。
 
 ## 2. 规划硬件
 

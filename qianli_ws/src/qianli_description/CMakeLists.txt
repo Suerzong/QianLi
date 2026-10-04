@@ -7,10 +7,8 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 
-# 模型与配置文件（Milestone 1 起逐步加入 urdf/ meshes/ rviz/）：
-#
-# install(DIRECTORY urdf rviz
-#   DESTINATION share/${PROJECT_NAME}
-# )
+# URDF / STL 网格 / RViz 配置 / Launch 全部安装到 share
+install(DIRECTORY urdf meshes rviz launch
+  DESTINATION share/${PROJECT_NAME})
 
 ament_package()

@@ -14,9 +14,11 @@
 
 ## Milestone 1 — 机械臂 ROS2/RViz 建模
 
-- [ ] URDF / Xacro 完整建模机械臂（qianli_description）
-- [ ] TF 树与 joint_states 发布
-- [ ] RViz 中虚拟机械臂正确显示
+- [x] URDF 建模机械臂（**SO-ARM101**，`urdf/so101.urdf`，6 DOF + 夹爪，来自虚拟机 ~/arm-final）
+- [x] STL 网格与资产路径整合（`meshes/`，18 个 STL，`package://qianli_description/meshes/`）
+- [x] display launch 与 RViz 配置（`launch/display.launch.py`、`rviz/arm.rviz`）
+- [ ] TF 树与 joint_states 发布验证（VM 构建 + 无头验证）
+- [ ] RViz 中虚拟机械臂正确显示（虚拟机桌面）
 
 ## Milestone 2 — 真实机械臂接入
 
