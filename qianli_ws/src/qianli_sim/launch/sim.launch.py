@@ -61,6 +61,10 @@ def setup(context):
         model_path = f.name
     gui = LaunchConfiguration('gui').perform(context).lower() == 'true'
     world = LaunchConfiguration('world').perform(context)
+    spawn_x = LaunchConfiguration('spawn_x').perform(context)
+    spawn_y = LaunchConfiguration('spawn_y').perform(context)
+    spawn_z = LaunchConfiguration('spawn_z').perform(context)
+    spawn_yaw = LaunchConfiguration('spawn_yaw').perform(context)
     headless = LaunchConfiguration('headless_rendering').perform(context).lower() == 'true'
     gz_args = ['-r ', world] if gui else ['-r -s '+('--headless-rendering ' if headless else ''), world]
     return [
@@ -73,7 +77,8 @@ def setup(context):
         Node(package='ros_gz_bridge', executable='parameter_bridge', name='qianli_bridge',
              parameters=[{'config_file': str(sim / 'config/bridge.yaml'), 'use_sim_time': True}], output='screen'),
         Node(package='ros_gz_sim', executable='create',
-             arguments=['-name', 'qianli', '-file', model_path, '-x', '0', '-y', '0', '-z', '0'],
+             arguments=['-name', 'qianli', '-file', model_path,
+                        '-x', spawn_x, '-y', spawn_y, '-z', spawn_z, '-Y', spawn_yaw],
              parameters=[{'use_sim_time': True}], output='screen'),
         Node(package='qianli_sim', executable='ideal_kinematic_sim.py', parameters=[{'use_sim_time': True}], output='screen'),
         Node(package='rviz2', executable='rviz2', arguments=['-d', str(desc / 'rviz/qianli.rviz')],
@@ -91,4 +96,8 @@ def generate_launch_description():
         DeclareLaunchArgument('sensors', default_value='true'),
         DeclareLaunchArgument('sim_mode', default_value='ideal_kinematic_sim'),
         DeclareLaunchArgument('world', default_value=str(sim / 'worlds/qianli_test_world.sdf')),
+        DeclareLaunchArgument('spawn_x', default_value='0.0'),
+        DeclareLaunchArgument('spawn_y', default_value='0.0'),
+        DeclareLaunchArgument('spawn_z', default_value='0.0'),
+        DeclareLaunchArgument('spawn_yaw', default_value='0.0'),
         OpaqueFunction(function=setup)])

@@ -1,0 +1,231 @@
+{
+  "result": "PASS",
+  "variant": "test_101",
+  "geometry_objects": 104,
+  "sdf_collision_count": 105,
+  "safe_rotation_radius": 0.5181,
+  "map_sdf_common_source": true,
+  "door_checks": [
+    {
+      "id": "west_spine_door_0",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "west_spine_door_1",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "west_spine_door_2",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "west_spine_door_3",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "east_spine_door_4",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "east_spine_door_5",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "east_spine_door_6",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "east_spine_door_7",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "classroom_hall_boundary_door_8",
+      "net_width": 2.4,
+      "passed": true
+    },
+    {
+      "id": "classroom_hall_boundary_door_9",
+      "net_width": 2.4,
+      "passed": true
+    },
+    {
+      "id": "east_partition_0_door_10",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "north_services_door_11",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "north_services_door_12",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "north_services_door_13",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "south_seminars_door_14",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "south_seminars_door_15",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "south_seminars_door_16",
+      "net_width": 1.2,
+      "passed": true
+    },
+    {
+      "id": "auditorium_1_door_17",
+      "net_width": 1.8,
+      "passed": true
+    },
+    {
+      "id": "auditorium_3_door_18",
+      "net_width": 1.8,
+      "passed": true
+    },
+    {
+      "id": "auditorium_5_door_19",
+      "net_width": 1.8,
+      "passed": true
+    },
+    {
+      "id": "lecture_north_door_20",
+      "net_width": 1.8,
+      "passed": true
+    },
+    {
+      "id": "lecture_south_door_21",
+      "net_width": 1.8,
+      "passed": true
+    },
+    {
+      "id": "lecture_west_door_22",
+      "net_width": 1.2,
+      "passed": true
+    }
+  ],
+  "connectivity_checks": [
+    {
+      "id": "T01_narrow_door",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.798,
+      "goal_clearance": 2.55
+    },
+    {
+      "id": "T02_classroom_turn",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.65,
+      "goal_clearance": 1.4
+    },
+    {
+      "id": "T03_repeated_rooms",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.518,
+      "goal_clearance": 1.6
+    },
+    {
+      "id": "T04_pillar_hall",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 2.95,
+      "goal_clearance": 1.848
+    },
+    {
+      "id": "T05_ring_north",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 0.8,
+      "goal_clearance": 1.7
+    },
+    {
+      "id": "T06_auditorium",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.9,
+      "goal_clearance": 0.75
+    },
+    {
+      "id": "T07_deadend_office",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.6,
+      "goal_clearance": 2.9
+    },
+    {
+      "id": "T08_long_return",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.7,
+      "goal_clearance": 3.95
+    },
+    {
+      "id": "T09_lobby_loop",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 3.95,
+      "goal_clearance": 1.45
+    },
+    {
+      "id": "T10_unreachable",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 2,
+      "start_clearance": 3.95,
+      "goal_clearance": 1.9
+    },
+    {
+      "id": "enter_lecture",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 3.95,
+      "goal_clearance": 1.45
+    },
+    {
+      "id": "exit_120cm_door",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 1.45,
+      "goal_clearance": 2.518
+    },
+    {
+      "id": "enter_project_room",
+      "passed": true,
+      "start_component": 1,
+      "goal_component": 1,
+      "start_clearance": 2.518,
+      "goal_clearance": 2.55
+    }
+  ]
+}

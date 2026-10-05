@@ -1,0 +1,70 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: nav2_rviz_plugins/Navigation 2
+    Name: Navigation 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Metric grid (1 m)
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 60
+      Reference Frame: map
+    - Class: rviz_default_plugins/Map
+      Name: Teaching Training v1
+      Enabled: true
+      Topic:
+        Value: /map
+        Durability Policy: Transient Local
+      Alpha: 1
+      Color Scheme: map
+    - Class: rviz_default_plugins/RobotModel
+      Name: QianLi
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Durability Policy: Transient Local
+      Visual Enabled: true
+    - Class: rviz_default_plugins/LaserScan
+      Name: Gazebo Laser
+      Enabled: true
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+      Size (m): 0.04
+      Color: 255; 80; 80
+    - Class: rviz_default_plugins/Path
+      Name: Global Plan
+      Enabled: true
+      Topic:
+        Value: /plan
+      Color: 20; 180; 80
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Names: false
+      Marker Scale: 0.2
+  Global Options:
+    Fixed Frame: map
+    Background Color: 35; 39; 47
+    Frame Rate: 15
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: nav2_rviz_plugins/GoalTool
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic: /initialpose
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Angle: 0
+      Scale: 18
+      X: 0
+      Y: 0
+      Target Frame: map
+Window Geometry:
+  Width: 1550
+  Height: 950
