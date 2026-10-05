@@ -249,3 +249,11 @@ base_link → shoulder_pan → shoulder_link → shoulder_lift → upper_arm_lin
 - 模型来源：真实机械臂 **SO-ARM101**（HX-30HM 舵机，Feetech SCS/STS 兼容），硬件资料见 [docs/HARDWARE.md](../../docs/HARDWARE.md) 与 [hardware/mechanical_arm/docs/joint_limits.md](../../../hardware/mechanical_arm/docs/joint_limits.md)；
 - 虚拟机原始文件：`~/arm-final/ros2_ws/src/so101_bringup/urdf/so101.urdf` + `~/arm-final/ros2_ws/src/so101_bringup/urdf/assets/*.stl`；
 - 待办：Milestone 3 将接入 MoveIt2（SRDF / kinematics / OMPL 配置）。
+
+## v0.3 可选扩展
+
+默认 geometry 入口仍为 6 links / 5 joints，无 ros2_control、传感器和惯性。
+`control_mode:=mock|gazebo` 加载四轮接口；`simulation:=true` 启用集中 TODO/PLACEHOLDER 惯性；
+`sensors:=true` 加载虚拟 imu_link/lidar_link 和 Gazebo sensors。
+推荐经 qianli_bringup/sim.launch.py 启动，由 launch 自动传 controllers_file。
+激光 ground z=0.25 m 仅为虚拟安装。全向轮不是 Mecanum，电机与编码器实机方向仍待校准。

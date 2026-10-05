@@ -1,8 +1,8 @@
 # ROADMAP — 开发路线图
 
-> QianLi 开发路线与 Milestone 定义。当前阶段：Phase 0 — Foundation。
+> QianLi 开发路线与 Milestone 定义。当前底盘软件阶段：QianLi Simulation v0.3。
 
-## Phase 0 — Foundation（当前）
+## Phase 0 — Foundation（已建立）
 
 建立可维护、可扩展、可正常 `colcon build` 的 QianLi ROS 2 工作区。
 
@@ -38,10 +38,10 @@
 
 ## 并行路线 — 虚拟平台（无真实 LiDAR 不阻塞）
 
-- [ ] Gazebo 虚拟移动机器人（四全向轮 Omni X-drive，qianli_description / qianli_base / qianli_control）
-- [ ] 虚拟 LiDAR（Simulation / Mock 模式，qianli_slam）
-- [ ] SLAM（先 2D，真实 3D LiDAR 到位后切换 FAST-LIO2 / LIO-SAM）
-- [ ] Nav2（Costmap / Planner / Controller，qianli_navigation）
+- [x] Gazebo 虚拟移动机器人（四全向轮 Omni X-drive，qianli_description / qianli_base / qianli_control）
+- [x] 虚拟 LiDAR（Simulation / Mock 模式，qianli_slam）
+- [x] SLAM（先 2D，真实 3D LiDAR 到位后切换 FAST-LIO2 / LIO-SAM）
+- [x] Nav2（Costmap / Planner / Controller，qianli_navigation）
 - [ ] Frontier Exploration（qianli_exploration）
 - [ ] robot_localization EKF 融合（qianli_localization）
 
@@ -60,3 +60,22 @@ YOLO → Semantic Mapping → Natural Language Agent → Multi-floor Navigation 
 | M2 | 真实机械臂接入 | 未开始 |
 | M3 | MoveIt2 | 未开始 |
 | M4 | Camera + AprilTag 按压 Demo | 未开始 |
+
+## QianLi Simulation v0.3（2026-10-05）
+
+- [x] Base Geometry v0.1 / REP-103 / outward joint axes / Xacro 参数化
+- [x] 修正为四 Omni Wheel X-drive / 官方 omni controller / mock 实际输出与四运动测试
+- [x] Harmonic + gz_ros2_control + ideal_kinematic_sim / 独立 ground truth
+- [x] 虚拟 360° 2D LiDAR / IMU 动态响应 / 静态 ros_gz bridge / 同一 sim_time
+- [x] slam_toolbox / 唯一 map→odom / 保存测试地图
+- [x] Nav2 holonomic / 三目标 action 成功 / 独立轨迹障碍相交检查
+- [x] 模块化 bringup / 自动系统验收
+- [x] qianli_exploration 可编译骨架、接口与 TODO
+- [ ] 实现 Frontier Exploration（Nav2 后续任务）
+- [ ] wheel_physics_sim：Harmonic 各向异性接触/滚子接触独立评估
+- [ ] 整车称重、重心/惯量、实机电机/编码器正方向校准
+- [ ] STM32 hardware interface、反馈里程计、EKF、安全急停
+- [ ] 实际 LiDAR 安装标定、3D PointCloud2 接口接入
+
+当前仿真可检验上层软件链，不能代替真实轮子接触动力学或实机安全验收。
+机械臂历史路线不因本次仿真而标记完成。

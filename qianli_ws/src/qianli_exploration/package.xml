@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>qianli_exploration</name><version>0.3.0</version>
+  <description>Exploration interface skeleton; no exploration algorithm implemented.</description>
+  <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer><license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>nav2_msgs</exec_depend><exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend><exec_depend>tf2_ros</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
