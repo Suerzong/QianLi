@@ -63,13 +63,23 @@ def usb_reset():
     ok = True
     node = find_usb_node()
     if node:
+        # 设备节点属 root，ioctl 需要 root 权限 → 用 sudo 跑
+        code = (
+            "import fcntl,sys\n"
+            f"fd=open('{node}','wb')\n"
+            "fcntl.ioctl(fd,0x5514,0)\n"
+            "fd.close()\n"
+            "print('ok')\n")
         try:
-            fd = os.open(node, os.O_WRONLY)
-            fcntl.ioctl(fd, USBDEVFS_RESET, 0)
-            os.close(fd)
-            log(f'USB 复位指令已发送 ({node})')
+            r = subprocess.run(['sudo', 'python3', '-c', code],
+                               capture_output=True, text=True, timeout=15)
+            if 'ok' in (r.stdout or ''):
+                log(f'USB 复位指令已发送 ({node})')
+            else:
+                log(f'USB 复位失败 ({node}): {(r.stderr or "").strip()[:120]}')
+                ok = False
         except Exception as e:
-            log(f'USB 复位失败 ({node}): {e}')
+            log(f'USB 复位异常 ({node}): {e}')
             ok = False
     else:
         log('未找到 USB 设备节点，跳过 ioctl 复位，直接重绑驱动')
