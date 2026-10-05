@@ -19,6 +19,7 @@
   "map": {
     "file": "qianli_bupt_shahe_public_teaching_floor1_approx.pgm",
     "yaml": "qianli_bupt_shahe_public_teaching_floor1_approx.yaml",
+    "footprint_overlay": "qianli_bupt_shahe_public_teaching_floor1_qianli_footprint_overlay.png",
     "resolution_m_per_pixel": 0.02,
     "pixels": [
       2220,

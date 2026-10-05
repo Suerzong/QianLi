@@ -20,6 +20,8 @@
 - `qianli_bupt_shahe_public_teaching_floor1_approx.pgm/.yaml`：按门洞初始比例生成的
   OccupancyGrid；地图分辨率 0.020 m/px，范围约 44.40 m × 35.90 m
 - `qianli_bupt_shahe_public_teaching_floor1_approx_preview.png`：公制地图与原平面图的检查叠加
+- `qianli_bupt_shahe_public_teaching_floor1_qianli_footprint_overlay.png`：在地图原点叠加
+  QianLi 八边形 footprint 和 `+X/+Y` 检查轴
 - `qianli_bupt_shahe_public_teaching_floor1_approx.json`：生成参数、原点和审查项
 
 ## 比例和建模状态
@@ -49,3 +51,9 @@
 地图坐标原点放在照片裁剪区域中心，图像上方作为地图 `+Y`；这只是导航测试坐标约定，
 还没有把北向和建筑真实测量坐标绑定。下一步是手工校正外墙/主隔墙/门洞，随后再生成
 Gazebo Harmonic 的静态墙体 SDF。
+
+## ROS 2 资源检查
+
+已将 `.pgm/.yaml` 放入远程工作区的
+`qianli_ws/src/qianli_slam/maps/`，并用 ROS 2 Jazzy `nav2_map_server` 完成加载、
+生命周期激活和 `/map` 发布检查。远程 `qianli_slam` 包也已重新构建。
