@@ -2,6 +2,84 @@
 
 > 按时间顺序记录 QianLi 开发过程、决策与验证结果。
 
+## 2026-10-05（下午）— 全自动棋盘格定位 + 机械臂串口急救 + 外参标定
+
+### 1. 自动调参（替代手动滑块）
+
+用户要求滤除"长宽差 > 5"的候选、面积限定 330~350。据此写 `autotune.py`
+遍历 HSV 阈值网格，自动搜出最优参数：
+
+| 参数 | 值 | 依据 |
+|---|---|---|
+| S_MAX | 127（100~155 等效） | 自动搜索：饱和度不区分物块/背景 |
+| V_MIN | 140 | 143 时面积掉到 330 边界，140 有余量 |
+| V_MAX | 167 | 175 时面积涨到 372 超出区间 |
+| 面积 | 330~350 | 用户指定 |
+| 长宽差 | ≤5 | 用户指定（立方体投影近似正方形） |
+| 边长 | 20~50 | 滤掉长条杂质（如 15×72） |
+
+**实测**：全画面无 ROI 也只命中唯一候选（area=339, 24×24）→ ROI 不再必要。
+
+### 2. 关键发现：标定板是黑白棋盘格，改用角点标定
+
+原 Hough 格线法的问题：格线聚类易漏线/多线，原点不确定，
+把物块算到 **X=28.9cm（超出棋盘 23.1cm 边界，明显错误）**。
+
+改用 `cv2.findChessboardCorners`（内角点 7×5 = 8×6 方格）：
+- **重投影误差 平均 0.08cm、最大 0.65cm**（亚像素 cornerSubPix）
+- 原点 = 棋盘左上第一个内角点，**在画面上用红圈标出**，彻底解决"哪个是原点"
+- 物块 → **(13.0, 6.5) cm**，落在棋盘范围内，合理
+- 每 3 秒自动重标定，被挡时不覆盖旧 H（抓取途中遮挡不影响）
+
+### 3. 机械臂串口"Write timeout"急救（重要经验）
+
+症状：driver 报 `servo reconnect pending: Write timeout`，
+/joint_states 无数据，RViz 机械臂不动。
+
+诊断（`arm_serial_probe.py`）：**连写 8 字节都超时** → 不是舵机问题，
+是 USB CDC 端点假死。设备 `1a86:55d3`（CH343）走通用 `cdc_acm` 驱动。
+
+修复（需要 sudo，已验证有效）：
+```bash
+# 1) USB 复位
+sudo python3 -c "import fcntl; fd=open('/dev/bus/usb/001/002','wb'); fcntl.ioctl(fd,0x5514,0)"
+# 2) 重绑驱动
+echo -n '1-1:1.0' | sudo tee /sys/bus/usb/drivers/cdc_acm/unbind
+echo -n '1-1:1.0' | sudo tee /sys/bus/usb/drivers/cdc_acm/bind
+```
+修复后：写入 1.4ms，**6 个舵机全部响应 ping**，driver 正常
+（`Connected to six servos; torque disabled`）。
+
+### 4. 外参标定（grid → base_link）
+
+`extrinsic_calib.py`：实时记录 TCP（`gripper_frame_link`）位置，
+SSH 侧 `touch /tmp/mark_A` 打点，无需用户在终端操作。
+两点法（原理：一点定位置，两点定朝向）：
+
+| 点 | grid 坐标 | base_link (m) |
+|---|---|---|
+| A | (0, 0) | (0.3420, 0.0584, -0.0310) |
+| B | (3.3, 0) | (0.3374, 0.0241, -0.0405) |
+
+结果：`grid_origin=(0.3420, 0.0584, -0.0310)`，`θ=-97.75°`
+校验：A→B 实测 3.46cm vs 理论 3.3cm（+0.16cm，含手搬误差 → 待用尺子核格宽）
+
+### 5. 抓取桥接验证
+
+`grab_bridge`：自动读 `/tmp/extrinsic.txt` → 旋转+平移 → 发布
+`/arm/target_position`（base_link）。oneshot 模式锁存首个稳定目标
+（连续 3 帧 <5mm），避免抓取途中物块被机械臂遮挡导致目标中断。
+
+模拟验证：grid (13.0, 6.5)cm → base (0.3889, -0.0792, 0.0190)m，
+与手算一致；oneshot 只发送一次 ✓
+
+### 已知问题 / 下一步
+
+- [ ] 机械臂下压会遮挡棋盘（眼在手外固有）→ 先归位标定，再抓取
+- [ ] 用尺子量棋盘整宽（8 格）校准格宽；量物块尺寸定抓取高度
+- [ ] 使能真实运动：`allow_motion:=true calibrated:=true` + `/arm/enable`
+- [ ] 首次抓取测试（低速 max_joint_speed:=0.3，随时 /arm/stop）
+
 ## 2026-10-05 — RGB 相机物块定位 + 抓取链路（视觉学习/教学）
 
 ### 背景
