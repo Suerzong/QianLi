@@ -69,10 +69,10 @@ class GrabBridge(Node):
         super().__init__('grab_bridge')
 
         self.declare_parameter('approach_z', 0.05)
-        self.declare_parameter('publish', True)
+        self.declare_parameter('publish', False)
         self.declare_parameter('mode', 'oneshot')
         self.declare_parameter('stable_n', 3)
-        self.declare_parameter('auto_enable', True)   # 自动调用 /arm/enable
+        self.declare_parameter('auto_enable', False)  # 默认预览，不自动使能
         self.declare_parameter('extrinsic_file', '/tmp/extrinsic.txt')
         # 允许命令行直接覆盖外参
         self.declare_parameter('grid_origin_x', float('nan'))

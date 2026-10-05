@@ -221,7 +221,8 @@ def main():
         ap.error('finite offsets, positive size/mass/repeat, valid timestep/angle required')
     half = args.obj_size*1000/2
     grid = np.asarray(args.object_grid_mm)
-    if np.any(grid < half) or np.any(grid > np.array([S.BOARD_W,S.BOARD_H])*1000-half):
+    if (np.any(grid < -S.CELL_SIZE*1000+half)
+            or np.any(grid > (np.array([S.BOARD_W,S.BOARD_H])-S.CELL_SIZE)*1000-half)):
         ap.error('object must start completely supported by the board')
     S.OBJ_GRID = tuple(np.asarray(args.object_grid_mm)/1000.)
     model = build(args.obj_size, args.mass_g/1000, args.friction, args.timestep)

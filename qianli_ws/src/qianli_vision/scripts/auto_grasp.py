@@ -26,6 +26,8 @@ import argparse
 import math
 import sys
 import time
+import json
+from grasp_guard import down_quat_xyzw
 
 import numpy as np
 import rclpy
@@ -115,12 +117,20 @@ class AutoGrasp(Node):
 
     # ---------- 回调 ----------
     def _on_obj(self, msg):
+        if msg.header.frame_id != 'grid':
+            return
+        age = (self.get_clock().now()-rclpy.time.Time.from_msg(msg.header.stamp)).nanoseconds/1e9
+        if age < -.5 or age > .5 or not np.isfinite([msg.point.x,msg.point.y]).all():
+            return
         self.obj_hist.append((msg.point.x, msg.point.y))
         if len(self.obj_hist) > 8:
             self.obj_hist.pop(0)
 
     def _on_status(self, msg):
-        self.enabled = '"enabled": true' in msg.data
+        try:
+            self.enabled = bool(json.loads(msg.data).get('enabled',False))
+        except (ValueError,TypeError):
+            self.enabled = False
 
     # ---------- 基础设施 ----------
     def spin_for(self, dur, stream=True):
@@ -193,12 +203,10 @@ class AutoGrasp(Node):
         while time.time() - t0 < timeout:
             rclpy.spin_once(self, timeout_sec=0.02)
             self._read_tcp()
-            if not self.enabled and reenables < 3:
-                reenables += 1
-                print(f'      ⚠️ 运动被禁用（串口重连），第 {reenables} 次重新使能')
-                self.enable()
-                t0 = time.time()
-                continue
+            if not self.enabled:
+                self.target = None
+                print('      ❌ 运动失能/掉线，终止；禁止自动重新使能')
+                return False, float('nan')
             self._publish_pose()
             if self.cur:
                 d = math.dist(self.cur, (x, y, z))
@@ -218,12 +226,15 @@ class AutoGrasp(Node):
                 print('❌ 使能失败')
                 return False
             park = tuple(a.park) if a.park else PARK_DEFAULT
-            self.goto(park[0], park[1], park[2], timeout=16)
+            ok,_ = self.goto(park[0], park[1], park[2], timeout=16)
+            if not ok:
+                return False
             self.spin_for(2.0)
         else:
             print(f'[dry-run] 先归位到 {a.park or PARK_DEFAULT}')
 
         print('① 等待物块定位…')
+        self.obj_hist = []
         t0 = time.time()
         grid = None
         while time.time() - t0 < 25:
@@ -276,10 +287,9 @@ class AutoGrasp(Node):
             print(f'   {name}: z={z:.4f} → {"✅" if ok else "❌"} '
                   f'误差 {d*1000:.1f}mm')
             if not ok:
-                stage_ok = False
-                if name == '高空转运' and d > 0.02:
-                    print('   ❌ 高空转运差太多（超臂展？），中止')
-                    return False
+                self.target = None
+                print('   ❌ 动作未到位，中止，不继续下降或闭爪')
+                return False
 
         print('④ 慢速闭合夹爪（活动爪从左侧合上）')
         self.gripper_close_slow()
@@ -289,7 +299,7 @@ class AutoGrasp(Node):
         print(f'   抬起 {"✅" if ok_lift else "❌"} 误差 {d*1000:.1f}mm')
 
         if stage_ok and ok_lift:
-            print('\n🎉 抓取成功：已夹住并抬起')
+            print('\n运动流程到位；尚无物块抬升反馈，抓取是否成功未验证')
             return True
         print('\n⚠️ 流程结束，但有动作未到位 —— 请检查是否夹住')
         return False

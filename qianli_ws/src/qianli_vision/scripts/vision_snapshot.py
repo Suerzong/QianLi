@@ -33,6 +33,7 @@ from geometry_msgs.msg import PoseStamped, PointStamped
 from std_msgs.msg import Float64, String
 from std_srvs.srv import SetBool
 import tf2_ros
+from grasp_guard import down_quat_xyzw, atomic_text
 
 PARK = np.array([0.06, 0.00, 0.26])      # 停靠位：正上方抬高
 # 实测（用"棋盘标定成功次数"当指标，8 秒内）：
@@ -40,15 +41,15 @@ PARK = np.array([0.06, 0.00, 0.26])      # 停靠位：正上方抬高
 #   (0.17, 0.03, 0.16) → 1 次 ✅
 #   (0.10, -0.10, 0.22) → 0 次 ❌ 挡住棋盘（会导致标定失败、完全不发布）
 YAW_DEG = -90.0
-GRID_X_MAX, GRID_Y_MAX = 27.0, 20.0     # 网格原点是棋盘【左上角】，不是中心！
+GRID_X_MAX, GRID_Y_MAX = 23.1, 16.5     # 原点为首个内角点；外边界 (-3.3,-3.3)..(23.1,16.5)cm
                                         # 棋盘 26x19.5cm → 坐标范围 [0,26]x[0,19.5]
 STABLE_N = 8                             # 需要连续稳定的帧数
 TOL_MM = 3.0
 
 
 def quat(yaw_deg):
-    y = math.radians(yaw_deg)
-    return (0.0, math.cos(y / 2), 0.0, math.sin(y / 2))
+    x,y,z,w = down_quat_xyzw(yaw_deg)
+    return w,x,y,z
 
 
 def read_extrinsic():
@@ -81,10 +82,15 @@ class Snap(rclpy.node.Node):
         self.tfl = tf2_ros.TransformListener(self.tfb, self)
 
     def _p(self, m):
+        if m.header.frame_id != 'grid':
+            return
+        age = (self.get_clock().now()-rclpy.time.Time.from_msg(m.header.stamp)).nanoseconds/1e9
+        if age < -.5 or age > .5 or not np.isfinite([m.point.x,m.point.y]).all():
+            return
         self.pose = (m.point.x, m.point.y)
 
     def _y(self, m):
-        self.yaw = m.data
+        self.yaw = math.degrees(m.data)
 
     def _s(self, m):
         self.status = m.data
@@ -144,7 +150,7 @@ def main():
     if not a.no_park:
         print('1) 使能机械臂并停到"离开棋盘视野"的停靠位 ...')
         if not n.enable():
-            print('   ⚠️ 使能失败，仍然继续（只影响背景质量）')
+            raise RuntimeError('enable failed; aborting snapshot parking')
         n.park()
         p = n.tcp()
         if p is not None:
@@ -191,7 +197,7 @@ def main():
         return
     # 找最稳定的一段
     best = None
-    for i in range(len(data) - STABLE_N + 1):
+    for i in [len(data)-STABLE_N]:
         win = np.array([(d[0], d[1]) for d in data[i:i + STABLE_N]])
         spread = float(np.max(np.linalg.norm(win - win.mean(axis=0), axis=1)))
         if best is None or spread < best[0]:
@@ -209,18 +215,17 @@ def main():
 
     print('4) 校验并换算到 base_link ...')
     gx_cm, gy_cm = mean[0] * 100, mean[1] * 100
-    if not (-1.0 <= gx_cm <= GRID_X_MAX and -1.0 <= gy_cm <= GRID_Y_MAX):
-        print(f'   ⚠️ 位置 ({gx_cm:.1f},{gy_cm:.1f})cm 超出棋盘 0~26 x 0~19.5cm，可能检测错了')
+    if not (-3.3 <= gx_cm <= GRID_X_MAX and -3.3 <= gy_cm <= GRID_Y_MAX):
+        raise ValueError('object outside calibrated board; snapshot rejected')
     ext = read_extrinsic()
     th = math.radians(ext['grid_theta_deg'])
     c, s = math.cos(th), math.sin(th)
     bx = ext['grid_origin_x'] + c * mean[0] - s * mean[1]
     by = ext['grid_origin_y'] + s * mean[0] + c * mean[1]
     bz = -0.0394
-    with open('/tmp/obj_base.txt', 'w') as fh:
-        fh.write(f'{bx:.5f} {by:.5f} {bz:.5f}\n')
-        fh.write(f'# grid=({mean[0]*100:.2f},{mean[1]*100:.2f})cm '
-                 f'yaw={yaw:.1f}deg spread={spread*1000:.2f}mm\n')
+    atomic_text('/tmp/obj_base.txt', f'{bx:.5f} {by:.5f} {bz:.5f}\n'
+                f'# grid=({mean[0]*100:.2f},{mean[1]*100:.2f})cm '
+                f'yaw={yaw:.1f}deg spread={spread*1000:.2f}mm\n')
     print(f'   ✅ 物块 base = ({bx:.4f}, {by:.4f}, {bz:.4f})  '
           f'离基座 {math.hypot(bx, by)*1000:.0f}mm')
     print('   已写入 /tmp/obj_base.txt')

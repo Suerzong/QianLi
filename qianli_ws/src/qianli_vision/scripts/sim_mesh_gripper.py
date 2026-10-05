@@ -29,7 +29,10 @@ import mujoco
 import sim_grasp as S
 
 ASSETS = os.path.join(os.path.dirname(S.URDF), 'assets')
-PARTS_DIR = os.path.expanduser('~/mj_parts')
+# 凸分解零件目录：默认 ~/mj_parts（VM 上的位置）。可用 QI_PARTS_DIR 覆盖，
+# 让同一份脚本在 Windows 宿主机上复用同一批 CoACD 凸块（零件内容完全一样）。
+PARTS_DIR = os.environ.get('QI_PARTS_DIR',
+                           os.path.expanduser('~/mj_parts'))
 
 # (网格文件, 挂在哪个 body, 局部平移, 局部四元数)
 # 平移/四元数来自 URDF 里该 visual/collision 的 origin
@@ -68,10 +71,19 @@ def decompose():
 
 
 def load_manifest():
+    """读 manifest.txt。
+
+    manifest 里存的是**生成时的绝对路径**（VM 上是 /home/ros/mj_parts/...）。
+    搬到别的机器（Windows）直接用它就会找不到文件，所以这里逐条容错：
+    路径在就用，不在就按文件名到 PARTS_DIR 里找同名零件。
+    这样同一份 manifest 在 VM 和宿主机上都能用，零件本身没有任何改动。
+    """
     out = []
     with open(os.path.join(PARTS_DIR, 'manifest.txt')) as fh:
         for line in fh:
             p, body, pos, quat = line.strip().split('|')
+            if not os.path.exists(p):
+                p = os.path.join(PARTS_DIR, os.path.basename(p.replace('\\', '/')))
             out.append((p, body, tuple(float(x) for x in pos.split(',')),
                         tuple(float(x) for x in quat.split(','))))
     return out
@@ -94,8 +106,7 @@ def make_spec(obj_size):
     gp.size = [0.045, 0.05, (S.BASE_BOTTOM - S.TABLE_Z) / 2]
     gp.pos = [0.0, 0.0, (S.TABLE_Z + S.BASE_BOTTOM) / 2]
     cy, sy = math.cos(S.BOARD_YAW), math.sin(S.BOARD_YAW)
-    cx = S.BOARD_ORIGIN[0] + cy * (S.BOARD_W / 2) - sy * (S.BOARD_H / 2)
-    cyy = S.BOARD_ORIGIN[1] + sy * (S.BOARD_W / 2) + cy * (S.BOARD_H / 2)
+    cx,cyy = S.board_center_world()
     gb = wb.add_geom(); gb.name = 'board'
     gb.type = mujoco.mjtGeom.mjGEOM_BOX
     gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]

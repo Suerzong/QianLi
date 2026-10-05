@@ -21,15 +21,22 @@ import numpy as np
 import mujoco
 from ikpy.chain import Chain
 
-URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+# URDF 路径：默认仍是虚拟机上的真机 URDF（行为一字不变）。
+# 允许用环境变量覆盖，是为了让同一份脚本能在 Windows 宿主机上跑
+# （VM 里没有 GPU，宿主机有 RTX；搬过去只改这一个路径，物理参数全不动）。
+SO101_PKG = os.environ.get(
+    'QI_SO101_PKG',
+    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup'
+                       '/share/so101_bringup'))
+URDF = os.path.join(SO101_PKG, 'urdf/so101.urdf')
 
 TABLE_Z = -0.0524
 BASE_BOTTOM = -0.0024
 BOARD_ORIGIN = (0.3420, 0.0584)
 BOARD_YAW = math.radians(-97.75)
-BOARD_W, BOARD_H = 0.228, 0.162
+CELL_SIZE = .033
+BOARD_COLS, BOARD_ROWS = 7,5  # 内角点数；外部为 8x6 方格
+BOARD_W, BOARD_H = (BOARD_COLS+1)*CELL_SIZE, (BOARD_ROWS+1)*CELL_SIZE
 OBJ_SIZE = 0.02
 OBJ_GRID = (0.111, 0.0)
 # 运行时覆盖物块尺寸（孪生里扫不同尺寸，找爪口能容纳的上限）
@@ -44,6 +51,13 @@ ARM_JOINTS = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
               'wrist_roll']
 ALL_JOINTS = ARM_JOINTS + ['gripper']
 FRAME_IN_GRIPPER = np.array([-0.0079, -0.000218121, -0.0981274])
+
+
+def board_center_world():
+    """Extrinsic origin is the first inner corner, one cell inside the board."""
+    x,y = BOARD_W/2-CELL_SIZE, BOARD_H/2-CELL_SIZE
+    c,s = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
+    return BOARD_ORIGIN[0]+c*x-s*y, BOARD_ORIGIN[1]+s*x+c*y
 
 
 def rot_x(a):
@@ -83,8 +97,7 @@ def build_model():
     gp.rgba = [0.3, 0.3, 0.32, 1]
 
     cy, sy = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
-    cx = BOARD_ORIGIN[0] + cy * (BOARD_W / 2) - sy * (BOARD_H / 2)
-    cyy = BOARD_ORIGIN[1] + sy * (BOARD_W / 2) + cy * (BOARD_H / 2)
+    cx,cyy = board_center_world()
     gb = wb.add_geom()
     gb.name = 'board'
     gb.type = mujoco.mjtGeom.mjGEOM_BOX

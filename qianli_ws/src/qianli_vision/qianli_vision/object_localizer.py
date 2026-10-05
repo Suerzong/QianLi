@@ -26,6 +26,7 @@
 
 import os
 import threading
+import time
 
 import math
 import cv2
@@ -37,7 +38,7 @@ from geometry_msgs.msg import PointStamped
 from std_msgs.msg import Float64
 
 # ---- 默认参数（已实机调优）----
-CELL_CM = 3.25       # 棋盘格边长（厘米）—— 用户实测：整宽 26cm / 8 格
+CELL_CM = 3.3        # 用户确认单格 33mm（2026-10-05）
 BOARD_COLS = 7       # 内角点列数
 BOARD_ROWS = 5       # 内角点行数
 MIN_AREA, MAX_AREA = 250, 600    # 物块轮廓面积区间（像素）
@@ -78,13 +79,19 @@ class ObjectLocalizer(Node):
         self.corners = None      # 内角点（像素）
         self.reproj_err = None   # 重投影误差（厘米）
         self.frame_i = 0
+        self.calibrated_at = None
+        self.reference_corners = None
+        self.calibration_moved = False
+        self._last_warn = 0.
 
         self.pub = self.create_publisher(PointStamped, '/object_pose', 10)
         # 灰色度上限：皮肤饱和度常在 100 上下，收紧到 60 可排除手/彩色工具
         self.declare_parameter('max_sat', 120)
         # 棋盘点位范围（cm）：超出即视为误检丢弃（棋盘 22.8x16.2cm）
-        self.declare_parameter('grid_x_limit_cm', 27.0)
-        self.declare_parameter('grid_y_limit_cm', 20.0)
+        self.declare_parameter('grid_x_limit_cm', BOARD_COLS*CELL_CM)
+        self.declare_parameter('grid_y_limit_cm', BOARD_ROWS*CELL_CM)
+        self.declare_parameter('object_size_cm', 2.)
+        self.declare_parameter('size_tolerance_cm', .8)
         self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
         self.box_pts = None
 
@@ -97,7 +104,8 @@ class ObjectLocalizer(Node):
 
         self.timer = self.create_timer(0.1, self.tick)
         # 棋盘格标定放独立线程做一次（不阻塞 executor）
-        threading.Thread(target=self._initial_calibrate, daemon=True).start()
+        # Calibration happens on the executor's first frame. Concurrent
+        # VideoCapture.read() calls from a startup thread can race with tick.
 
     # ---------- 标定 ----------
     def _initial_calibrate(self):
@@ -140,7 +148,7 @@ class ObjectLocalizer(Node):
                 dst.append((j * cell, i * cell))
         src = np.array(src, np.float32)
         dst = np.array(dst, np.float32)
-        H, _ = cv2.findHomography(src, dst, cv2.RANSAC, 3.0)
+        H, inliers = cv2.findHomography(src, dst, cv2.RANSAC, 0.15)
         if H is None:
             self.get_logger().warn('Homography 计算失败')
             return False
@@ -148,11 +156,23 @@ class ObjectLocalizer(Node):
         proj = cv2.perspectiveTransform(
             src.reshape(-1, 1, 2), H).reshape(-1, 2)
         err = np.linalg.norm(proj - dst, axis=1)
+        if inliers is None or inliers.mean() < .8 or err.mean() > .1 or err.max() > .3:
+            self._warn_throttled('棋盘标定质量不足，拒绝更新 H')
+            return False
+        if self.reference_corners is not None:
+            shift = np.linalg.norm(pts-self.reference_corners, axis=1).max()
+            if shift > 3.:
+                self.calibration_moved = True
+                self._warn_throttled('相机/棋盘相对位置变化；旧 base 外参失效，需重标定')
+                return False
+        else:
+            self.reference_corners = pts.copy()
 
         self.H = H
         self.corners = pts
         self.origin_px = tuple(pts[0])
         self.reproj_err = (float(err.mean()), float(err.max()))
+        self.calibrated_at = time.monotonic()
         self.get_logger().info(
             f'✅ 棋盘格标定成功：内角点 {cols}x{rows}，'
             f'覆盖 {cols*cell:.1f}x{rows*cell:.1f} cm，'
@@ -164,6 +184,7 @@ class ObjectLocalizer(Node):
     def tick(self):
         ok, frame = self.cap.read()
         if not ok:
+            self._write_invalid('camera_read_failed')
             return
         self.frame_i += 1
 
@@ -172,6 +193,12 @@ class ObjectLocalizer(Node):
             self._calibrate(frame)
 
         obj = self._detect_object(frame)
+        if (self.H is None or self.calibration_moved or self.calibrated_at is None
+                or time.monotonic()-self.calibrated_at > 10.):
+            self._write_invalid('calibration_missing_moved_or_stale')
+            return
+        if obj is None:
+            self._write_invalid(getattr(self,'_detection_reason','object_not_found'))
 
         if obj is not None and self.H is not None:
             gx, gy, bw, bh, area = obj[:5]
@@ -183,10 +210,13 @@ class ObjectLocalizer(Node):
             #   范围放宽到整个桌面（用户要求：动之前检测一次，之后照坐标执行）
             xlim = float(self.get_parameter('grid_x_limit_cm').value)
             ylim = float(self.get_parameter('grid_y_limit_cm').value)
-            if not (-1.0 <= Xcm <= xlim and -1.0 <= Ycm <= ylim):
+            lower = -float(self.get_parameter('cell_cm').value)
+            if not (lower <= Xcm <= xlim and lower <= Ycm <= ylim):
                 self._warn_throttled(
                     f'目标在棋盘点位范围外 ({Xcm:.1f},{Ycm:.1f})cm'
-                    f'（棋盘 ±({xlim:.0f},{ylim:.0f})cm），仍继续发布')
+                    f'（棋盘 ±({xlim:.0f},{ylim:.0f})cm），拒绝发布')
+                self._write_invalid('outside_board')
+                return
 
             msg = PointStamped()
             msg.header.stamp = self.get_clock().now().to_msg()
@@ -225,11 +255,17 @@ class ObjectLocalizer(Node):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 128, 0), 2)
             # 落盘便于 SSH 侧读取
             try:
-                with open('/tmp/object_pose.txt', 'w') as f:
-                    f.write(f'X_cm={Xcm:.2f}\nY_cm={Ycm:.2f}\n'
+                tmp = f'/tmp/object_pose.txt.tmp{os.getpid()}'
+                with open(tmp, 'w') as f:
+                    f.write(f'valid=1\ntimestamp={time.time():.6f}\n'
+                            f'cell_cm={self.get_parameter("cell_cm").value}\n'
+                            'coordinate_method=board_plane_projection\n'
+                            f'calibration_age_s={time.monotonic()-self.calibrated_at:.3f}\n'
+                            f'X_cm={Xcm:.2f}\nY_cm={Ycm:.2f}\n'
                             f'yaw_deg={yaw_deg if yaw_deg is not None else 0.0:.2f}\n'
                             f'center_px=({gx},{gy})\n'
                             f'size_px={bw}x{bh}\narea={int(area)}\n')
+                os.replace(tmp,'/tmp/object_pose.txt')
             except OSError:
                 pass
 
@@ -243,6 +279,21 @@ class ObjectLocalizer(Node):
                 pass
 
     # ---------- 物块检测 ----------
+    def _warn_throttled(self, message):
+        now = time.monotonic()
+        if now-self._last_warn > 2.:
+            self.get_logger().warn(message)
+            self._last_warn = now
+
+    def _write_invalid(self, reason):
+        tmp = f'/tmp/object_pose.txt.tmp{os.getpid()}'
+        try:
+            with open(tmp,'w') as stream:
+                stream.write(f'valid=0\nreason={reason}\ntimestamp={time.time():.6f}\n')
+            os.replace(tmp,'/tmp/object_pose.txt')
+        except OSError:
+            pass
+
     def _detect_object(self, frame):
         """返回候选 (cx, cy, bw, bh, area)，否则 None。
 
@@ -384,7 +435,8 @@ class ObjectLocalizer(Node):
 
         cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
-        best = None
+        candidates = []
+        self._detection_reason = 'object_not_found'
         for c in cnts:
             area = cv2.contourArea(c)
             if not (a_lo <= area <= a_hi):
@@ -397,9 +449,21 @@ class ObjectLocalizer(Node):
             cx, cy = x + bw // 2, y + bh // 2
             if not (bx0 <= cx <= bx1 and by0 <= cy <= by1):
                 continue          # 离棋盘太远（线缆/桌面杂物）
-            if best is None or area > best[4]:
-                best = (cx, cy, bw, bh, area, c)
-        return best
+            if area/(bw*bh) < .6:
+                continue
+            if self.H is not None:
+                box = cv2.boxPoints(cv2.minAreaRect(c)).astype(np.float32)
+                mapped = cv2.perspectiveTransform(box.reshape(-1,1,2),self.H).reshape(-1,2)
+                sides = np.linalg.norm(np.roll(mapped,-1,axis=0)-mapped,axis=1)
+                expected = float(self.get_parameter('object_size_cm').value)
+                tolerance = float(self.get_parameter('size_tolerance_cm').value)
+                if np.any(np.abs(sides-expected) > tolerance):
+                    continue
+            candidates.append((cx,cy,bw,bh,area,c))
+        if len(candidates) > 1:
+            self._detection_reason = 'ambiguous_candidates'
+            return None
+        return candidates[0] if candidates else None
 
     # ---------- GUI ----------
     def _draw(self, frame, obj):
