@@ -25,11 +25,23 @@ sys.argv = [sys.argv[0]]
 import sim_grasp as S   # noqa: E402
 import sim_sweep_offset as SW   # noqa: E402
 
+def make_spiral(radius_mm=4, pitch_mm=1.0):
+    """生成 1mm 步长的二维螺旋搜索点（按到原点距离排序，先近后远）。"""
+    pts = []
+    n = int(radius_mm / pitch_mm)
+    for i in range(-n, n + 1):
+        for j in range(-n, n + 1):
+            pts.append((i * pitch_mm, j * pitch_mm))
+    pts.sort(key=lambda p: (p[0] ** 2 + p[1] ** 2))
+    return pts
+
+
 # ---- 训练得到的策略参数 ----
 POLICY = {
     'obj_size': 0.014,      # 物块尺寸（12~16mm 可用）
     'dz': -0.030,           # TCP 目标沿工具轴下移（补偿 3.4cm 参考点偏移）
-    'spiral_mm': [0.0, -2.0, 2.0, -4.0, 4.0, -6.0, 6.0, -8.0, 8.0],   # 横向搜索偏移（X 方向）
+    # 1mm 步长二维螺旋：X/Y 都要搜（实测 Y 方向容差更紧，只有 0 可行）
+    'spiral': make_spiral(4, 1.0),
     'grip_kp': 20.0,
 }
 
@@ -60,30 +72,30 @@ def main():
     model = build(POLICY['obj_size'], POLICY['grip_kp'])
     ch, names = S.make_chain()
     print(f"策略: 物块 {POLICY['obj_size']*1000:.0f}mm, "
-          f"dz={POLICY['dz']*1000:+.0f}mm, 螺旋搜索 "
-          f"{POLICY['spiral_mm']} mm")
-    print('\n模拟"视觉/IK 有 err mm 横向误差"时，策略的最终结果：')
-    print('  初始误差(mm)  尝试次数  净偏移(mm)  结果')
+          f"dz={POLICY['dz']*1000:+.0f}mm, 二维螺旋 {len(POLICY['spiral'])} 点")
+    print('\n模拟"视觉/IK 有 (ex, ey) mm 误差"时，策略的最终结果：')
+    print('  真实误差(mm)     尝试次数  净偏移(mm)      结果')
     ok_count = 0
-    cases = [-6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 6]
-    for err in cases:
-        # 我们以为物块在原点，实际偏了 err；每次尝试再加一个搜索偏移 off，
-        # 于是仿真里 TCP 相对物块的净偏移 = off - err
+    cases = [(0, 0), (2, 0), (0, 2), (-2, 0), (0, -2), (3, 3), (-3, 3),
+             (4, 0), (0, 4), (2, -2), (-2, -2)]
+    for ex, ey in cases:
         result = None
-        for attempt, off in enumerate(POLICY['spiral_mm'], start=1):
-            net = (off - err) / 1000.0
+        for attempt, (ox, oy) in enumerate(POLICY['spiral'], start=1):
+            nx, ny = ox - ex, oy - ey
             d = mujoco.MjData(model)
-            ok, nc, moved, ga = SW.trial(model, d, ch, names, net, 0.0,
-                                         POLICY['dz'], POLICY['obj_size'])
+            ok, nc, moved, ga = SW.trial(model, d, ch, names, nx / 1000.0,
+                                         ny / 1000.0, POLICY['dz'],
+                                         POLICY['obj_size'])
             if ok:
-                result = (attempt, off - err)
+                result = (attempt, nx, ny)
                 break
         if result:
             ok_count += 1
-            print(f'  {err:+6.1f}      第{result[0]}次     '
-                  f'{result[1]:+5.1f}mm   ✅', flush=True)
+            print(f'  ({ex:+3.0f},{ey:+3.0f})          第{result[0]:2d}次   '
+                  f'({result[1]:+4.0f},{result[2]:+4.0f})mm   ✅', flush=True)
         else:
-            print(f'  {err:+6.1f}      全失败        --      ❌', flush=True)
+            print(f'  ({ex:+3.0f},{ey:+3.0f})          全失败   --          ❌',
+                  flush=True)
     print(f'\n成功率 {ok_count}/{len(cases)}  '
           f'({ok_count/len(cases)*100:.0f}%)')
 
