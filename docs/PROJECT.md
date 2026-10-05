@@ -39,7 +39,7 @@ QianLi 是一个面向**室内复杂环境**的自主探索、语义认知与任
 
 - 已有机械臂，可进行真实机械臂开发；
 - 真实 3D LiDAR **暂时缺失**（后续可能接入 RoboSense RS-LiDAR-16、Livox Mid-360 或其他 3D LiDAR）；
-- 后续接入四麦克纳姆轮移动底盘；
+- 后续接入四全向轮 Omni X-drive移动底盘；
 - 后续可能使用 STM32 作为实时底层控制器；
 - 后续使用 RGB / RGB-D Camera、IMU、编码器、下视 ToF 等传感器。
 

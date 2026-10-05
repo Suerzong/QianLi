@@ -74,7 +74,7 @@ joint_state_publisher 仅用于可视化零位/滑块关节状态。
 URDF 圆柱也沿局部 Z，因此 visual/collision 不再额外旋转。
 `Rz(yaw) Ry(pi/2) (0,0,1) = (cos(yaw), sin(yaw), 0)`，圆柱轴、关节轴、实车指定电机轴一致。
 RViz TF 显示中，各轮的**蓝色 +Z 轴**应沿斜边法向朝外；红色 X 为轮局部轴，不是电机轴。
-continuous joint 的正角度仅是右手坐标约定，不代表电机正转、编码器正方向或任何麦轮运动学符号。
+continuous joint 的正角度仅是右手坐标约定，不代表电机正转、编码器正方向或Omni X-drive 电机接口符号。
 
 ## 八边形、Collision 与 Nav2 footprint
 
@@ -165,7 +165,7 @@ Derived：
 
 Still unknown / TODO：
 
-- mecanum roller handedness（每个轮子的 X/O、滚子角度与安装方向）
+- omni 小滚子尺寸与接触特性（轮型已确认为 Omni，无需 Mecanum X/O 配置）
 - encoder polarity
 - motor positive rotation direction
 - exact mass（整车、底板、每个轮子及其他部件）

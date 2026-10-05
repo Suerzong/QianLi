@@ -20,7 +20,7 @@
               rpy="0 ${pi/2} ${yaw}"/>
       <axis xyz="0 0 1"/>
       <!-- Positive angle follows URDF's right-hand rule only.
-           It does not specify motor/encoder polarity or mecanum kinematics. -->
+           It does not specify motor/encoder polarity or omni X-drive kinematics. -->
     </joint>
   </xacro:macro>
   <xacro:macro name="qianli_wheels" params="">
