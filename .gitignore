@@ -47,3 +47,6 @@ datasets/*
 firmware/stm32/build/
 firmware/stm32/Debug/
 firmware/stm32/Release/
+
+tmp_*
+
