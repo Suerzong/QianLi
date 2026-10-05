@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """行动前的物块位置快照（用户提议：不要用流式读数，动作前定一次）
 
 为什么需要：
@@ -34,9 +34,14 @@ from std_msgs.msg import Float64, String
 from std_srvs.srv import SetBool
 import tf2_ros
 
-PARK = np.array([0.16, 0.02, 0.16])      # 停靠位：远离棋盘，抬高
+PARK = np.array([0.06, 0.00, 0.26])      # 停靠位：正上方抬高
+# 实测（用"棋盘标定成功次数"当指标，8 秒内）：
+#   (0.06, 0.00, 0.26) → 2 次 ✅ 不挡棋盘（最好）
+#   (0.17, 0.03, 0.16) → 1 次 ✅
+#   (0.10, -0.10, 0.22) → 0 次 ❌ 挡住棋盘（会导致标定失败、完全不发布）
 YAW_DEG = -90.0
-GRID_LIMIT_CM = 14.0                     # 棋盘半幅（22.8x16.2cm）内
+GRID_X_MAX, GRID_Y_MAX = 27.0, 20.0     # 网格原点是棋盘【左上角】，不是中心！
+                                        # 棋盘 26x19.5cm → 坐标范围 [0,26]x[0,19.5]
 STABLE_N = 8                             # 需要连续稳定的帧数
 TOL_MM = 3.0
 
@@ -203,8 +208,9 @@ def main():
         return
 
     print('4) 校验并换算到 base_link ...')
-    if abs(mean[0] * 100) > GRID_LIMIT_CM or abs(mean[1] * 100) > GRID_LIMIT_CM:
-        print(f'   ⚠️ 位置超出棋盘范围 ±{GRID_LIMIT_CM}cm，可能检测错了')
+    gx_cm, gy_cm = mean[0] * 100, mean[1] * 100
+    if not (-1.0 <= gx_cm <= GRID_X_MAX and -1.0 <= gy_cm <= GRID_Y_MAX):
+        print(f'   ⚠️ 位置 ({gx_cm:.1f},{gy_cm:.1f})cm 超出棋盘 0~26 x 0~19.5cm，可能检测错了')
     ext = read_extrinsic()
     th = math.radians(ext['grid_theta_deg'])
     c, s = math.cos(th), math.sin(th)

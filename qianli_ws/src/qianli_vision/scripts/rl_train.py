@@ -160,6 +160,9 @@ def main():
     ap.add_argument('--n-epochs', type=int, default=10)
     ap.add_argument('--gamma', type=float, default=0.98)
     ap.add_argument('--net-arch', default='256,256')
+    ap.add_argument('--pretrain', default=None,
+                    help='行为克隆模型路径（rl_bc.py 产出），用它初始化策略网络')
+    ap.add_argument('--no-copy-critic', action='store_true')
     ap.add_argument('--n-steps', type=int, default=256,
                     help='PPO 每个 env 每次更新的步数')
     ap.add_argument('--batch-size', type=int, default=1024)
@@ -208,8 +211,34 @@ def main():
                     policy_kwargs=policy_kwargs,
                     tensorboard_log=db_dir)
 
+    # 行为克隆热启动：把 BC 策略的权重拷进 PPO（网络结构必须一致）
+    if a.pretrain:
+        from stable_baselines3 import PPO as _PPO
+        bc = _PPO.load(a.pretrain, device='cpu')
+        sd_bc = bc.policy.state_dict()
+        sd = model.policy.state_dict()
+        copied, skipped = [], []
+        for k, v in sd_bc.items():
+            if k in sd and sd[k].shape == v.shape:
+                if a.no_copy_critic and k.startswith('value_net'):
+                    skipped.append(k)
+                    continue
+                sd[k] = v.clone()
+                copied.append(k)
+            else:
+                skipped.append(k)
+        model.policy.load_state_dict(sd)
+        print(f'  ✅ 已从 {a.pretrain} 载入行为克隆权重：'
+              f'拷贝 {len(copied)} 项，跳过 {len(skipped)} 项')
+
     cb = MetricCallback(eval_every=a.eval_every, n_eval=a.n_eval,
                         csv_path=csv_path, max_steps=a.max_ep_steps)
+    if a.pretrain:
+        cb.init_callback(model)          # 让回调先拿到 model 引用
+        st0 = cb._eval()
+        print(f'  BC 初始策略评测（微调前）: 成功率='
+              f'{st0["success_rate"]*100:.0f}%  '
+              f'平均抬升={st0["mean_lift_mm"]:+.1f}mm', flush=True)
     ck = CheckpointCallback(save_freq=max(1, a.save_every // n_envs),
                             save_path=ckpt_dir, name_prefix=f'{tag}_ckpt')
     t0 = time.perf_counter()

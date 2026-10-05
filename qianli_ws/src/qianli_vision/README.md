@@ -1,5 +1,8 @@
 # qianli_vision — RGB 相机物块定位 + 抓取桥接
 
+最新仿真抓取入口为 `scripts/sim_grasp_ok.py`，窗口入口为 `scripts/view_grasp_ok.py`。
+碰撞修复、重试策略、验收结果和复现命令见 [仿真抓取验收](../../../docs/GRASP_SIM_VALIDATION.md)。
+
 用普通 RGB 相机 + 3.3cm 网格纸标尺，实现"物块检测 → 物理坐标 → 机械臂抓取"链路。
 
 ## 完整链路

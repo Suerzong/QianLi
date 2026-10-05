@@ -81,9 +81,14 @@ def make_spec(obj_size):
     S._OBJ_SIZE_OVERRIDE[0] = obj_size
     spec = mujoco.MjSpec.from_file(S.URDF)
     wb = spec.worldbody
+    wb.add_light(name='grasp_key', pos=[0.2, -0.3, 0.7], dir=[0, 0, -1],
+                 diffuse=[0.8, 0.8, 0.8])
+    wb.add_light(name='grasp_fill', pos=[0.4, 0.5, 0.5], dir=[0, -1, -1],
+                 diffuse=[0.5, 0.5, 0.5])
     gt = wb.add_geom(); gt.name = 'table'
     gt.type = mujoco.mjtGeom.mjGEOM_BOX
     gt.size = [0.4, 0.4, 0.15]; gt.pos = [0.3, 0.0, S.TABLE_Z - 0.15]
+    gt.rgba = [0.35, 0.38, 0.43, 1]
     gp = wb.add_geom(); gp.name = 'pedestal'
     gp.type = mujoco.mjtGeom.mjGEOM_BOX
     gp.size = [0.045, 0.05, (S.BASE_BOTTOM - S.TABLE_Z) / 2]
@@ -96,12 +101,14 @@ def make_spec(obj_size):
     gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]
     gb.pos = [cx, cyy, S.TABLE_Z + 0.0015]
     gb.quat = [math.cos(S.BOARD_YAW / 2), 0, 0, math.sin(S.BOARD_YAW / 2)]
+    gb.rgba = [0.9, 0.9, 0.85, 1]
     op = S.obj_world_pos()
     ob = wb.add_body(name='object'); ob.pos = list(op); ob.add_freejoint()
     go = ob.add_geom(); go.name = 'cube'
     go.type = mujoco.mjtGeom.mjGEOM_BOX
     go.size = [obj_size / 2] * 3
     go.mass = 0.008
+    go.rgba = [0.05, 0.8, 0.7, 1]
 
     # 加凸分解零件
     for i, (path, body, pos, quat) in enumerate(load_manifest()):
@@ -116,6 +123,23 @@ def make_spec(obj_size):
         g.pos = list(pos)
         g.quat = list(quat)
 
+    # Configure masks before compilation: MuJoCo also builds per-body masks
+    # and collision BVHs, so editing only model.geom_contype is insufficient.
+    # Groups: object=1, jaws=2, environment=4, proximal arm=8.
+    for geom in spec.geoms:
+        if geom.name.startswith('pg'):
+            geom.contype, geom.conaffinity = 2, 5
+        elif geom.name in ('table', 'board', 'pedestal'):
+            geom.contype, geom.conaffinity = 4, 11
+        elif geom.name == 'cube':
+            geom.contype, geom.conaffinity = 1, 6
+        elif geom.parent.name in ('shoulder_link', 'upper_arm_link',
+                                  'lower_arm_link', 'wrist_link'):
+            geom.contype, geom.conaffinity = 8, 4
+        else:
+            # Fixed base / duplicate gripper meshes are visual only.
+            geom.contype, geom.conaffinity = 0, 0
+    ranges = {j.name: list(j.range) for j in spec.joints if j.name}
     servo = {'shoulder_pan': 120, 'shoulder_lift': 120, 'elbow_flex': 120,
              'wrist_flex': 60, 'wrist_roll': 30, 'gripper': 20}
     for j in S.ALL_JOINTS:
@@ -125,50 +149,23 @@ def make_spec(obj_size):
         act.trntype = mujoco.mjtTrn.mjTRN_JOINT
         act.gaintype = mujoco.mjtGain.mjGAIN_FIXED
         act.biastype = mujoco.mjtBias.mjBIAS_AFFINE
-        act.gainprm[0] = 1.0
-        lo, hi = (-0.1745, 1.7453) if j == 'gripper' else (-3.2, 3.2)
-        act.ctrlrange = [lo, hi]
-        act.forcerange = [-3.0, 3.0] if j == 'gripper' else [-12.0, 12.0]
+        kp = servo[j]
+        # Assign complete parameter arrays; indexed writes to MjSpec arrays
+        # can edit a temporary copy in some versions of the Python binding.
+        act.gainprm = [kp] + [0.0] * 9
+        act.biasprm = [0.0, -kp, -0.4 * math.sqrt(kp)] + [0.0] * 7
+        act.ctrlrange = ranges[j]
+        act.ctrllimited = True
+        # Conservative simulation limits; actual torque curves need measuring.
+        torque = 1.5 if j == 'gripper' else 3.0
+        act.forcerange = [-torque, torque]
+        act.forcelimited = True
+        spec.joint(j).armature = 0.002 if j == 'gripper' else 0.02
     return spec
 
 
 def build(obj_size):
-    model = make_spec(obj_size).compile()
-    arm_ids = {mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, n) for n in
-               ['shoulder_link', 'upper_arm_link', 'lower_arm_link',
-                'wrist_link', 'gripper_link', 'moving_jaw_so101_v1_link']}
-    env = {mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, n)
-           for n in ('table', 'pedestal', 'board')}
-    cube = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, 'cube')
-    for i in range(model.ngeom):
-        gn = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, i) or ''
-        if gn.startswith('pg'):
-            # 爪零件：contype=2, conaffinity=1
-            #  爪-爪 (2&1)|(2&1)=0 不碰 ← 否则相邻零件本身重叠会把爪卡死
-            #  爪-物块 (2&5)|(3&1)=1 碰
-            #  爪-桌面 (2&4)|(4&1)=0 不碰
-            model.geom_contype[i], model.geom_conaffinity[i] = 2, 1
-        elif model.geom_bodyid[i] in arm_ids:
-            model.geom_contype[i], model.geom_conaffinity[i] = 0, 0
-        elif i in env:
-            model.geom_contype[i], model.geom_conaffinity[i] = 4, 4
-        elif i == cube:
-            model.geom_contype[i], model.geom_conaffinity[i] = 3, 5
-    servo = {'shoulder_pan': 120, 'shoulder_lift': 120, 'elbow_flex': 120,
-             'wrist_flex': 60, 'wrist_roll': 30, 'gripper': 20}
-    for i in range(model.nu):
-        j = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR,
-                              i).replace('servo_', '')
-        kp = servo.get(j, 120.0)
-        model.actuator_gainprm[i][0] = kp
-        model.actuator_biasprm[i][1] = -kp
-        model.actuator_biasprm[i][2] = -2.0 * math.sqrt(kp) * 0.2
-    for i in range(model.njnt):
-        if model.jnt_type[i] == mujoco.mjtJoint.mjJNT_HINGE:
-            nm = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i)
-            model.dof_armature[model.jnt_dofadr[i]] = (
-                0.002 if nm == 'gripper' else 0.02)
-    return model
+    return make_spec(obj_size).compile()
 
 
 def pose_and_measure(model, angles):

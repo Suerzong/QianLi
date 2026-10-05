@@ -79,12 +79,15 @@ def evaluate(env, policy, episodes, seed0, verbose=True, label=''):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--model', default=None, help='SB3 .zip 模型路径')
+    ap.add_argument('--models', nargs='*', default=None,
+                    help='一次评测多个模型（在同一批初始位姿上对比，便于做置信区间）')
     ap.add_argument('--episodes', type=int, default=50)
     ap.add_argument('--jitter', type=float, default=R.OBJ_JITTER)
     ap.add_argument('--seed', type=int, default=777)
     ap.add_argument('--obj-size', type=float, default=R.OBJ_SIZE)
     ap.add_argument('--out', default=None)
     ap.add_argument('--random-only', action='store_true')
+    ap.add_argument('--no-random', action='store_true')
     ap.add_argument('--max-ep-steps', type=int, default=R.MAX_STEPS)
     a = ap.parse_args()
 
@@ -93,21 +96,31 @@ def main():
     print(f'=== 策略评测（物块 {a.obj_size*1000:.0f}mm，'
           f'{a.episodes} 个确定性初始位姿，抖动 ±{a.jitter*1000:.0f}mm，'
           f'seed={a.seed}）===')
-    rnd = evaluate(env, make_random_policy(env, a.seed), a.episodes,
-                   a.seed, label='随机策略')
-    res = [rnd]
-    if not a.random_only:
-        if not a.model:
-            raise SystemExit('需要 --model 或 --random-only')
+    res = []
+    rnd = None
+    if not a.no_random:
+        rnd = evaluate(env, make_random_policy(env, a.seed), a.episodes,
+                       a.seed, label='随机策略')
+        res.append(rnd)
+    models = a.models or ([a.model] if a.model else [])
+    if models:
         from stable_baselines3 import PPO, SAC
-        cls = SAC if os.path.basename(a.model).startswith('sac') else PPO
-        model = cls.load(a.model, device='cpu')
-        tr = evaluate(env, make_model_policy(model), a.episodes, a.seed,
-                      label=f'训练后({os.path.basename(a.model)})')
-        res.append(tr)
-        d = (tr['rate'] - rnd['rate']) * 100
-        print(f'\n  成功率提升: {rnd["rate"]*100:.0f}% → '
-              f'{tr["rate"]*100:.0f}%  ({d:+.0f} 个百分点)')
+        for path in models:
+            cls = SAC if os.path.basename(path).startswith('sac') else PPO
+            model = cls.load(path, device='cpu')
+            res.append(evaluate(env, make_model_policy(model), a.episodes,
+                                a.seed,
+                                label=os.path.basename(path).replace('.zip', '')))
+    if rnd is not None and len(res) > 1:
+        print()
+        for r in res[1:]:
+            d = (r['rate'] - rnd['rate']) * 100
+            # 成功率差的 95% 置信区间（两独立比例的正态近似）
+            n = a.episodes
+            se = np.sqrt(max(rnd['rate'] * (1 - rnd['rate']) / n +
+                             r['rate'] * (1 - r['rate']) / n, 1e-12))
+            print(f'  {r["label"]}: vs 随机 {d:+.0f} 个百分点 '
+                  f'(±{1.96*se*100:.0f}, 95%CI)')
     if a.out:
         with open(a.out, 'w', newline='') as fh:
             w = csv.writer(fh)

@@ -92,8 +92,14 @@ DT_CTRL = 0.02
 ARM_STEP_MAX = 0.15              # rad / RL 步
 GRIP_STEP_MAX = 0.6              # rad / RL 步
 CONTACT_FORCE_MIN = 0.05         # N，判定"真接触"
+# --- 奖励常数（都经过"防刷分"论证，见 step() 里的注释）---
+TIME_PENALTY = 0.02              # 每步时间惩罚（很小；防悬停靠势能塑形，不靠罚）
+APPROACH_SCALE = 2.0             # 接近项系数
+HOLD_BONUS = 0.30                # 两侧夹住且物块已抬起时，每步持续奖励
+SUCCESS_BONUS = 40.0             # 终局成功大奖励
+FALL_PENALTY = 30.0              # 物块掉下桌子/被甩飞
 
-OBS_DIM = 19
+OBS_DIM = 22
 ACT_DIM = 6
 
 # 手臂初始位（预抓取）：物块上方 60mm，TCP 对准 off
@@ -144,6 +150,7 @@ class GraspEnv(gym.Env):
         self._prev_ctrl = np.zeros(6)
         self._fbuf = np.zeros(6)
         self._obuf = np.zeros(OBS_DIM, np.float32)
+        self._prev_dist = None
         self._phase_contacts = np.zeros(2)
         self.ep_steps = 0
         self.ep_obj0 = None
@@ -250,6 +257,10 @@ class GraspEnv(gym.Env):
         p_tcp, R = self.tcp()
         p_obj = d.xpos[self.obj_body]
         rel = R.T @ (p_obj - p_tcp)                # 3
+        # 回合内"起手时物块在哪"（TCP 系）：专家各阶段的目标都与它有关，
+        # 只靠瞬时状态是分不清"该往下压"还是"该闭爪"的 —— 行为克隆
+        # 实测就卡在这里（TCP 到了 10mm 但夹爪角一直停在 0.26 不闭合）。
+        rel0 = R.T @ (self.ep_obj0 - p_tcp)        # 3
         oq = d.qpos[self.obj_q + 3:self.obj_q + 7]
         yaw_o = math.atan2(2 * (oq[0] * oq[3] + oq[1] * oq[2]),
                            1 - 2 * (oq[2] ** 2 + oq[3] ** 2))
@@ -257,15 +268,16 @@ class GraspEnv(gym.Env):
         lag = d.ctrl[self._arm_a] - q
         # 组装（避免 np.concatenate 的开销，直接写进预分配缓冲）
         o = self._obuf
-        o[0:5] = q
-        o[5] = g
-        o[6:9] = rel
-        o[9] = math.sin(dyaw)
-        o[10] = math.cos(dyaw)
-        o[11] = p_obj[2] - TABLE_Z
-        o[12] = p_tcp[2] - p_obj[2]
-        o[13:18] = lag
-        o[18] = d.ctrl[self._ga] - g
+        o[0:5] = q                                 # [0:5]  臂关节角
+        o[5] = g                                   # [5]    夹爪角
+        o[6:9] = rel                               # [6:9]  物块当前位置(TCP系)
+        o[9] = math.sin(dyaw)                      # [9]
+        o[10] = math.cos(dyaw)                     # [10]
+        o[11] = p_obj[2] - TABLE_Z                 # [11] 物块离桌面高度
+        o[12] = p_tcp[2] - p_obj[2]                # [12] TCP 高于物块
+        o[13:16] = rel0                            # [13:16] 起手时物块位置(TCP系)
+        o[16] = self.ep_steps / self.max_steps     # [16] 归一化步数（阶段线索）
+        o[17:22] = lag                             # [17:22] 5 臂关节伺服滞后
         return o
 
     # ---------------------------------------------------------- reset
@@ -297,6 +309,9 @@ class GraspEnv(gym.Env):
         mujoco.mj_forward(self.model, d)
         self.ep_obj0 = self.obj_pos().copy()
         self.ep_steps = 0
+        p_tcp, _ = self.tcp()
+        self._prev_dist = float(np.linalg.norm(
+            (self.obj_pos() + GRASP_OFF) - p_tcp))
         self._phase_contacts = np.zeros(2)
         self._prev_ctrl = np.array(
             [d.ctrl[self.aadr[j]] for j in S.ARM_JOINTS] +
@@ -335,28 +350,37 @@ class GraspEnv(gym.Env):
         # 物块比 TCP 高出一大截 = 被甩飞了（正常夹持时物块在爪口里，
         # 只会略高于 TCP）
         thrown = bool(p_obj[2] - p_tcp[2] > 0.10)
+        # 真正在"握着"物块：两侧都接触 + 物块已经被抬起一点
+        hold = bool(both and lift > 0.005)
         success = bool(lift > LIFT_SUCCESS and both and not thrown)
         fell = not self.on_table()
 
-        r_app = -2.0 * dist
+        r_app = -APPROACH_SCALE * dist
+        if self._prev_dist is None:
+            r_shape = 0.0
+        else:
+            # ★ 势能塑形（potential-based）：只奖励"接近量的**增量**"，
+            # 不奖励"贴着物块不动"。这是修掉悬停刷分的关键 ——
+            # 之前用 -2.0*dist 的绝对距离分，贴近后每步能拿 ~+0.2，
+            # 150 步刷到 +180，比真抓起来（+20）还多，策略就完全不学抓取了
+            # （见 rl_out/ppo_final_farmreward/eval.csv）。
+            r_shape = APPROACH_SCALE * (self._prev_dist - dist)
+        self._prev_dist = dist
         r_side = 0.5 * float(side.sum())
         r_grasp = 1.0 if grasped else 0.0
-        # ★ 关键修正 1：抬升奖励必须**以"两侧真的夹住"为前提**。
-        # 之前没这个前提，策略学会了把物块往天上甩（实测抬升 +1217mm
-        # = 1.2 米），拿满抬升分但根本没有抓取。见
-        # rl_out/ppo_1m_badreward/evals.txt 的证据。
         r_lift = 8.0 * min(max(lift / LIFT_SUCCESS, 0.0), 1.0) if both else 0.0
-        r = r_app + r_side + r_grasp + r_lift - 0.01
+        r_hold = HOLD_BONUS if hold else 0.0
+        r_time = -TIME_PENALTY
+        r = r_shape + r_side + r_grasp + r_lift + r_hold + r_time
         if success:
-            r += 10.0
-        # ★ 关键修正 2：把物块打飞/掉下桌子的惩罚必须**远大于**时间惩罚。
-        # 罚 -1 时策略发现"7 步内把物块铲飞、提前结束回合、躲掉
-        # 150 步 × -0.01 的时间惩罚"是有利可图的（实测平均回合长度掉到
-        # 7 步）。见 rl_out/ppo_1p5m_badfloor/evals.txt。
+            r += SUCCESS_BONUS
+        # 掉下桌子/被甩飞要罚得比"什么都不做"更狠，否则策略学会
+        # "几步内把物块铲飞、提前结束回合"来躲时间惩罚
+        # （见 rl_out/ppo_1p5m_badfloor/evals.txt）。
         if fell:
-            r -= 50.0
+            r -= FALL_PENALTY
         if thrown:
-            r -= 50.0
+            r -= FALL_PENALTY
         r *= self.reward_scale
 
         self._phase_contacts += side
@@ -366,7 +390,8 @@ class GraspEnv(gym.Env):
                     force_max=fmax, dist_tcp=dist, grip_ang=grip_ang,
                     success=success, fell=fell, grasped=grasped,
                     thrown=thrown, r_approach=r_app, r_side=r_side,
-                    r_grasp=r_grasp, r_lift=r_lift,
+                    r_grasp=r_grasp, r_lift=r_lift, r_hold=r_hold,
+                    r_time=r_time, hold=hold,
                     phase_fixed=float(self._phase_contacts[0]),
                     phase_moving=float(self._phase_contacts[1]),
                     reward=r)
@@ -519,16 +544,47 @@ def baseline(episodes=20, obj_size=OBJ_SIZE, policy='random', seed=0,
     return res
 
 
+def reward_audit(verbose=True):
+    """奖励"防刷分"审计：把各种退化策略能拿到的回报算清楚。
+
+    这是被坑了三次之后加的护栏 —— 每次改奖励都要先跑这个。
+    关键结论：接近项必须是**势能塑形**（只奖励距离的增量），
+    否则"贴着物块不动"能无限刷分。
+    """
+    T = MAX_STEPS
+    hover = (-TIME_PENALTY) * T                       # 势能项贴住后恒为 0
+    idle = (-APPROACH_SCALE * 0.060 - TIME_PENALTY) * T   # 初始距离约 60mm
+    succ = (HOLD_BONUS * 70 + SUCCESS_BONUS + 8.0
+            - TIME_PENALTY * 100 + APPROACH_SCALE * 0.045)
+    thrown = -FALL_PENALTY - TIME_PENALTY * 8
+    rows = [('贴着物块悬停 150 步（旧的绝对距离分能刷 +180）', hover),
+            ('什么都不做 150 步', idle),
+            ('正常抓取+抬起(约100步)', succ),
+            ('把物块甩飞（提前结束）', thrown)]
+    if verbose:
+        print('=== 奖励防刷分审计（势能塑形版）===')
+        for k, v in sorted(rows, key=lambda t: -t[1]):
+            print(f'  {k:38s} {v:+8.1f}')
+        best_bad = max(hover, idle, thrown)
+        print(f'  最好"作弊"路线 = {best_bad:+.1f}，'
+              f'正常抓取 = {succ:+.1f} → '
+              f'{"✅ 抓取占优" if succ > best_bad else "❌ 作弊更划算！"}')
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--speed', action='store_true')
     ap.add_argument('--expert', action='store_true')
+    ap.add_argument('--audit', action='store_true')
     ap.add_argument('--baseline', type=int, default=0)
     ap.add_argument('--obj-size', type=float, default=OBJ_SIZE)
     ap.add_argument('--out', default=None)
     a = ap.parse_args()
-    if a.expert:
+    if a.audit:
+        reward_audit()
+    elif a.expert:
         env = GraspEnv(obj_size=a.obj_size, seed=0)
         print('=== 脚本化专家回放（验证 env 里物理/奖励/终止都通）===')
         ok, info, steps = expert_rollout(env, a.obj_size)

@@ -42,6 +42,14 @@ def tcp_of(model, data):
     return data.xpos[gl] + R @ S.FRAME_IN_GRIPPER, R, gl
 
 
+def solve_only(model, qadr, target, cur_qpos, yaw=-90.0):
+    """Solve on scratch data without moving the physical simulation."""
+    scratch = mujoco.MjData(model)
+    scratch.qpos[:] = cur_qpos
+    q, error = ik_dls(model, scratch, qadr, np.asarray(target), yaw_deg=yaw)
+    return q.tolist(), error
+
+
 def ik_dls(model, data, qadr, target_pos, yaw_deg=-90.0, iters=400,
            lam=2e-3, step=0.6, seed=None, rot_weight=0.0, verbose=False):
     """位置 DLS IK + 工具轴保持。

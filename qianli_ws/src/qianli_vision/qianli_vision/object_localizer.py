@@ -81,7 +81,10 @@ class ObjectLocalizer(Node):
 
         self.pub = self.create_publisher(PointStamped, '/object_pose', 10)
         # 灰色度上限：皮肤饱和度常在 100 上下，收紧到 60 可排除手/彩色工具
-        self.declare_parameter('max_sat', 60)
+        self.declare_parameter('max_sat', 120)
+        # 棋盘点位范围（cm）：超出即视为误检丢弃（棋盘 22.8x16.2cm）
+        self.declare_parameter('grid_x_limit_cm', 27.0)
+        self.declare_parameter('grid_y_limit_cm', 20.0)
         self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
         self.box_pts = None
 
@@ -174,6 +177,16 @@ class ObjectLocalizer(Node):
             gx, gy, bw, bh, area = obj[:5]
             p = np.array([[[gx, gy]]], dtype=np.float64)
             Xcm, Ycm = cv2.perspectiveTransform(p, self.H)[0][0]
+
+            # ★ 棋盘点位范围校验：棋盘 22.8x16.2cm。
+            #   注意：物块可能被碰落到棋盘外，所以这里**只警告不丢弃**，
+            #   范围放宽到整个桌面（用户要求：动之前检测一次，之后照坐标执行）
+            xlim = float(self.get_parameter('grid_x_limit_cm').value)
+            ylim = float(self.get_parameter('grid_y_limit_cm').value)
+            if not (-1.0 <= Xcm <= xlim and -1.0 <= Ycm <= ylim):
+                self._warn_throttled(
+                    f'目标在棋盘点位范围外 ({Xcm:.1f},{Ycm:.1f})cm'
+                    f'（棋盘 ±({xlim:.0f},{ylim:.0f})cm），仍继续发布')
 
             msg = PointStamped()
             msg.header.stamp = self.get_clock().now().to_msg()
