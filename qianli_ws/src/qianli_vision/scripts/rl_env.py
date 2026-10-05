@@ -332,27 +332,41 @@ class GraspEnv(gym.Env):
         grip_ang = float(d.qpos[self.qadr['gripper']])
         both = bool(nf and nm)
         grasped = both and grip_ang < 0.35
-        success = bool(lift > LIFT_SUCCESS and both)
+        # 物块比 TCP 高出一大截 = 被甩飞了（正常夹持时物块在爪口里，
+        # 只会略高于 TCP）
+        thrown = bool(p_obj[2] - p_tcp[2] > 0.10)
+        success = bool(lift > LIFT_SUCCESS and both and not thrown)
         fell = not self.on_table()
 
-        r = -2.0 * dist
-        r += 0.5 * float(side.sum())
-        if grasped:
-            r += 1.0
-        r += 8.0 * min(max(lift / LIFT_SUCCESS, 0.0), 1.0)
-        r -= 0.01
+        r_app = -2.0 * dist
+        r_side = 0.5 * float(side.sum())
+        r_grasp = 1.0 if grasped else 0.0
+        # ★ 关键修正 1：抬升奖励必须**以"两侧真的夹住"为前提**。
+        # 之前没这个前提，策略学会了把物块往天上甩（实测抬升 +1217mm
+        # = 1.2 米），拿满抬升分但根本没有抓取。见
+        # rl_out/ppo_1m_badreward/evals.txt 的证据。
+        r_lift = 8.0 * min(max(lift / LIFT_SUCCESS, 0.0), 1.0) if both else 0.0
+        r = r_app + r_side + r_grasp + r_lift - 0.01
         if success:
             r += 10.0
+        # ★ 关键修正 2：把物块打飞/掉下桌子的惩罚必须**远大于**时间惩罚。
+        # 罚 -1 时策略发现"7 步内把物块铲飞、提前结束回合、躲掉
+        # 150 步 × -0.01 的时间惩罚"是有利可图的（实测平均回合长度掉到
+        # 7 步）。见 rl_out/ppo_1p5m_badfloor/evals.txt。
         if fell:
-            r -= 1.0
+            r -= 50.0
+        if thrown:
+            r -= 50.0
         r *= self.reward_scale
 
         self._phase_contacts += side
-        terminated = success or fell
+        terminated = success or fell or thrown
         truncated = self.ep_steps >= self.max_steps
         info = dict(lift=lift, contacts_fixed=nf, contacts_moving=nm,
                     force_max=fmax, dist_tcp=dist, grip_ang=grip_ang,
                     success=success, fell=fell, grasped=grasped,
+                    thrown=thrown, r_approach=r_app, r_side=r_side,
+                    r_grasp=r_grasp, r_lift=r_lift,
                     phase_fixed=float(self._phase_contacts[0]),
                     phase_moving=float(self._phase_contacts[1]),
                     reward=r)

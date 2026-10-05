@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """真机抓取（孪生验证过的参数）
 
 孪生验证结论（20mm 物块）：
@@ -21,16 +21,18 @@
 """
 
 import argparse
+import json
 import math
 import os
 import sys
+import threading
 import time
 
 import numpy as np
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, String
 from std_srvs.srv import SetBool
 from sensor_msgs.msg import JointState
 import tf2_ros
@@ -92,6 +94,64 @@ class Grasp(Node):
         self.cli_enable = self.create_client(SetBool, '/arm/enable')
         self.tfb = tf2_ros.Buffer()
         self.tfl = tf2_ros.TransformListener(self.tfb, self)
+        # ★ 看门狗：driver 的 command_timeout=0.5s，只要 0.5 秒没收到指令就会
+        #   自动失能（之前抓取到"等夹爪合拢"那步就失能了，因为那儿没发目标）。
+        #   所以开一个后台线程，**持续以 10Hz 重发**最后的位姿与夹爪指令。
+        self._last = None
+        self._last_grip = None
+        self._stop = False
+        self._yaw = YAW_DEG
+        # 串口掉线自动恢复：VM 的 USB 透传不稳，驱动重连后会保持"失能"。
+        # 这里监视 /arm/status，一旦从 enabled 掉到 disabled 就自动重新使能。
+        self._was_enabled = False
+        self._reenable_count = 0
+        self._auto = True
+        self.create_subscription(String, '/arm/status', self._on_status, 10)
+        self._th = threading.Thread(target=self._heartbeat, daemon=True)
+        self._th.start()
+
+    def _on_status(self, msg):
+        try:
+            en = bool(json.loads(msg.data).get('enabled', False))
+        except Exception:
+            return
+        if en:
+            self._was_enabled = True
+        elif self._was_enabled and self._auto:
+            self._was_enabled = False
+            self._reenable_count += 1
+            print(f'    ⚠️ 检测到失能（第 {self._reenable_count} 次，'
+                  f'可能是串口掉线）→ 自动重新使能', flush=True)
+            threading.Thread(target=self._auto_enable, daemon=True).start()
+
+    def _auto_enable(self):
+        time.sleep(1.0)          # 等驱动的重连完成
+        for _ in range(5):
+            try:
+                if self.enable(True):
+                    self._was_enabled = True
+                    return
+            except Exception:
+                pass
+            time.sleep(1.5)
+
+    def _heartbeat(self):
+        while not self._stop:
+            if self._last is not None:
+                self._publish(self._last, self._yaw)
+            if self._last_grip is not None:
+                self.pub_grip.publish(Float64(data=float(self._last_grip)))
+            time.sleep(0.1)
+
+    def _publish(self, xyz, yaw):
+        q = quat_from_RzRx(yaw)
+        m = PoseStamped()
+        m.header.frame_id = 'base_link'
+        m.header.stamp = self.get_clock().now().to_msg()
+        m.pose.position.x, m.pose.position.y, m.pose.position.z = map(float, xyz)
+        (m.pose.orientation.w, m.pose.orientation.x,
+         m.pose.orientation.y, m.pose.orientation.z) = q
+        self.pub_pose.publish(m)
 
     def tcp(self):
         try:
@@ -103,6 +163,8 @@ class Grasp(Node):
             return None
 
     def send(self, xyz, yaw=YAW_DEG):
+        self._last = np.asarray(xyz, dtype=float); self._yaw = yaw
+        return
         q = quat_from_RzRx(yaw)
         m = PoseStamped()
         m.header.frame_id = 'base_link'
@@ -113,7 +175,7 @@ class Grasp(Node):
         self.pub_pose.publish(m)
 
     def grip(self, v):
-        self.pub_grip.publish(Float64(data=float(v)))
+        self._last_grip = float(v)
 
     def enable(self, v):
         """调用 /arm/enable **服务**（std_srvs/SetBool）——不是话题！"""
@@ -168,6 +230,13 @@ def main():
 
     if a.obj:
         obj, yaw_grid = np.array(a.obj), 0.0
+    elif os.path.exists('/tmp/obj_base.txt'):
+        # 优先用 vision_snapshot.py 写下的"行动前快照"（动之前定一次）
+        with open('/tmp/obj_base.txt') as fh:
+            vals = fh.readline().split()[:3]
+        obj = np.array([float(v) for v in vals])
+        yaw_grid = float('nan')
+        print('（使用行动前快照 /tmp/obj_base.txt）')
     else:
         try:
             obj, yaw_grid = read_vision()

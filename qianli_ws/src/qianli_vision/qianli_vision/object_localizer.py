@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """qianli_vision object_localizer：全自动物块定位（棋盘格标定）
 
 流程（全自动，无需框 ROI / 手点格点）：
@@ -80,6 +80,8 @@ class ObjectLocalizer(Node):
         self.frame_i = 0
 
         self.pub = self.create_publisher(PointStamped, '/object_pose', 10)
+        # 灰色度上限：皮肤饱和度常在 100 上下，收紧到 60 可排除手/彩色工具
+        self.declare_parameter('max_sat', 60)
         self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
         self.box_pts = None
 
@@ -220,6 +222,12 @@ class ObjectLocalizer(Node):
 
         if self.gui:
             self._draw(frame, obj)
+        # 每 15 帧存一张调试图（便于 SSH 侧确认检测是否正确）
+        if self.frame_i % 15 == 0:
+            try:
+                cv2.imwrite('/tmp/detect.jpg', frame)
+            except Exception:
+                pass
 
     # ---------- 物块检测 ----------
     def _detect_object(self, frame):
@@ -268,7 +276,7 @@ class ObjectLocalizer(Node):
                     hi = int(v_white - 0.03 * span)
                     self._band = (lo, hi, v_black, v_white)
                     mask_gray = cv2.inRange(v_ch, lo, hi)
-                    mask_gray &= cv2.inRange(s_ch, 0, S_MAX)
+                    mask_gray &= cv2.inRange(s_ch, 0, self.get_parameter('max_sat').value)
                     mask = cv2.bitwise_and(mask_bg, mask_gray)
                     self._method = (f'bg+gray thr={thr} '
                                     f'band={lo}-{hi}')
@@ -307,7 +315,7 @@ class ObjectLocalizer(Node):
 
         mask = cv2.inRange(v_ch, lo, hi)
         if S_MAX < 255:      # 饱和度上限（可选）
-            mask &= cv2.inRange(s_ch, 0, S_MAX)
+            mask &= cv2.inRange(s_ch, 0, self.get_parameter('max_sat').value)
         k = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
