@@ -1,57 +1,37 @@
-"""QianLi 机械臂（SO-ARM101）display launch。
-
-启动 robot_state_publisher + joint_state_publisher_gui + RViz2，
-用于在 RViz 中显示机械臂模型与 TF（Milestone 1）。
-
-用法：
-    ros2 launch qianli_description display.launch.py
-    ros2 launch qianli_description display.launch.py use_rviz:=false   # 无头验证
-"""
+"""QianLi Base Geometry v0.1: description, joint states and RViz only."""
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+import xacro
 
 
 def generate_launch_description():
-    pkg_share = get_package_share_directory('qianli_description')
-    urdf_path = os.path.join(pkg_share, 'urdf', 'so101.urdf')
-
-    # so101.urdf 为纯 URDF（onshape-to-robot 生成），直接读取文本
-    with open(urdf_path, 'r', encoding='utf-8') as f:
-        robot_description_content = f.read()
-
-    robot_description = {
-        'robot_description': ParameterValue(robot_description_content, value_type=str)
-    }
-
-    rviz_config = os.path.join(pkg_share, 'rviz', 'arm.rviz')
-    use_rviz = LaunchConfiguration('use_rviz')
-
+    share = get_package_share_directory('qianli_description')
+    description = xacro.process_file(
+        os.path.join(share, 'urdf', 'qianli.urdf.xacro')).toxml()
+    gui = LaunchConfiguration('gui')
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'use_rviz', default_value='true',
-            description='是否启动 RViz2（无头验证时设为 false）'),
-
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            parameters=[robot_description],
-        ),
-        Node(
-            package='joint_state_publisher_gui',
-            executable='joint_state_publisher_gui',
-        ),
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            arguments=['-d', rviz_config],
-            condition=IfCondition(use_rviz),
-        ),
+        DeclareLaunchArgument('use_rviz', default_value='true'),
+        DeclareLaunchArgument('gui', default_value='false',
+                              description='Use joint_state_publisher_gui sliders'),
+        DeclareLaunchArgument('rviz_config',
+                              default_value=os.path.join(share, 'rviz', 'qianli.rviz')),
+        Node(package='robot_state_publisher', executable='robot_state_publisher',
+             name='qianli_robot_state_publisher', output='screen',
+             parameters=[{'robot_description': ParameterValue(description, value_type=str)}]),
+        Node(package='joint_state_publisher', executable='joint_state_publisher',
+             name='qianli_joint_state_publisher', condition=UnlessCondition(gui),
+             parameters=[{'rate': 30}]),
+        Node(package='joint_state_publisher_gui', executable='joint_state_publisher_gui',
+             name='qianli_joint_state_publisher_gui', condition=IfCondition(gui)),
+        Node(package='rviz2', executable='rviz2', name='qianli_rviz',
+             arguments=['-d', LaunchConfiguration('rviz_config')],
+             condition=IfCondition(LaunchConfiguration('use_rviz')), output='screen'),
     ])

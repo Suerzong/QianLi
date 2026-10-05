@@ -1,0 +1,62 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Ground Grid (0.1 m)
+      Enabled: true
+      Cell Size: 0.1
+      Plane Cell Count: 20
+      Reference Frame: base_footprint
+      Color: 100; 110; 125
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        History Policy: Keep Last
+        Depth: 1
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1
+    - Class: rviz_default_plugins/TF
+      Name: TF (wheel blue Z = shaft)
+      Enabled: true
+      Frame Timeout: 15
+      Marker Scale: 0.35
+      Show Arrows: false
+      Show Axes: true
+      Show Names: true
+      Frames:
+        All Enabled: true
+    - Class: rviz_default_plugins/Axes
+      Name: Ground Axes (red X forward)
+      Enabled: true
+      Reference Frame: base_footprint
+      Length: 0.25
+      Radius: 0.005
+  Global Options:
+    Fixed Frame: base_footprint
+    Background Color: 35; 39; 47
+    Frame Rate: 30
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 1.65
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.06
+      Pitch: 0.8
+      Yaw: 0.75
+      Target Frame: base_footprint
+Window Geometry:
+  Width: 1360
+  Height: 880

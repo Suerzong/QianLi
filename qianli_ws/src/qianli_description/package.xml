@@ -3,17 +3,25 @@
 <package format="3">
   <name>qianli_description</name>
   <version>0.1.0</version>
-  <description>QianLi 机器人 URDF 模型与网格：SO-ARM101 机械臂（6 DOF + 夹爪），Mesh、TF 与 RViz 配置。</description>
+  <description>QianLi Base Geometry v0.1: octagonal mobile base, radial wheel axes, URDF/Xacro, meshes and RViz; preserves standalone SO-ARM101 assets.</description>
   <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>python3</build_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>python3</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>joint_state_publisher_gui</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>launch_ros</exec_depend>
 
+  <test_depend>ament_cmake_test</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
   <export>

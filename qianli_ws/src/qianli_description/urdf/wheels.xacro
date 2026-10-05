@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="qianli_wheel" params="name x_sign y_sign yaw">
+    <link name="${name}_wheel_link">
+      <!-- Cylinder axis and joint axis are both local +Z. -->
+      <visual>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="qianli_tire"/>
+      </visual>
+      <collision>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+    </link>
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_wheel_link"/>
+      <!-- Rz(yaw)*Ry(pi/2) maps local Z to (cos(yaw),sin(yaw),0).
+           Position is relative to base_link, not ground. -->
+      <origin xyz="${x_sign*wheel_x} ${y_sign*wheel_y} ${wheel_z-base_height}"
+              rpy="0 ${pi/2} ${yaw}"/>
+      <axis xyz="0 0 1"/>
+      <!-- Positive angle follows URDF's right-hand rule only.
+           It does not specify motor/encoder polarity or mecanum kinematics. -->
+    </joint>
+  </xacro:macro>
+  <xacro:macro name="qianli_wheels" params="">
+    <xacro:qianli_wheel name="front_left" x_sign="1" y_sign="1" yaw="${wheel_mount_angle}"/>
+    <xacro:qianli_wheel name="front_right" x_sign="1" y_sign="-1" yaw="${-wheel_mount_angle}"/>
+    <xacro:qianli_wheel name="rear_left" x_sign="-1" y_sign="1" yaw="${pi-wheel_mount_angle}"/>
+    <xacro:qianli_wheel name="rear_right" x_sign="-1" y_sign="-1" yaw="${wheel_mount_angle-pi}"/>
+  </xacro:macro>
+</robot>
