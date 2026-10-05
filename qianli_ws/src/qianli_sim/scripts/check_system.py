@@ -82,10 +82,12 @@ def main():
     topic_types = dict(node.get_topic_names_and_types())
     assert topic_types['/cmd_vel'] == ['geometry_msgs/msg/TwistStamped'], topic_types['/cmd_vel']
     pairs = [('odom', 'base_footprint')] + ([('map', 'odom')] if args.map else [])
-    tf_publishers = {p.node_name for p in node.get_publishers_info_by_topic('/tf')}
+    tf_publisher_counts = Counter(p.node_name for p in node.get_publishers_info_by_topic('/tf'))
+    tf_publishers = set(tf_publisher_counts)
     localization_node = 'slam_toolbox' if args.localization == 'slam' else 'amcl'
     expected_tf_publishers = {'robot_state_publisher', 'omni_base_controller'} | ({localization_node} if args.map else set())
     assert tf_publishers == expected_tf_publishers, ('unexpected TF publisher', tf_publishers)
+    assert all(count == 1 for count in tf_publisher_counts.values()), ('duplicate TF publisher', tf_publisher_counts)
     for pair in pairs:
         assert owners[pair], ('missing TF edge', pair)
     frames = ['base_link', 'imu_link', 'lidar_link']+[n+'_wheel_link' for n in ('front_left', 'front_right', 'rear_left', 'rear_right')]
@@ -111,6 +113,12 @@ def main():
              'robot_state_publisher', 'qianli_bridge', 'ideal_kinematic_sim'] + ([localization_node] if args.map else [])
     navigation_nodes = ['controller_server', 'planner_server', 'smoother_server', 'behavior_server', 'bt_navigator']
     lifecycle = {}
+    if args.map and args.localization == 'amcl':
+        names += ['map_server', 'lifecycle_manager_localization']
+        for name in ['map_server', 'amcl']:
+            state = call(node.create_client(GetState, f'/{name}/get_state'), GetState.Request()).current_state
+            assert state.id == 3, (name, state.label)
+            lifecycle[name] = state.label
     if args.navigation:
         assert args.map, '--navigation requires --map'
         names += navigation_nodes + ['lifecycle_manager_navigation', 'local_costmap/local_costmap', 'global_costmap/global_costmap']
@@ -133,7 +141,8 @@ def main():
     report = {'result': 'PASS', 'controllers': controllers, 'message_counts': dict(counts),
               'scan': {'frame': scan.header.frame_id, 'samples': len(scan.ranges), 'min': min(scan.ranges), 'max': max(scan.ranges)},
               'imu': {'frame': imu.header.frame_id, 'values': values},
-              'tf_publishers': sorted(tf_publishers), 'tf_edges_seen': [list(p) for p in pairs], 'use_sim_time': sim_time}
+              'tf_publishers': sorted(tf_publishers), 'tf_publisher_counts': dict(tf_publisher_counts),
+              'tf_edges_seen': [list(p) for p in pairs], 'use_sim_time': sim_time}
     if args.navigation:
         report['nav2_lifecycle'] = lifecycle
         report['nav2_footprint'] = expected_footprint

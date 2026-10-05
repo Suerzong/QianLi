@@ -22,7 +22,6 @@ def include(package, launch, arguments=None, condition=None):
 def generate_launch_description():
     slam, nav2, rviz, gui = [LaunchConfiguration(p) for p in ('slam', 'nav2', 'rviz', 'gui')]
     sim = Path(get_package_share_directory('qianli_sim'))
-    navigation = Path(get_package_share_directory('qianli_navigation'))
     localization = IfCondition(PythonExpression(["'", nav2, "' == 'true' and '", slam, "' != 'true'"]))
     fixed_frame = PythonExpression(["'map' if '", slam, "' == 'true' or '", nav2, "' == 'true' else 'odom'"])
     return LaunchDescription([
@@ -34,9 +33,8 @@ def generate_launch_description():
         DeclareLaunchArgument('map', default_value=str(Path(get_package_share_directory('qianli_slam')) / 'maps/qianli_test_map.yaml')),
         include('qianli_sim', 'sim.launch.py', {'gui': gui, 'rviz': 'false', 'sim_mode': LaunchConfiguration('sim_mode')}),
         include('qianli_slam', 'slam.launch.py', condition=IfCondition(slam)),
-        include('nav2_bringup', 'localization_launch.py', {'use_sim_time': 'true', 'autostart': 'true',
-                'use_composition': 'false', 'map': LaunchConfiguration('map'),
-                'params_file': str(navigation / 'config/nav2_params.yaml')}, condition=localization),
+        include('qianli_navigation', 'localization.launch.py',
+                {'map_file': LaunchConfiguration('map')}, condition=localization),
         include('qianli_navigation', 'navigation.launch.py', condition=IfCondition(nav2)),
         Node(package='rviz2', executable='rviz2', name='qianli_sim_rviz',
              arguments=['-d', str(sim / 'rviz/simulation.rviz'), '-f', fixed_frame],
