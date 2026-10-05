@@ -32,6 +32,7 @@ SLAM、Navigation、Perception、Semantic Mapping、Task Planning、Agent、Move
 | qianli_manipulation | MoveIt2 / IK / Trajectory / 抓取 / 按按钮 | ⏳ 占位 |
 | qianli_base | 移动底盘接口、cmd_vel、轮式里程计 | ⏳ 占位 |
 | qianli_control | 官方 omni controller、mock/Gazebo、teleop、运动学测试 | ✅ v0.3 底盘 |
+| qianli_sim | Harmonic、理想运动执行、虚拟传感器、bridge、系统验收 | ✅ v0.3 |
 | qianli_localization | IMU / Odometry / EKF / robot_localization | ⏳ 占位 |
 | qianli_slam | slam_toolbox、2D Map、测试地图 | ✅ v0.3 |
 | qianli_navigation | Nav2 holonomic DWB / NavFn / AMCL / 自动导航验收 | ✅ v0.3 |
