@@ -22,7 +22,7 @@
 | 硬件 | 规划型号 | 用途 | 状态 |
 |---|---|---|---|
 | 3D LiDAR | RoboSense RS-LiDAR-16 / Livox Mid-360（或其他） | SLAM / 建图 | ⏳ 缺失，先 Simulation/Mock |
-| 移动底盘 | 四麦克纳姆轮 | 全向移动 | ⏳ 待接入 |
+| 移动底盘 | 四全向轮 | 全向移动 | ⏳ 待接入 |
 | 底层控制器 | STM32 | 电机实时控制 / PID / 安全 | ⏳ 待接入 |
 | RGB / RGB-D Camera | [待补充] | 视觉感知（AprilTag / YOLO） | ⏳ 待接入 |
 | IMU | [待补充] | 里程计融合（EKF） | ⏳ 待接入 |

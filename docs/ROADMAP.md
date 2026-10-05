@@ -38,7 +38,7 @@
 
 ## 并行路线 — 虚拟平台（无真实 LiDAR 不阻塞）
 
-- [ ] Gazebo 虚拟移动机器人（四麦克纳姆轮，qianli_description / qianli_base / qianli_control）
+- [ ] Gazebo 虚拟移动机器人（四全向轮，qianli_description / qianli_base / qianli_control）
 - [ ] 虚拟 LiDAR（Simulation / Mock 模式，qianli_slam）
 - [ ] SLAM（先 2D，真实 3D LiDAR 到位后切换 FAST-LIO2 / LIO-SAM）
 - [ ] Nav2（Costmap / Planner / Controller，qianli_navigation）
