@@ -31,20 +31,20 @@ import sim_mesh_gripper as MG
 import sim_ik_dls as IK
 
 
-def solve_only(model, qadr, target, cur_qpos):
+def solve_only(model, qadr, target, cur_qpos, yaw=-90.0):
     """在临时 MjData 里解 IK，**不改动主仿真状态**。"""
     tmp = mujoco.MjData(model)
     tmp.qpos[:] = cur_qpos
-    q, err = IK.ik_dls(model, tmp, qadr, np.asarray(target))
+    q, err = IK.ik_dls(model, tmp, qadr, np.asarray(target), yaw_deg=yaw)
     return q.tolist(), err
 
 
 def goto(model, data, qadr, aadr, target, steps=500, grip=0.0,
-         tol=0.002, max_rounds=6):
+         tol=0.002, max_rounds=6, yaw=-90.0):
     """只发 ctrl 让伺服把 TCP 开到 target（不瞬移）。"""
     gl = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, 'gripper_link')
     for r in range(max_rounds):
-        q_sol, _ = solve_only(model, qadr, target, data.qpos.copy())
+        q_sol, _ = solve_only(model, qadr, target, data.qpos.copy(), yaw)
         for j in S.ARM_JOINTS:
             data.ctrl[aadr[j]] = q_sol[S.ARM_JOINTS.index(j)]
         data.ctrl[aadr['gripper']] = grip

@@ -27,12 +27,14 @@
 import os
 import threading
 
+import math
 import cv2
 import numpy as np
 
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PointStamped
+from std_msgs.msg import Float64
 
 # ---- 默认参数（已实机调优）----
 CELL_CM = 3.25       # 棋盘格边长（厘米）—— 用户实测：整宽 26cm / 8 格
@@ -78,6 +80,8 @@ class ObjectLocalizer(Node):
         self.frame_i = 0
 
         self.pub = self.create_publisher(PointStamped, '/object_pose', 10)
+        self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
+        self.box_pts = None
 
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
@@ -165,7 +169,7 @@ class ObjectLocalizer(Node):
         obj = self._detect_object(frame)
 
         if obj is not None and self.H is not None:
-            gx, gy, bw, bh, area = obj
+            gx, gy, bw, bh, area = obj[:5]
             p = np.array([[[gx, gy]]], dtype=np.float64)
             Xcm, Ycm = cv2.perspectiveTransform(p, self.H)[0][0]
 
@@ -177,14 +181,38 @@ class ObjectLocalizer(Node):
             msg.point.z = 0.0
             self.pub.publish(msg)
 
+            # ---- 物块朝向：minAreaRect → 单应变换到 grid 系 → 角度 ----
+            # 物块是立方体，90° 旋转等价，所以角度归一化到 [-45°, +45°)
+            yaw_deg = None
+            self.box_px = None
+            try:
+                rect = cv2.minAreaRect(obj[5])
+                box = cv2.boxPoints(rect).astype(np.float64)
+                self.box_px = box.astype(np.int32)
+                g = cv2.perspectiveTransform(
+                    box.reshape(-1, 1, 2), self.H).reshape(-1, 2)
+                e = g[1] - g[0]
+                a = math.degrees(math.atan2(e[1], e[0]))
+                yaw_deg = (a + 45.0) % 90.0 - 45.0
+                self.box_pts = g
+            except Exception:
+                self.box_pts = None
+            if yaw_deg is not None:
+                self.pub_yaw.publish(Float64(data=math.radians(yaw_deg)))
+
             if self.gui:
                 cv2.putText(frame, f'({Xcm:.1f}, {Ycm:.1f}) cm',
                             (gx + 12, gy - 12), cv2.FONT_HERSHEY_SIMPLEX,
                             0.6, (0, 255, 0), 2)
+                if yaw_deg is not None:
+                    cv2.putText(frame, f'yaw {yaw_deg:+.1f}deg',
+                                (gx + 12, gy + 14),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 128, 0), 2)
             # 落盘便于 SSH 侧读取
             try:
                 with open('/tmp/object_pose.txt', 'w') as f:
                     f.write(f'X_cm={Xcm:.2f}\nY_cm={Ycm:.2f}\n'
+                            f'yaw_deg={yaw_deg if yaw_deg is not None else 0.0:.2f}\n'
                             f'center_px=({gx},{gy})\n'
                             f'size_px={bw}x{bh}\narea={int(area)}\n')
             except OSError:
@@ -349,7 +377,7 @@ class ObjectLocalizer(Node):
             if not (bx0 <= cx <= bx1 and by0 <= cy <= by1):
                 continue          # 离棋盘太远（线缆/桌面杂物）
             if best is None or area > best[4]:
-                best = (cx, cy, bw, bh, area)
+                best = (cx, cy, bw, bh, area, c)
         return best
 
     # ---------- GUI ----------
@@ -367,10 +395,12 @@ class ObjectLocalizer(Node):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
 
         if obj is not None:
-            cx, cy, bw, bh, area = obj
+            cx, cy, bw, bh, area = obj[:5]
             cv2.rectangle(frame, (cx - bw // 2, cy - bh // 2),
                           (cx + bw // 2, cy + bh // 2), (0, 255, 0), 2)
             cv2.circle(frame, (cx, cy), 3, (0, 0, 255), -1)
+            if getattr(self, 'box_px', None) is not None:
+                cv2.polylines(frame, [self.box_px], True, (255, 128, 0), 2)
 
         status = ('CALIB OK' if self.H is not None else 'NO CALIB')
         if self.reproj_err:
