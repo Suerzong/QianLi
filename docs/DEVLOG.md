@@ -2,6 +2,51 @@
 
 > 按时间顺序记录 QianLi 开发过程、决策与验证结果。
 
+## 2026-10-05 — RGB 相机物块定位 + 抓取链路（视觉学习/教学）
+
+### 背景
+
+用户目标：用普通 RGB 相机让机械臂自己抓取小物块。环境：VM（Ubuntu 24.04 + Jazzy，
+12 核/8G，已调优）+ USB 相机（ARC International，640x480）+ 3.3cm 网格纸标尺 + 灰色立方体物块。
+
+### 学习过程（教学脚本迭代）
+
+| 版本 | 脚本 | 教学点 |
+|---|---|---|
+| v1 | detect_demo.py | 边缘/轮廓检测（Canny+approxPolyDP），发现灰方块不稳 |
+| v2 | detect_demo.py(v2) | 自适应 Canny + 形态学 + 平滑，仍未解决对比度问题 |
+| v3 | detect_gray.py | **HSV 灰色识别**：S 低 + V 适中，5 窗口可视化 |
+| v4 | detect_gray_roi.py | ROI 排除灰色桌面干扰 |
+| v5 | detect_gray_trackbar.py | 滑块实时调参 + 参数自动落盘 |
+| v6 | detect_gray_multi.py | 多物块 + mask 半透明叠加 |
+| v7 | detect_diagnose.py | 诊断：显示所有轮廓 + 面积落盘 → 定位"过滤吞物块" |
+| v8 | mask_diagnose.py | 尺寸过滤（30~50px） |
+
+### 关键 bug 与修复
+
+1. `cv2.HoughLinesP` 新版返回 (N,4) 而非 (N,1,4) → `lines[:,0]` 解包崩溃 → 兼容 reshape
+2. 物块实际 24x25px（391px 面积），但 MIN_AREA=602 把它滤掉 → 降到 100 + 尺寸范围过滤
+3. selectROI 阻塞 rclpy executor → 独立线程做初始化
+
+### 标定验证（成功）
+
+- 自动网格标定：行线 6 条、列线 8 条，Homography（RANSAC）成功
+- 物块定位：X=26.2cm Y=25.6cm（像素 306,291），读数稳定一致
+- 物块尺寸：24×25 px（很小，注意 30px 下限）
+
+### 代码成果
+
+- `qianli_ws/src/qianli_vision/`（新包，构建通过）
+  - `object_localizer`：检测 + 标定 + 发布 /object_pose（grid 系）
+  - `grab_bridge`：grid → base_link 外参变换 → /arm/target_position
+  - scripts/：8 个教学脚本
+
+### 待办（下一步）
+
+- [ ] 用户确认物块尺寸过滤参数（30~50px 还是放宽）
+- [ ] 外参标定：机械臂末端碰网格纸原点，记录 base_link 坐标
+- [ ] 接 ik_node 实际抓取测试（先 sim 后 direct）
+
 ## 2026-10-04 — 项目初始化（Phase 0 / Milestone 0）
 
 ### 环境扫描摘要
