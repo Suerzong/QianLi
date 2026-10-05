@@ -80,8 +80,9 @@ class ObjectLocalizer(Node):
         super().__init__('object_localizer')
         self.cell_cm = cell_cm
         self.gui = gui
-        self.min_size = min_size
-        self.max_size = max_size
+        # 尺寸过滤改为 ROS 参数（运行时可用 ros2 param set 调整）
+        self.declare_parameter('min_size', min_size)
+        self.declare_parameter('max_size', max_size)
         self.H = None
         self.roi = None
 
@@ -147,7 +148,9 @@ class ObjectLocalizer(Node):
             bx, by, bw, bh = cv2.boundingRect(cnt)
             # 尺寸过滤：只保留边长在 [min_size, max_size] 的物块
             side = max(bw, bh)
-            if not (self.min_size <= side <= self.max_size):
+            ms = self.get_parameter('min_size').value
+            mx = self.get_parameter('max_size').value
+            if not (ms <= side <= mx):
                 continue
             if best is None or area > best[4]:
                 best = (bx + bw // 2, by + bh // 2, bw, bh, area)
