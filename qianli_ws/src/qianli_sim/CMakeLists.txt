@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.8)
+project(qianli_sim)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY launch config worlds DESTINATION share/${PROJECT_NAME})
+install(PROGRAMS scripts/ideal_kinematic_sim.py DESTINATION lib/${PROJECT_NAME})
+install(FILES README.md DESTINATION share/${PROJECT_NAME})
+ament_package()
