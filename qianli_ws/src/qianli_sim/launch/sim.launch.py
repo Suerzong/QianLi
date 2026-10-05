@@ -25,7 +25,8 @@ def setup(context):
     control = runpy.run_path(str(Path(get_package_share_directory('qianli_control')) / 'launch/control.launch.py'))
     config = control['controller_config'](use_sim_time=True, open_loop=True)
     document = xacro.process_file(str(desc / 'urdf/qianli.urdf.xacro'),
-                                 mappings={'control_mode': 'gazebo', 'simulation': 'true', 'controllers_file': config})
+                                 mappings={'control_mode': 'gazebo', 'simulation': 'true', 'controllers_file': config,
+                                           'sensors': LaunchConfiguration('sensors').perform(context)})
     description = document.toxml()
     converted = ET.fromstring(description)
     for mesh in converted.findall('.//mesh'):
@@ -60,7 +61,8 @@ def setup(context):
         model_path = f.name
     gui = LaunchConfiguration('gui').perform(context).lower() == 'true'
     world = LaunchConfiguration('world').perform(context)
-    gz_args = ['-r ', world] if gui else ['-r -s --headless-rendering ', world]
+    headless = LaunchConfiguration('headless_rendering').perform(context).lower() == 'true'
+    gz_args = ['-r ', world] if gui else ['-r -s '+('--headless-rendering ' if headless else ''), world]
     return [
         AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(desc.parent)),
         AppendEnvironmentVariable('GZ_SIM_SYSTEM_PLUGIN_PATH', '/opt/ros/jazzy/lib'),
@@ -83,7 +85,10 @@ def generate_launch_description():
     sim = Path(get_package_share_directory('qianli_sim'))
     return LaunchDescription([
         DeclareLaunchArgument('gui', default_value='true'),
+        DeclareLaunchArgument('headless_rendering', default_value='false',
+                              description='EGL rendering; software GL may require Xvfb instead'),
         DeclareLaunchArgument('rviz', default_value='false'),
+        DeclareLaunchArgument('sensors', default_value='true'),
         DeclareLaunchArgument('sim_mode', default_value='ideal_kinematic_sim'),
         DeclareLaunchArgument('world', default_value=str(sim / 'worlds/qianli_test_world.sdf')),
         OpaqueFunction(function=setup)])

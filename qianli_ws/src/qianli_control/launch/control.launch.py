@@ -6,7 +6,8 @@ import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
 import xacro
@@ -33,14 +34,15 @@ def controller_config(use_sim_time=False, open_loop=True):
 
 
 def spawners(config):
-    return [
-        Node(package='controller_manager', executable='spawner',
-             arguments=['joint_state_broadcaster', '-p', config, '--controller-manager-timeout', '90']),
-        Node(package='controller_manager', executable='spawner',
+    broadcaster = Node(package='controller_manager', executable='spawner',
+             arguments=['joint_state_broadcaster', '-p', config, '--controller-manager-timeout', '90',
+                        '--service-call-timeout', '30', '--switch-timeout', '30'])
+    omni = Node(package='controller_manager', executable='spawner',
              arguments=['omni_base_controller', '-p', config, '--controller-manager-timeout', '90',
+                        '--service-call-timeout', '30', '--switch-timeout', '30',
                         '--controller-ros-args=-r', '--controller-ros-args=~/cmd_vel:=/cmd_vel',
-                        '--controller-ros-args=-r', '--controller-ros-args=~/odom:=/odom']),
-    ]
+                        '--controller-ros-args=-r', '--controller-ros-args=~/odom:=/odom'])
+    return [RegisterEventHandler(OnProcessExit(target_action=broadcaster, on_exit=[omni])), broadcaster]
 
 
 def setup(context):
