@@ -32,6 +32,22 @@
 
 > 主机不参与 ROS 2 构建；ROS 2 工具链全部在虚拟机内运行。
 
+### 2.1.1 SSH 快速连接（必读）
+
+```bash
+# 主机（Windows）免密登录，别名已配好
+ssh qianli-vm
+
+# 或一键脚本
+bash scripts/tools/vm_ssh.sh
+
+# 健康检查
+bash scripts/tools/vm_check.sh
+```
+
+> 完整连接信息、排查清单与别名配置块见 **[SSH.md](SSH.md)**。
+> 连不上时按 SSH.md §4 排查（虚拟机开机 → 端口 22 → sshd → 免密 → 别名）。
+
 ### 2.2 开发虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）
 
 | 检查项 | 结果 |
@@ -39,16 +55,19 @@
 | VM 名称 | Ubuntu 24.04 ROS2 Jazzy（`D:\Ubuntu-VM\ubuntu24-ros2.vmx`） |
 | 系统 | Ubuntu 24.04.4 LTS（Noble Numbat），内核 7.0.0-34-generic |
 | 网络 | VMware NAT：**192.168.26.128**（hostname `ros2-ubuntu`，MAC 00:0c:29:bd:0b:9c） |
-| SSH | 22 端口开放；用户 `ros`（密码认证） |
+| SSH | 22 端口开放；用户 `ros`；**免密已配好**（别名 `qianli-vm`），连接指南见 [SSH.md](SSH.md) |
+| sshd 自启 | ✅ enabled + active（2026-10-04 复核） |
 | ROS 2 | ✅ `/opt/ros/jazzy`，`.bashrc` 已自动 source |
 | colcon | ✅ /usr/bin/colcon |
 | Python | ✅ 3.12.3（系统） |
 | CMake | ✅ 3.28.3 |
 | Git | ✅ 2.43.0 |
-| 磁盘 | / 剩余约 13 GB（83% 已用）——注意空间，构建产物及时清理 |
+| 磁盘 | / 剩余约 **12 GB**（84% 已用）——注意空间，构建产物及时清理 |
+| GPU | ❌ 无（VMware 未直通，`nvidia-smi` 不存在）→ 深度学习训练需另配 GPU 云服务器 |
+| 内存 | 5.8 GiB 总 / 约 3.5 GiB 可用 |
 | 关键包 | ✅ urdf / xacro / rviz2 / robot-state-publisher / joint-state-publisher / ros2-control / moveit |
 | 待装包 | ⏳ nav2-bringup / robot-localization / gazebo-ros-pkgs（后续 Milestone 需要时再装） |
-| 已有工作区 | ~/arm_ws、~/arm-final 等（机械臂相关，与 QianLi 互不影响） |
+| 工作区 | `~/QianLi`（与主机仓库同步）；`~/arm_ws`、`~/arm-final` 已不存在（2026-10-04 复核，模型已整合进 qianli_description） |
 
 ## 3. 构建验证状态
 

@@ -151,3 +151,36 @@
 
 - [ ] 真实硬件拖动示教演练：record 录一段真实拖动轨迹 → sim 回放确认 → （确认校准后）direct 回放
 - [ ] Milestone 2：把 so101 驱动栈整合进 QianLi（qianli_arm），teach 工具直接对接
+
+## 2026-10-04（续 4）— 修复"找不到虚拟机 SSH"问题
+
+### 背景
+
+用户反馈：之前多次尝试（含 AI 会话）"找不到虚拟机 SSH"。排查确认：
+
+- **实际连通**：Windows 主机 `ssh qianli-vm` 免密成功（别名在 `C:\Users\sez18\.ssh\config`，私钥 `id_ed25519` ↔ VM `authorized_keys` 的 `suerzong@outlook.com`）；
+- **sshd 状态**：`systemctl is-enabled ssh` = **enabled**、`is-active` = **active**（开机自启已配置，ENVIRONMENT.md 旧记录"自启 disabled"已过时）；
+- **根因**：连接信息分散（别名/密钥只在主机 `~/.ssh/config`），项目文档未给出"怎么连"，新会话无从下手。
+
+### 修复内容
+
+- 新建 **[docs/SSH.md](SSH.md)**：连接信息、快速命令、排查清单（端口/sshd/免密/别名）、常见问题表、别名配置块；
+- 新增 `scripts/tools/vm_ssh.sh`：一键 SSH（自动探测别名，回退私钥/密码）；
+- 新增 `scripts/tools/vm_check.sh`：连通性 + sshd + 磁盘 + GPU + ROS 健康检查；
+- 更新 `docs/ENVIRONMENT.md`：§2.2 修正（sshd 已 enabled、无 GPU、内存 5.8G、磁盘 12G、~/arm_ws 已不存在），新增 §2.1.1 SSH 快速连接；
+- 更新 `scripts/tools/README.md`、`scripts/setup/README.md`：登记新脚本与 SSH 入口。
+
+### 环境复核结果（本次 SSH 实测）
+
+| 项 | 结果 |
+|---|---|
+| SSH 连通 | ✅ 免密成功（别名 qianli-vm） |
+| GPU | ❌ 无（VMware 未直通）→ 深度学习训练需 GPU 云服务器 |
+| 磁盘 | 12 GB 剩余（84%） |
+| 内存 | 5.8 GiB / 可用 3.5 GiB |
+| conda | ❌ 未安装（系统 Python 3.12.3） |
+| ROS 2 | ✅ jazzy |
+
+### 待办（下一步）
+
+- [ ] 机器人抓取学习环境：本机无 GPU，若在 VM 上跑 robotic-grasping 只能 CPU 版（慢）；建议 GPU 云服务器上搭建（方案见对话记录）
