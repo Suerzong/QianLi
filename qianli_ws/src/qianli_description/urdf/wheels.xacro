@@ -2,6 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="qianli_wheel" params="name x_sign y_sign yaw">
     <link name="${name}_wheel_link">
+      <xacro:if value="${simulation}"><xacro:sim_wheel_inertial/></xacro:if>
       <!-- Cylinder axis and joint axis are both local +Z. -->
       <visual>
         <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>

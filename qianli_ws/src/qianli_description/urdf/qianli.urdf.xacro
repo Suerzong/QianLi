@@ -1,8 +1,17 @@
 <?xml version="1.0"?>
 <robot name="qianli" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="control_mode" default="none"/>
+  <xacro:arg name="controllers_file" default=""/>
+  <xacro:arg name="simulation" default="false"/>
+  <xacro:property name="simulation" value="$(arg simulation)"/>
   <xacro:include filename="common.xacro"/>
   <xacro:include filename="base.xacro"/>
   <xacro:include filename="wheels.xacro"/>
+  <xacro:include filename="ros2_control.xacro"/>
+  <xacro:include filename="sim_inertials.xacro"/>
   <xacro:qianli_base/>
   <xacro:qianli_wheels/>
+  <xacro:if value="${'$(arg control_mode)' != 'none'}">
+    <xacro:qianli_control mode="$(arg control_mode)" controllers_file="$(arg controllers_file)"/>
+  </xacro:if>
 </robot>
