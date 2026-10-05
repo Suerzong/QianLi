@@ -22,3 +22,8 @@ ros2 launch qianli_sim sim.launch.py \
 The resulting world is useful for checking basic Gazebo loading, laser returns,
 and whether the QianLi footprint can move through the rough layout. Replace it
 with a manually traced wall/door model before treating paths as building-valid.
+
+The world was parsed by `gz sdf -k`, launched through the existing
+`qianli_sim` entry point in an isolated ROS domain, and produced `/scan` with
+finite wall returns. The quick check did not claim `/odom` as a building-model
+result; odometry remains controlled by the existing QianLi simulation mode.
