@@ -35,6 +35,8 @@ import os
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PointStamped
+from std_msgs.msg import String
+from std_srvs.srv import SetBool
 
 
 def load_extrinsic(path):
@@ -70,6 +72,7 @@ class GrabBridge(Node):
         self.declare_parameter('publish', True)
         self.declare_parameter('mode', 'oneshot')
         self.declare_parameter('stable_n', 3)
+        self.declare_parameter('auto_enable', True)   # 自动调用 /arm/enable
         self.declare_parameter('extrinsic_file', '/tmp/extrinsic.txt')
         # 允许命令行直接覆盖外参
         self.declare_parameter('grid_origin_x', float('nan'))
@@ -93,13 +96,45 @@ class GrabBridge(Node):
             PointStamped, '/object_pose', self.on_object_pose, 10)
         self.pub = self.create_publisher(
             PointStamped, '/arm/target_position', 10)
+        # 自动使能：串口重连后 driver 会禁用运动，这里自动补一次 /arm/enable
+        self.enabled = False
+        self.enable_sent = False
+        if self.get_parameter('auto_enable').value:
+            self.cli = self.create_client(SetBool, '/arm/enable')
+            self.create_subscription(String, '/arm/status', self.on_arm_status,
+                                     10)
         self.history = []       # 最近几帧 grid 坐标（稳定性判断）
         self.latched = False    # oneshot 模式下是否已锁存
         self.get_logger().info(
             '抓取桥接就绪：/object_pose (grid) → /arm/target_position '
-            '(base_link)；publish=%s mode=%s'
+            '(base_link)；publish=%s mode=%s auto_enable=%s'
             % (self.get_parameter('publish').value,
-               self.get_parameter('mode').value))
+               self.get_parameter('mode').value,
+               self.get_parameter('auto_enable').value))
+
+    def on_arm_status(self, msg: String):
+        """跟踪 /arm/status 的 enabled 字段。"""
+        try:
+            import json
+            self.enabled = bool(json.loads(msg.data).get('enabled', False))
+        except Exception:
+            self.enabled = '"enabled": true' in msg.data
+
+    def _ensure_enabled(self):
+        """若未使能则请求使能。返回 True 表示当前已使能。"""
+        if self.enabled:
+            return True
+        if self.enable_sent:
+            return False        # 已请求过，等待生效
+        if not self.cli.service_is_ready():
+            self.get_logger().warn('/arm/enable 服务未就绪，等待…')
+            return False
+        req = SetBool.Request()
+        req.data = True
+        self.cli.call_async(req)
+        self.enable_sent = True
+        self.get_logger().info('已请求 /arm/enable 使能运动')
+        return False
 
     def _resolve_extrinsic(self):
         """参数优先，其次外参文件。"""
@@ -124,6 +159,10 @@ class GrabBridge(Node):
         mode = self.get_parameter('mode').value
         if mode == 'oneshot' and self.latched:
             return           # 已锁存目标，忽略后续（抓取途中物块被挡也不影响）
+
+        # 自动使能：未使能时先请求，等生效后再发目标
+        if self.get_parameter('auto_enable').value and not self._ensure_enabled():
+            return
 
         gx, gy = msg.point.x, msg.point.y   # 米（grid 系）
 

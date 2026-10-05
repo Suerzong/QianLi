@@ -24,6 +24,7 @@
   ros2 run qianli_vision object_localizer --ros-args -p gui:=false
 """
 
+import os
 import threading
 
 import cv2
@@ -34,12 +35,12 @@ from rclpy.node import Node
 from geometry_msgs.msg import PointStamped
 
 # ---- 默认参数（已实机调优）----
-CELL_CM = 3.3        # 棋盘格边长（厘米）
+CELL_CM = 3.25       # 棋盘格边长（厘米）—— 用户实测：整宽 26cm / 8 格
 BOARD_COLS = 7       # 内角点列数
 BOARD_ROWS = 5       # 内角点行数
-MIN_AREA, MAX_AREA = 330, 350    # 物块轮廓面积区间（像素）
-MIN_SIZE, MAX_SIZE = 20, 50      # 物块边长区间（像素）
-MAX_DIFF = 5                     # 长宽差上限（正方形性）
+MIN_AREA, MAX_AREA = 250, 600    # 物块轮廓面积区间（像素）
+MIN_SIZE, MAX_SIZE = 15, 60      # 物块边长区间（像素）
+MAX_DIFF = 15                    # 长宽差上限（bg+gray 混合下放宽）
 S_MAX, V_MIN, V_MAX = 127, 140, 167   # 灰色判定（HSV）
 
 # 棋盘格亚像素精化参数
@@ -62,6 +63,12 @@ class ObjectLocalizer(Node):
         self.declare_parameter('min_size', MIN_SIZE)
         self.declare_parameter('max_size', MAX_SIZE)
         self.declare_parameter('max_diff', MAX_DIFF)
+        self.declare_parameter('adaptive', True)   # 自适应灰度带（抗光照变化）
+        self.declare_parameter('bg_file', '/tmp/board_bg.png')  # 背景差分
+        self.declare_parameter('bg_thresh', 25)    # 背景差分阈值（灰度级）
+        self.declare_parameter('hybrid', True)     # 背景差分∩灰色带（排除影子/彩色物）
+        self.declare_parameter('restrict_to_board', True)  # 候选须在棋盘邻域内
+        self.declare_parameter('board_margin', 25)         # 邻域外扩像素
 
         self.gui = self.get_parameter('gui').value
         self.H = None            # 像素 → 物理（厘米）
@@ -188,34 +195,161 @@ class ObjectLocalizer(Node):
 
     # ---------- 物块检测 ----------
     def _detect_object(self, frame):
-        """返回最长边符合、面积符合的候选 (cx, cy, bw, bh, area)，否则 None。"""
+        """返回候选 (cx, cy, bw, bh, area)，否则 None。
+
+        灰色带的确定方式（adaptive=true，默认）：
+          物块"比棋盘黑格亮、比白格暗" —— 用同一帧里棋盘区域的黑/白亮度
+          分位数动态算出灰色带 [lo, hi]，因此**对光照变化免疫**
+          （固定 HSV 阈值在灯光变化时会失效）。
+        关掉 adaptive 则用固定 V_MIN/V_MAX。
+        """
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, (0, 0, V_MIN), (179, S_MAX, V_MAX))
+        v_ch = hsv[:, :, 2]
+        s_ch = hsv[:, :, 1]
+
+        # ---- 方法A：背景差分（首选，最稳健）----
+        bg = self._load_bg(frame.shape[:2])
+        if bg is not None:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.int16)
+            diff = gray - bg
+            # 全局亮度补偿：用棋盘区域中位差抵消整体明暗漂移
+            if self.corners is not None:
+                xs, ys = self.corners[:, 0], self.corners[:, 1]
+                x0, x1 = int(xs.min()), int(xs.max())
+                y0, y1 = int(ys.min()), int(ys.max())
+                offset = float(np.median(diff[max(0, y0):y1,
+                                              max(0, x0):x1]))
+            else:
+                offset = float(np.median(diff))
+            d = np.abs(diff - offset).astype(np.uint8)
+            thr = int(self.get_parameter('bg_thresh').value)
+            mask_bg = cv2.inRange(d, thr, 255)
+
+            # 混合：与"灰色带"掩码取交集 → 只保留灰色物块本体，
+            # 排除影子（偏暗）、彩色线缆（饱和度高）、棋盘边缘伪影
+            if self.get_parameter('hybrid').value and self.corners is not None:
+                xs, ys = self.corners[:, 0], self.corners[:, 1]
+                x0, x1 = int(xs.min()), int(xs.max())
+                y0, y1 = int(ys.min()), int(ys.max())
+                vv = v_ch[max(0, y0):y1, max(0, x0):x1].ravel()
+                if vv.size > 100:
+                    v_white = float(np.percentile(vv, 92))
+                    v_black = float(np.percentile(vv, 8))
+                    span = max(1.0, v_white - v_black)
+                    lo = int(v_black + 0.55 * span)
+                    hi = int(v_white - 0.03 * span)
+                    self._band = (lo, hi, v_black, v_white)
+                    mask_gray = cv2.inRange(v_ch, lo, hi)
+                    mask_gray &= cv2.inRange(s_ch, 0, S_MAX)
+                    mask = cv2.bitwise_and(mask_bg, mask_gray)
+                    self._method = (f'bg+gray thr={thr} '
+                                    f'band={lo}-{hi}')
+                else:
+                    mask = mask_bg
+                    self._method = f'bg-sub thr={thr}'
+            else:
+                mask = mask_bg
+                self._method = f'bg-sub thr={thr} offset={offset:+.0f}'
+
+            k = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
+            self._mask = mask
+            return self._filter_contours(mask)
+
+        # ---- 方法B：自适应灰度带（无背景图时的回退）----
+        if self.get_parameter('adaptive').value and self.corners is not None:
+            xs, ys = self.corners[:, 0], self.corners[:, 1]
+            x0, x1 = int(xs.min()), int(xs.max())
+            y0, y1 = int(ys.min()), int(ys.max())
+            vv = v_ch[max(0, y0):y1, max(0, x0):x1].ravel()
+            if vv.size > 100:
+                v_white = float(np.percentile(vv, 92))
+                v_black = float(np.percentile(vv, 8))
+                span = max(1.0, v_white - v_black)
+                lo = int(v_black + 0.55 * span)
+                hi = int(v_white - 0.03 * span)
+                self._band = (lo, hi, v_black, v_white)
+            else:
+                lo, hi = V_MIN, V_MAX
+                self._band = None
+        else:
+            lo, hi = V_MIN, V_MAX
+            self._band = None
+
+        mask = cv2.inRange(v_ch, lo, hi)
+        if S_MAX < 255:      # 饱和度上限（可选）
+            mask &= cv2.inRange(s_ch, 0, S_MAX)
         k = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
-        self._mask = mask  # 供 GUI 显示
+        self._mask = mask
+        self._method = 'adaptive-gray' if self._band else 'fixed-hsv'
+        return self._filter_contours(mask)
 
+    def _load_bg(self, shape):
+        """懒加载背景图（灰度，int16）。文件变化时自动重载。"""
+        path = self.get_parameter('bg_file').value
+        if not path or not os.path.exists(path):
+            return None
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError:
+            return None
+        if getattr(self, '_bg_mtime', None) != mtime:
+            bg = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            if bg is None:
+                return None
+            if bg.shape[:2] != tuple(shape):
+                self.get_logger().warn(
+                    f'背景图尺寸 {bg.shape[:2]} != 画面 {tuple(shape)}，忽略')
+                self._bg_mtime = mtime
+                self._bg = None
+                return None
+            self._bg = bg.astype(np.int16)
+            self._bg_mtime = mtime
+            self.get_logger().info(f'已加载背景图: {path}')
+        return getattr(self, '_bg', None)
+
+    def _filter_contours(self, mask):
+        """按 面积区间 / 正方形性 / 边长区间 / 棋盘邻域 过滤，返回最佳候选。
+
+        restrict_to_board（默认开）：候选中心必须落在棋盘外扩 margin 的
+        矩形内 —— 这样线缆/桌面杂物的移动即使面积合适也会被排除
+        （它们离棋盘远）。
+        """
         a_lo = self.get_parameter('min_area').value
         a_hi = self.get_parameter('max_area').value
         s_lo = self.get_parameter('min_size').value
         s_hi = self.get_parameter('max_size').value
         d_max = self.get_parameter('max_diff').value
+        use_board = self.get_parameter('restrict_to_board').value
+        margin = int(self.get_parameter('board_margin').value)
+
+        bx0 = by0 = -10 ** 6
+        bx1 = by1 = 10 ** 6
+        if use_board and self.corners is not None:
+            xs, ys = self.corners[:, 0], self.corners[:, 1]
+            bx0, bx1 = int(xs.min()) - margin, int(xs.max()) + margin
+            by0, by1 = int(ys.min()) - margin, int(ys.max()) + margin
 
         cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
         best = None
         for c in cnts:
             area = cv2.contourArea(c)
-            if not (a_lo <= area <= a_hi):      # 面积区间
+            if not (a_lo <= area <= a_hi):
                 continue
-            bx, by, bw, bh = cv2.boundingRect(c)
-            if d_max > 0 and abs(bw - bh) > d_max:   # 正方形性
+            x, y, bw, bh = cv2.boundingRect(c)
+            if d_max > 0 and abs(bw - bh) > d_max:
                 continue
-            if not (s_lo <= max(bw, bh) <= s_hi):    # 边长区间
+            if not (s_lo <= max(bw, bh) <= s_hi):
                 continue
+            cx, cy = x + bw // 2, y + bh // 2
+            if not (bx0 <= cx <= bx1 and by0 <= cy <= by1):
+                continue          # 离棋盘太远（线缆/桌面杂物）
             if best is None or area > best[4]:
-                best = (bx + bw // 2, by + bh // 2, bw, bh, area)
+                best = (cx, cy, bw, bh, area)
         return best
 
     # ---------- GUI ----------
@@ -241,6 +375,10 @@ class ObjectLocalizer(Node):
         status = ('CALIB OK' if self.H is not None else 'NO CALIB')
         if self.reproj_err:
             status += f' err {self.reproj_err[0]:.3f}cm'
+        if getattr(self, '_band', None):
+            lo, hi, vb, vw = self._band
+            status += f' | band {lo}-{hi} (blk{int(vb)}/wht{int(vw)})'
+        status += f' | {getattr(self, "_method", "?")}'
         status += ' | obj FOUND' if obj else ' | obj not found'
         cv2.putText(frame, status, (10, 22),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 2)
