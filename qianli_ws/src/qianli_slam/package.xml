@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>qianli_slam</name><version>0.3.0</version>
+  <description>QianLi simulation software prototype.</description>
+  <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer><license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
