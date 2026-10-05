@@ -1,0 +1,7 @@
+image: qianli_bupt_shahe_public_teaching_floor1_approx.pgm
+mode: trinary
+resolution: 0.020
+origin: [-22.200, -17.950, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

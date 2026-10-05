@@ -1,0 +1,35 @@
+{
+  "source": "E:\\AAA-ALL-DOWNLOAD\\qq_downloads\\IMG_1950.JPG",
+  "source_pixels": [
+    5712,
+    4284
+  ],
+  "crop_xyxy_pixels": [
+    560,
+    360,
+    5000,
+    3950
+  ],
+  "crop_pixels": [
+    4440,
+    3590
+  ],
+  "north_arrow": "visible on source image right side; not yet used to choose ROS origin",
+  "metric_scale": {
+    "door_width_m": 1.2,
+    "door_width_px_estimate": 120.0,
+    "pixels_per_meter": 100.0,
+    "map_resolution_m_per_pixel": 0.02,
+    "status": "provisional image calibration; multiple doors/corridors still need measurement"
+  },
+  "status": "approximate metric OccupancyGrid generated; not a surveyed or production Nav2 map",
+  "visible_semantics": [
+    "outer building wall and internal partitions",
+    "corridors and rooms",
+    "stairs and elevator cores",
+    "lecture hall seating",
+    "green evacuation arrows and red fire-equipment symbols",
+    "red star marking a location"
+  ],
+  "next_required_measurement": "measure at least 5 doors and 2 corridors, then manually trace principal walls and openings"
+}
