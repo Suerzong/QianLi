@@ -16,11 +16,14 @@ from tf2_msgs.msg import TFMessage
 from tf2_ros import Buffer, TransformListener
 from controller_manager_msgs.srv import ListControllers
 from rcl_interfaces.srv import GetParameters
+from lifecycle_msgs.srv import GetState
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--map', action='store_true')
+    parser.add_argument('--navigation', action='store_true')
+    parser.add_argument('--localization', choices=['slam', 'amcl'], default='slam')
     parser.add_argument('--output', type=Path)
     args, ros_args = parser.parse_known_args()
     rclpy.init(args=ros_args)
@@ -80,7 +83,8 @@ def main():
     assert topic_types['/cmd_vel'] == ['geometry_msgs/msg/TwistStamped'], topic_types['/cmd_vel']
     pairs = [('odom', 'base_footprint')] + ([('map', 'odom')] if args.map else [])
     tf_publishers = {p.node_name for p in node.get_publishers_info_by_topic('/tf')}
-    expected_tf_publishers = {'robot_state_publisher', 'omni_base_controller'} | ({'slam_toolbox'} if args.map else set())
+    localization_node = 'slam_toolbox' if args.localization == 'slam' else 'amcl'
+    expected_tf_publishers = {'robot_state_publisher', 'omni_base_controller'} | ({localization_node} if args.map else set())
     assert tf_publishers == expected_tf_publishers, ('unexpected TF publisher', tf_publishers)
     for pair in pairs:
         assert owners[pair], ('missing TF edge', pair)
@@ -104,7 +108,22 @@ def main():
     controllers = {c.name: c.state for c in response.controller}
     assert controllers['omni_base_controller'] == controllers['joint_state_broadcaster'] == 'active'
     names = ['controller_manager', 'omni_base_controller', 'joint_state_broadcaster',
-             'robot_state_publisher', 'qianli_bridge', 'ideal_kinematic_sim'] + (['slam_toolbox'] if args.map else [])
+             'robot_state_publisher', 'qianli_bridge', 'ideal_kinematic_sim'] + ([localization_node] if args.map else [])
+    navigation_nodes = ['controller_server', 'planner_server', 'smoother_server', 'behavior_server', 'bt_navigator']
+    lifecycle = {}
+    if args.navigation:
+        assert args.map, '--navigation requires --map'
+        names += navigation_nodes + ['lifecycle_manager_navigation', 'local_costmap/local_costmap', 'global_costmap/global_costmap']
+        for name in navigation_nodes:
+            state = call(node.create_client(GetState, f'/{name}/get_state'), GetState.Request()).current_state
+            assert state.id == 3, (name, state.label)
+            lifecycle[name] = state.label
+        expected_footprint = [[.35,.20],[.20,.35],[-.20,.35],[-.35,.20],[-.35,-.20],[-.20,-.35],[.20,-.35],[.35,-.20]]
+        for name in ['local_costmap/local_costmap', 'global_costmap/global_costmap']:
+            request = GetParameters.Request(names=['footprint', 'footprint_padding'])
+            footprint_values = call(node.create_client(GetParameters, f'/{name}/get_parameters'), request).values
+            assert json.loads(footprint_values[0].string_value) == expected_footprint
+            assert abs(footprint_values[1].double_value-.06) < 1e-6
     sim_time = {}
     for name in names:
         request = GetParameters.Request(names=['use_sim_time'])
@@ -115,6 +134,10 @@ def main():
               'scan': {'frame': scan.header.frame_id, 'samples': len(scan.ranges), 'min': min(scan.ranges), 'max': max(scan.ranges)},
               'imu': {'frame': imu.header.frame_id, 'values': values},
               'tf_publishers': sorted(tf_publishers), 'tf_edges_seen': [list(p) for p in pairs], 'use_sim_time': sim_time}
+    if args.navigation:
+        report['nav2_lifecycle'] = lifecycle
+        report['nav2_footprint'] = expected_footprint
+        report['footprint_padding'] = .06
     if args.map:
         report['map'] = {'width': data['map'].info.width, 'height': data['map'].info.height,
                          'known_cells': sum(v >= 0 for v in data['map'].data),
