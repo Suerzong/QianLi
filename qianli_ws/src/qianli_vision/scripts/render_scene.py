@@ -196,9 +196,12 @@ def main():
         font_s = font
 
     markers = [
-        (low, (220, 40, 40), f'gripper lowest point  z={low[2]*1000:+.1f}mm', 8),
+        (low, (220, 40, 40), f'gripper lowest  z={low[2]*1000:+.1f}mm', 8),
         (tcp, (40, 90, 220), f'TCP  z={tcp[2]*1000:+.1f}mm', 7),
     ]
+    flange = T['gripper_frame_link'][:3, 3]
+    markers.append((flange, (20, 160, 90),
+                    f'gripper_frame_link  z={flange[2]*1000:+.1f}mm', 6))
 
     W, H = 1500, 720
     img = Image.new('RGB', (W, H), (245, 247, 250))

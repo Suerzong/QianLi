@@ -172,6 +172,42 @@ class GripperModel:
         M = T.get('tcp_link')
         return None if M is None else M[:3, 3]
 
+    # ---------------- 整机净空（不只夹爪） ----------------
+    # 撞桌子的不一定是夹爪：肘部、前臂在低姿态下都可能先碰到。
+    # 所以安全判定必须扫全部 link 的网格。
+    ARM_LINKS = ('base_link', 'shoulder_link', 'upper_arm_link',
+                 'lower_arm_link', 'wrist_link', FLANGE_LINK, JAW_LINK)
+
+    def prepare_clearance(self, stride=40):
+        self._clr = {}
+        for link in self.ARM_LINKS:
+            p = self.link_points(link)
+            if len(p):
+                self._clr[link] = p[::max(1, stride)]
+        return self._clr
+
+    def lowest_over_all(self, joints, exclude_base=True):
+        """整条臂的最低点。返回 (最低点 xyz, link, 该 link 的最低 z)。
+
+        exclude_base: 默认排除 base_link —— 它是安装面，永远在桌子下方，
+        算进来会永远"不安全"。
+        """
+        if not getattr(self, '_clr', None):
+            self.prepare_clearance()
+        T = self.solve(joints)
+        best, best_link = None, None
+        for link, pts in self._clr.items():
+            if exclude_base and link == 'base_link':
+                continue
+            M = T.get(link)
+            if M is None:
+                continue
+            world = (M[:3, :3] @ pts.T).T + M[:3, 3]
+            k = int(np.argmin(world[:, 2]))
+            if best is None or world[k, 2] < best[2]:
+                best, best_link = world[k].copy(), link
+        return best, best_link
+
     # ---------------- 自检 ----------------
     def selftest(self):
         """验证 FK 真的落在该落的 link 上（防"名字对不上静默退化"）。"""
