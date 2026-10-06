@@ -25,6 +25,12 @@
 
 import math
 import os
+import sys
+
+# 正式外参路径：任何工具都不许在这里写废弃值
+OFFICIAL_EXTRINSICS = '/tmp/extrinsic.txt'
+# 旧两点法的产物只能写到这个带后缀的路径，避免被下游误当成正式外参
+DEPRECATED_OUT = '/tmp/extrinsic_old_twopoint.txt'
 
 import rclpy
 from rclpy.node import Node
@@ -94,23 +100,44 @@ class ExtrinsicProbe(Node):
         # 实测两点距离 vs 理论格宽（校验）
         measured = math.hypot(x1 - x0, y1 - y0) * 100.0
         lines = [
+            f'# ⚠️ 已废弃：两点法外参产物，**不可用于抓取**',
+            f'# 两点法只用 2 个点、无冗余无残差；记录的是 gripper_frame_link',
+            f'# 而人是按爪口对格点的；实测 A→B 34.6mm vs 格宽 33mm，',
+            f'# 两个内角点 Z 还差 9.5mm —— 它连自己都不自洽。',
+            f'# 替代品：extrinsic_calib_multi.py（5 点最小二乘 + 交叉验证）',
+            f'# 本文件写到 {DEPRECATED_OUT}，**不会**覆盖 {OFFICIAL_EXTRINSICS}',
             f'# 外参（grid → base_link）由两点标定',
             f'grid_origin_x={x0:.4f}',
             f'grid_origin_y={y0:.4f}',
             f'grid_origin_z={z0:.4f}',
             f'grid_theta_deg={theta:.2f}',
+            f'quality_ok=0',
             f'# 校验：A→B 实测距离 {measured:.2f} cm '
             f'(理论 {self.cell} cm，误差 {measured - self.cell:+.2f} cm)',
         ]
-        with open('/tmp/extrinsic.txt', 'w') as f:
+        # 关键：**绝不写正式路径**。旧工具和新工具本来都写 /tmp/extrinsic.txt，
+        # 只要有人手滑跑一次旧的，标好的外参就被这个不可信值覆盖了。
+        with open(DEPRECATED_OUT, 'w') as f:
             f.write('\n'.join(lines) + '\n')
+        self.get_logger().warning(
+            f'⚠️ 两点法已废弃。结果写到 {DEPRECATED_OUT}，'
+            f'**没有**动 {OFFICIAL_EXTRINSICS}')
         self.get_logger().info(
-            '✅ 外参标定完成：origin=(%.4f, %.4f, %.4f) θ=%.2f°；'
+            '外参标定完成：origin=(%.4f, %.4f, %.4f) θ=%.2f°；'
             'A→B 实测 %.2fcm（理论 %.2fcm）'
             % (x0, y0, z0, theta, measured, self.cell))
 
 
 def main():
+    if '--i-know-this-is-deprecated' not in sys.argv:
+        print(__doc__)
+        print('=' * 74)
+        print('  ⛔ 拒绝运行：两点法已废弃，它产出的外参不可信。')
+        print('     请用 extrinsic_calib_multi.py（5 点最小二乘 + 交叉验证）。')
+        print(f'     确实要看旧输出，加 --i-know-this-is-deprecated，')
+        print(f'     它会写到 {DEPRECATED_OUT} 而不会覆盖 {OFFICIAL_EXTRINSICS}。')
+        print('=' * 74)
+        return 2
     rclpy.init()
     node = ExtrinsicProbe()
     node.get_logger().info(
@@ -126,4 +153,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # 必须 sys.exit(main()) —— 只写 main() 的话返回值被丢弃，
+    # 脚本拒绝运行时仍会以 0 退出，调用方（脚本/CI）就看不出失败了。
+    sys.exit(main())

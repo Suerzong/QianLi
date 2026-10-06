@@ -150,36 +150,38 @@ def main():
         # 桌面板画薄、半透明，免得把下面的东西吞掉
         arr.markers.append(box(0, 'table', [0.30, 0.0, args.table_z - 0.0015],
                               [0.8, 0.8, 0.003], (0.60, 0.60, 0.64, 0.55)))
-        arr.markers.append(sphere(1, 'tcp', tcp, (1.0, 0.2, 0.2, 1.0), 0.010))
-        arr.markers.append(label(2, 'tcp', tcp, (1.0, 0.35, 0.35, 1.0),
-                                 f'TCP  z={tcp[2]*1000:+.1f}mm', 0.012))
+        arr.markers.append(sphere(1, 'tcp', tcp, (1.0, 0.0, 0.75, 1.0), 0.016))
+        arr.markers.append(label(2, 'tcp', tcp, (1.0, 0.3, 0.85, 1.0),
+                                 f'TCP  z={tcp[2]*1000:+.1f}mm', 0.016))
         arr.markers.append(sphere(3, 'flange', flange,
-                                  (0.25, 0.5, 1.0, 1.0), 0.007))
-        arr.markers.append(label(4, 'flange', flange, (0.4, 0.6, 1.0, 1.0),
+                                  (0.15, 0.55, 1.0, 1.0), 0.012))
+        arr.markers.append(label(4, 'flange', flange, (0.4, 0.7, 1.0, 1.0),
                                  f'gripper_frame_link  z={flange[2]*1000:+.1f}mm',
-                                 0.010))
-        # 最低点：小球 + 一条竖线画间隙（绿=在上方，红=在下方）
-        gcol = (0.1, 0.95, 0.25, 1.0) if gap >= 0 else (1.0, 0.15, 0.15, 1.0)
-        arr.markers.append(sphere(5, 'lowest_ref', low_ref, gcol, 0.005))
+                                 0.013))
+        # 最低点：小球 + 一条竖线画间隙（青=在上方，红=在下方）。
+        # 用青色是因为机械臂是不透明的黄色，青黄对比度最高；
+        # 而标记要"戳出"网格外面才看得见，所以半径给得比爪口还大一圈。
+        gcol = (0.0, 1.0, 1.0, 1.0) if gap >= 0 else (1.0, 0.1, 0.1, 1.0)
+        arr.markers.append(sphere(5, 'lowest_ref', low_ref, gcol, 0.011))
         arr.markers.append(line(8, 'gap', [low_ref[0], low_ref[1], args.table_z],
                                 [low_ref[0], low_ref[1], low_ref[2]],
-                                gcol, 0.002))
+                                gcol, 0.003))
         arr.markers.append(label(6, 'lowest_ref', low_ref, gcol,
                                  f'lowest @gripper={args.gripper_ref:.2f}rad  '
                                  f'z={low_ref[2]*1000:+.1f}mm  gap {gap:+.1f}mm'
-                                 f'  [{link_ref[:12]}]', 0.010))
+                                 f'  [{link_ref[:12]}]', 0.013))
         # 实际夹爪角下的最低点（灰色小球，仅作对照）
         arr.markers.append(sphere(9, 'lowest_now', low,
-                                  (0.75, 0.75, 0.75, 0.9), 0.004))
-        arr.markers.append(label(10, 'lowest_now', low, (0.85, 0.85, 0.85, 1.0),
+                                  (0.85, 0.85, 0.85, 0.9), 0.008))
+        arr.markers.append(label(10, 'lowest_now', low, (0.9, 0.9, 0.9, 1.0),
                                  f'lowest @now gripper={joints["gripper"]:.2f}rad'
                                  f'  z={low[2]*1000:+.1f}mm  [{link[:12]}]',
-                                 0.009))
+                                 0.011))
         arr.markers.append(label(7, 'info', [0.0, 0.0, 0.40],
                                  (1.0, 1.0, 1.0, 1.0),
                                  f'table z={args.table_z*1000:+.1f}mm   '
                                  f'TCP-lowest(ref)={(tcp[2]-low_ref[2])*1000:+.1f}mm',
-                                 0.013))
+                                 0.016))
         pub.publish(arr)
 
     try:

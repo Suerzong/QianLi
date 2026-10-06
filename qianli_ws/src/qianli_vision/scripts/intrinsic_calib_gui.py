@@ -127,10 +127,21 @@ def reader_thread():
         with LOCK:
             STATE['frame'] = vis
             STATE['info'] = info
-            # 自动采集：检测到 + 姿态与上次有足够差异 + 覆盖度还没满
+            # 自动采集：检测到 + 棋盘够大 + 姿态与上次有足够差异
+            # "棋盘够大"这一条是必须的：畸变在画面边缘最大，棋盘只占中间一小块时
+            # 采到的角点全在无畸变区域，标出来的畸变系数纯属外推噪声。
+            # 实测踩过：1900 多个角点全挤在画面中间 36%，解出 k1=-0.45 k2=+0.35。
             if (CONFIG['auto'] and found and STATE.get('auto_on')
                     and len(STATE['views']) < CONFIG['target_views']):
-                if (last_pose is None
+                pts = np.asarray(info['corners'], dtype=float)
+                frac = ((pts[:, 0].max() - pts[:, 0].min())
+                        / CONFIG['width'])
+                info['board_frac'] = float(frac)
+                if frac < CONFIG['min_board_frac']:
+                    STATE['flash'] = (
+                        f'棋盘只占画面宽 {frac*100:.0f}%，太小没采 '
+                        f'(要 {CONFIG["min_board_frac"]*100:.0f}%+)', time.time())
+                elif (last_pose is None
                         or info['pose_diff'] > CONFIG['min_pose_diff']):
                     STATE['views'].append({
                         'corners': info['corners'],
@@ -174,7 +185,12 @@ def _guidance(info, coverage):
     """
     hints = []
     if not info.get('found'):
-        hints.append('把棋盘完整放进画面（当前没检测到）')
+        # 现场实测：夹爪停在棋盘正中央时 findChessboardCorners 直接返回 false，
+        # 整块板一个角点都提不出来。所以"被挡住"要排在排查顺序第一位。
+        hints.append('没检测到棋盘 —— 按顺序查：'
+                     '① <b>机械臂是不是挡住棋盘了</b>（用手拖开即可，'
+                     '驱动是只读的、扭矩没使能）'
+                     '② 棋盘超出画面了吗 ③ 距离太近或太远吗')
         return hints
     pts = np.asarray(info['corners'], dtype=float)
     frac = (pts[:, 0].max() - pts[:, 0].min()) / CONFIG['width']
@@ -256,11 +272,41 @@ def solve():
             'row': float(np.mean(after_r)), 'col': float(np.mean(after_c)),
             'max': float(np.max(after_m))},
     }
+    # ---- 质量裁决 ----
+    # 单看 RMS 不够：边缘没数据时，标定可以"拟合得很好"却完全是错的
+    # （畸变系数在边缘外推，抓取时刚好在边缘，误差会被放大）。
+    cov = np.asarray(STATE.get('coverage') or [[0]])
+    edge_n = 0
+    if cov.size > 1:
+        edge_n = int(cov[:, 0].sum() + cov[:, -1].sum()
+                     + cov[0, :].sum() + cov[-1, :].sum())
+    imp_row = 1 - np.mean(after_r) / max(np.mean(before_r), 1e-9)
+    imp_col = 1 - np.mean(after_c) / max(np.mean(before_c), 1e-9)
+    imp = min(imp_row, imp_col)
+
+    bad = []
+    if edge_n < 30:
+        bad.append(f'画面边缘只有 {edge_n} 个角点，畸变系数欠约束'
+                   f'（畸变在边缘最大，必须有数据）')
+    if rms > 1.0:
+        bad.append(f'RMS {rms:.2f}px 偏大（目标 <0.5，可接受 <1.0）')
+    if imp < 0.5:
+        bad.append(f'直线度改善仅 {imp*100:.0f}%（<50% 说明畸变没被正确建模）')
+    n_bad = int(np.sum(np.asarray(per) > 2.0))
+    if n_bad:
+        bad.append(f'有 {n_bad} 张重投影误差 >2px（那张的姿态可能没解好，建议删掉重拍）')
+
+    res['edge_corners'] = edge_n
+    res['straight_improve'] = float(imp)
+    res['verdict'] = ('✅ 可用' if not bad
+                      else '❌ <b>不可用于抓取</b>：' + '；'.join(bad))
+    res['bad_views'] = [i + 1 for i, v in enumerate(per) if v > 2.0]
     return res
 
 
 def save_yaml(res):
     path = CONFIG['out']
+    ok = str(res.get('verdict', '')).startswith('✅')
     with open(path, 'w') as fh:
         fh.write(f'# SO-101 相机内参标定  {time.strftime("%Y-%m-%d %H:%M:%S")}\n')
         fh.write(f'# 棋盘 {CONFIG["cols"]}x{CONFIG["rows"]} 内角点，'
@@ -271,6 +317,13 @@ def save_yaml(res):
                  f'最大{sb["max"]:.3f}\n')
         fh.write(f'#                去畸变后 行{sa["row"]:.3f} 列{sa["col"]:.3f} '
                  f'最大{sa["max"]:.3f}\n')
+        fh.write(f'# 边缘角点数 {res.get("edge_corners")}   '
+                 f'直线度改善 {res.get("straight_improve", 0)*100:.1f}%\n')
+        # quality_ok 是给下游管线（block_pipeline.py）**机器判定**用的：
+        # 没有这个字段的文件会被直接拒绝，避免拿没裁决过的参数去抓取。
+        fh.write(f'quality_ok={1 if ok else 0}\n')
+        fh.write(f'# 质量裁决: '
+                 f'{res.get("verdict", "").replace("<b>", "").replace("</b>", "")}\n')
         fh.write(f'image_width: {res["image_size"][0]}\n')
         fh.write(f'image_height: {res["image_size"][1]}\n')
         fh.write('camera_matrix:\n')
@@ -279,6 +332,21 @@ def save_yaml(res):
         fh.write('distortion_coefficients:\n')
         fh.write('  - [' + ', '.join(f'{v:.10f}'
                                      for v in res['dist_coeffs']) + ']\n')
+        # 可信区域：标定时角点实际覆盖到的百分比范围。
+        # 畸变在边缘最大，覆盖之外的区域去畸变是外推，结果不可信。
+        cov = STATE.get('coverage')
+        if cov:
+            import numpy as _np
+            c = _np.asarray(cov)
+            cols_nz = _np.nonzero(c.sum(axis=0))[0]
+            rows_nz = _np.nonzero(c.sum(axis=1))[0]
+            if len(cols_nz) and len(rows_nz):
+                cw, ch = CONFIG['cov_cols'], CONFIG['cov_rows']
+                fh.write(f'# 可信区域（角点覆盖到的画面范围，归一化 0~1）\n')
+                fh.write(f'trusted_x0={cols_nz[0]/cw:.4f}\n')
+                fh.write(f'trusted_x1={(cols_nz[-1]+1)/cw:.4f}\n')
+                fh.write(f'trusted_y0={rows_nz[0]/ch:.4f}\n')
+                fh.write(f'trusted_y1={(rows_nz[-1]+1)/ch:.4f}\n')
     return path
 
 
@@ -303,6 +371,11 @@ td,th{border:1px solid #333;padding:4px 7px;text-align:left}
 <div><img src="/stream.mjpg" alt="stream"></div>
 <div class="panel">
 <h3 style="margin:4px 0">相机内参标定</h3>
+<div style="background:#3a2a10;border-left:4px solid #d09a20;padding:7px 10px;
+ border-radius:4px;font-size:13px;line-height:1.6;margin-bottom:8px">
+<b>开始前：先用手把机械臂挪出画面</b>（它现在夹着物块，正挡在棋盘中央，
+会直接导致棋盘检测失败）。驱动是只读的，扭矩没使能，可以直接拖。
+</div>
 <div id="msg" style="min-height:22px;color:#8fd">　</div>
 <div id="hints" style="background:#12151a;border-left:4px solid #2d6cdf;
  padding:8px 10px;border-radius:4px;font-size:13px;line-height:1.7;
@@ -348,6 +421,10 @@ async function refresh(){
     h+='<div>姿态差异：'+(inf.pose_diff!==undefined?inf.pose_diff.toFixed(3):'-')+'</div>';
   }
   document.getElementById('stat').innerHTML=h;
+  if(s.hints&&s.hints.length){
+    document.getElementById('hints').innerHTML=
+      s.hints.map(t=>'▸ '+t).join('<br>');
+  }
   if(s.coverage)drawCov(s.coverage);
   if(s.result)document.getElementById('out').textContent=JSON.stringify(s.result,null,1);
 }
@@ -471,6 +548,10 @@ def main():
     ap.add_argument('--min-views', type=int, default=12)
     ap.add_argument('--target-views', type=int, default=20)
     ap.add_argument('--min-pose-diff', type=float, default=0.035)
+    ap.add_argument('--min-board-frac', type=float, default=0.45,
+                    help='棋盘至少要占画面宽度的比例，否则不自动采集。'
+                         '畸变在边缘最大，棋盘太小则角点全在无畸变区域，'
+                         '标出来的畸变系数是外推噪声。')
     ap.add_argument('--cov-rows', type=int, default=4)
     ap.add_argument('--cov-cols', type=int, default=5)
     ap.add_argument('--out', default='/tmp/camera_intrinsics.yaml')
