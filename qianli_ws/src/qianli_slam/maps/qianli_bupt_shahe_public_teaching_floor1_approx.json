@@ -1,0 +1,52 @@
+{
+  "source": "E:\\AAA-ALL-DOWNLOAD\\qq_downloads\\IMG_1950.JPG",
+  "crop_xyxy_pixels": [
+    560,
+    360,
+    5000,
+    3950
+  ],
+  "crop_pixels": [
+    4440,
+    3590
+  ],
+  "calibration": {
+    "door_width_m": 1.2,
+    "door_width_px_estimate": 120.0,
+    "pixels_per_meter": 100.0,
+    "status": "provisional; derive from multiple measured door/corridor dimensions before deployment"
+  },
+  "map": {
+    "file": "qianli_bupt_shahe_public_teaching_floor1_approx.pgm",
+    "yaml": "qianli_bupt_shahe_public_teaching_floor1_approx.yaml",
+    "footprint_overlay": "qianli_bupt_shahe_public_teaching_floor1_qianli_footprint_overlay.png",
+    "resolution_m_per_pixel": 0.02,
+    "pixels": [
+      2220,
+      1795
+    ],
+    "extent_m": [
+      44.4,
+      35.9
+    ],
+    "origin": [
+      -22.2,
+      -17.95,
+      0.0
+    ],
+    "classification": "binary approximation from image threshold; not a surveyed CAD/Nav2 production map"
+  },
+  "processing": [
+    "saturated green/red annotations excluded from the dark-line mask",
+    "small dark-line gaps closed",
+    "dark strokes conservatively dilated for initial obstacle visibility",
+    "convex hull of detected strokes used as an exterior safety envelope",
+    "fine text, furniture and door symbols may still be present as obstacles"
+  ],
+  "required_review": [
+    "confirm building identity and floor plan orientation",
+    "measure at least 5 door widths and 2 corridor widths",
+    "manually trace principal walls and door openings",
+    "validate map against a real scan or authorized CAD drawing before navigation"
+  ]
+}

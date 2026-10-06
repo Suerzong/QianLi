@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>qianli_control</name><version>0.3.0</version>
+  <description>Official omni X-drive controller configuration and motion verification.</description>
+  <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer><license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>qianli_description</exec_depend><exec_depend>xacro</exec_depend>
+  <exec_depend>controller_manager</exec_depend><exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>omni_wheel_drive_controller</exec_depend><exec_depend>hardware_interface</exec_depend>
+  <exec_depend>launch_ros</exec_depend><exec_depend>ament_index_python</exec_depend>
+  <exec_depend>rclpy</exec_depend><exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend><exec_depend>nav_msgs</exec_depend><exec_depend>tf2_ros</exec_depend>
+  <exec_depend>python3-yaml</exec_depend><test_depend>ament_cmake_test</test_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

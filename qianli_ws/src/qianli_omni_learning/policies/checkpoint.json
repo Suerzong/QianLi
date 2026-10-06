@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "type": "sensor_only_holonomic_parameter_policy",
+  "kind": "training_checkpoint",
+  "params": {
+    "preferred_speed": 0.24982266260488922,
+    "goal_gain": 1.2398376067088133,
+    "repulsion_gain": 0.1304920203706469,
+    "repulsion_radius": 0.5057012996810465,
+    "tangent_gain": 0.05397633506188176,
+    "acceleration_limit": 0.5257551546225434,
+    "yaw_gain": 1.6410972888145539,
+    "preview_time": 0.5256474844728671
+  },
+  "limits": {
+    "max_translation_m_s": 0.25,
+    "max_yaw_rad_s": 0.6
+  },
+  "observation": {
+    "goal_body": [
+      "x_m",
+      "y_m"
+    ],
+    "yaw_error": "rad",
+    "scan": "72 uniformly spaced body-frame rays over 2*pi, metres",
+    "scan_max_range_m": 4.0,
+    "dt": "seconds"
+  },
+  "training": {
+    "algorithm": "CEM over eight bounded controller parameters",
+    "seed": 20261005,
+    "manifests": [
+      {
+        "path": "C:\\Users\\sez18\\Documents\\Codex\\2026-10-05\\qianli-ros-2-rviz2-gazebo-harmonic\\work\\training_scene\\generated\\train_000\\manifest.json",
+        "sha256": "a6ff424477ab01eb4bccdd69ab77d5c0b6882ccb37f4d8789a5a0ae2d1f9fa84"
+      },
+      {
+        "path": "C:\\Users\\sez18\\Documents\\Codex\\2026-10-05\\qianli-ros-2-rviz2-gazebo-harmonic\\work\\training_scene\\generated\\train_001\\manifest.json",
+        "sha256": "e27a6c3392835fd09ca2c0374506de114f3af1564512fbd40a5e2fabf79921b0"
+      }
+    ],
+    "task_config_sha256": "de604b929d79f878fc988bcbf6944758eb1ad81c39085704fa2f32429be3ebf5",
+    "selection": "Minimum training mean objective; held-out results never select parameters"
+  },
+  "limitations": [
+    "Waypoint route is supplied by a caller; this is not a global planner.",
+    "2D ideal kinematics only: no omni-wheel contact, friction or actuator dynamics.",
+    "This parameter optimization is neither PPO nor deep reinforcement learning."
+  ]
+}

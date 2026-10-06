@@ -12,6 +12,13 @@
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>qianli_description</exec_depend>
 
+  <exec_depend>qianli_sim</exec_depend>
+  <exec_depend>qianli_slam</exec_depend>
+  <exec_depend>qianli_navigation</exec_depend>
+  <exec_depend>qianli_training_scenarios</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
   <test_depend>ament_lint_common</test_depend>
 
   <export>

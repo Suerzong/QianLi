@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.8)
+project(qianli_exploration)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md interfaces.md TODO.md DESTINATION share/${PROJECT_NAME})
+ament_package()

@@ -1,0 +1,1831 @@
+{
+  "scene_id": "teaching_training_v1",
+  "variant": "train_000",
+  "seed": 0,
+  "bounds": [
+    -24,
+    -20,
+    24,
+    20
+  ],
+  "parameters": {
+    "building_width": 48.0,
+    "building_depth": 40.0,
+    "wall_thickness": 0.16,
+    "wall_height": 2.6,
+    "door_width": 1.2,
+    "main_corridor_width": 3.0,
+    "resolution": 0.05,
+    "margin": 0.5,
+    "footprint_padding": 0.06
+  },
+  "spawn": [
+    13.5,
+    -16.0,
+    0.0
+  ],
+  "obstacles": [
+    {
+      "id": "outer_south_0",
+      "kind": "wall",
+      "x": 0.0,
+      "y": -20.0,
+      "z": 1.3,
+      "sx": 48.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "outer_north_0",
+      "kind": "wall",
+      "x": 0.0,
+      "y": 20.0,
+      "z": 1.3,
+      "sx": 48.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "outer_west_0",
+      "kind": "wall",
+      "x": -24.0,
+      "y": 0.0,
+      "z": 1.3,
+      "sx": 40.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "outer_east_0",
+      "kind": "wall",
+      "x": 24.0,
+      "y": 0.0,
+      "z": 1.3,
+      "sx": 40.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_0",
+      "kind": "wall",
+      "x": -18.2,
+      "y": -10.3,
+      "z": 1.3,
+      "sx": 3.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_1",
+      "kind": "wall",
+      "x": -18.2,
+      "y": -4.0,
+      "z": 1.3,
+      "sx": 6.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_2",
+      "kind": "wall",
+      "x": -18.2,
+      "y": 4.0,
+      "z": 1.3,
+      "sx": 6.799999999999999,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_3",
+      "kind": "wall",
+      "x": -18.2,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 6.799999999999997,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_4",
+      "kind": "wall",
+      "x": -18.2,
+      "y": 18.3,
+      "z": 1.3,
+      "sx": 3.3999999999999986,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_0",
+      "kind": "wall",
+      "x": -15.2,
+      "y": -10.3,
+      "z": 1.3,
+      "sx": 3.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_1",
+      "kind": "wall",
+      "x": -15.2,
+      "y": -4.0,
+      "z": 1.3,
+      "sx": 6.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_2",
+      "kind": "wall",
+      "x": -15.2,
+      "y": 4.0,
+      "z": 1.3,
+      "sx": 6.799999999999999,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_3",
+      "kind": "wall",
+      "x": -15.2,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 6.799999999999997,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_4",
+      "kind": "wall",
+      "x": -15.2,
+      "y": 18.3,
+      "z": 1.3,
+      "sx": 3.3999999999999986,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "classroom_hall_boundary_0",
+      "kind": "wall",
+      "x": -10.0,
+      "y": -10.6,
+      "z": 1.3,
+      "sx": 2.8,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "classroom_hall_boundary_1",
+      "kind": "wall",
+      "x": -10.0,
+      "y": 1.0,
+      "z": 1.3,
+      "sx": 15.600000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "classroom_hall_boundary_2",
+      "kind": "wall",
+      "x": -10.0,
+      "y": 15.600000000000001,
+      "z": 1.3,
+      "sx": 8.8,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_partition_0_0",
+      "kind": "wall",
+      "x": -21.1,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 5.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "east_partition_0_0",
+      "kind": "wall",
+      "x": -14.2,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 2.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "east_partition_0_1",
+      "kind": "wall",
+      "x": -11.0,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 1.9999999999999991,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_w0",
+      "kind": "desk",
+      "x": -22.0,
+      "y": -10.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_e0",
+      "kind": "desk",
+      "x": -12.3,
+      "y": -10.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "west_partition_1_0",
+      "kind": "wall",
+      "x": -21.1,
+      "y": -4.0,
+      "z": 1.3,
+      "sx": 5.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "east_partition_1_0",
+      "kind": "wall",
+      "x": -12.6,
+      "y": -4.0,
+      "z": 1.3,
+      "sx": 5.199999999999999,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_w1",
+      "kind": "desk",
+      "x": -22.0,
+      "y": -2.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_e1",
+      "kind": "desk",
+      "x": -12.3,
+      "y": -2.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "west_partition_2_0",
+      "kind": "wall",
+      "x": -21.1,
+      "y": 4.0,
+      "z": 1.3,
+      "sx": 5.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "east_partition_2_0",
+      "kind": "wall",
+      "x": -12.6,
+      "y": 4.0,
+      "z": 1.3,
+      "sx": 5.199999999999999,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_w2",
+      "kind": "desk",
+      "x": -22.0,
+      "y": 6.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_e2",
+      "kind": "desk",
+      "x": -12.3,
+      "y": 6.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "west_partition_3_0",
+      "kind": "wall",
+      "x": -21.1,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 5.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "east_partition_3_0",
+      "kind": "wall",
+      "x": -12.6,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 5.199999999999999,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_w3",
+      "kind": "desk",
+      "x": -22.0,
+      "y": 14.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "desk_e3",
+      "kind": "desk",
+      "x": -12.3,
+      "y": 14.0,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_0",
+      "kind": "wall",
+      "x": -8.8,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 2.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_1",
+      "kind": "wall",
+      "x": -4.0,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 4.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_2",
+      "kind": "wall",
+      "x": 2.0,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 4.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_3",
+      "kind": "wall",
+      "x": 6.800000000000001,
+      "y": 12.0,
+      "z": 1.3,
+      "sx": 2.4000000000000004,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_divider_0_0",
+      "kind": "wall",
+      "x": -10.0,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "north_divider_1_0",
+      "kind": "wall",
+      "x": -4.0,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "north_divider_2_0",
+      "kind": "wall",
+      "x": 2.0,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "north_divider_3_0",
+      "kind": "wall",
+      "x": 8.0,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "north_desk_0",
+      "kind": "desk",
+      "x": -7.0,
+      "y": 18,
+      "z": 0.375,
+      "sx": 2.6,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_desk_1",
+      "kind": "desk",
+      "x": -1.0,
+      "y": 18,
+      "z": 0.375,
+      "sx": 2.6,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_desk_2",
+      "kind": "desk",
+      "x": 5.0,
+      "y": 18,
+      "z": 0.375,
+      "sx": 2.6,
+      "sy": 0.8,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_0",
+      "kind": "wall",
+      "x": -8.8,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 2.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_1",
+      "kind": "wall",
+      "x": -4.0,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 4.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_2",
+      "kind": "wall",
+      "x": 2.0,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 4.800000000000001,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_3",
+      "kind": "wall",
+      "x": 6.800000000000001,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 2.4000000000000004,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_divider_0_0",
+      "kind": "wall",
+      "x": -10.0,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "south_divider_1_0",
+      "kind": "wall",
+      "x": -4.0,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "south_divider_2_0",
+      "kind": "wall",
+      "x": 2.0,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "south_divider_3_0",
+      "kind": "wall",
+      "x": 8.0,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "seminar_table_0",
+      "kind": "desk",
+      "x": -7.0,
+      "y": -18,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.9,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "seminar_table_1",
+      "kind": "desk",
+      "x": -1.0,
+      "y": -18,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.9,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "seminar_table_2",
+      "kind": "desk",
+      "x": 5.0,
+      "y": -18,
+      "z": 0.375,
+      "sx": 2.0,
+      "sy": 0.9,
+      "sz": 0.75,
+      "yaw": 0.0
+    },
+    {
+      "id": "stair_boundary_0",
+      "kind": "wall",
+      "x": -18.2,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "stair_elevator_divider_0",
+      "kind": "wall",
+      "x": -20.0,
+      "y": -16.0,
+      "z": 1.3,
+      "sx": 8.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "auditorium_0_0",
+      "kind": "wall",
+      "x": 9.5,
+      "y": 3.5,
+      "z": 1.3,
+      "sx": 4.242640687119285,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": -0.7853981633974483
+    },
+    {
+      "id": "auditorium_1_0",
+      "kind": "wall",
+      "x": 13.55,
+      "y": 2.0,
+      "z": 1.3,
+      "sx": 5.1,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "auditorium_1_1",
+      "kind": "wall",
+      "x": 18.95,
+      "y": 2.0,
+      "z": 1.3,
+      "sx": 2.0999999999999996,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "auditorium_2_0",
+      "kind": "wall",
+      "x": 20.0,
+      "y": 9.0,
+      "z": 1.3,
+      "sx": 14.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "auditorium_3_0",
+      "kind": "wall",
+      "x": 18.95,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 2.1,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 3.141592653589793
+    },
+    {
+      "id": "auditorium_3_1",
+      "kind": "wall",
+      "x": 13.55,
+      "y": 16.0,
+      "z": 1.3,
+      "sx": 5.1,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 3.141592653589793
+    },
+    {
+      "id": "auditorium_4_0",
+      "kind": "wall",
+      "x": 9.5,
+      "y": 14.5,
+      "z": 1.3,
+      "sx": 4.242640687119285,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": -2.356194490192345
+    },
+    {
+      "id": "auditorium_5_0",
+      "kind": "wall",
+      "x": 8.0,
+      "y": 11.45,
+      "z": 1.3,
+      "sx": 3.1,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": -1.5707963267948966
+    },
+    {
+      "id": "auditorium_5_1",
+      "kind": "wall",
+      "x": 8.0,
+      "y": 6.55,
+      "z": 1.3,
+      "sx": 3.0999999999999996,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": -1.5707963267948966
+    },
+    {
+      "id": "aud_seats_0_0",
+      "kind": "seating",
+      "x": 13.1,
+      "y": 4.7,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_0_1",
+      "kind": "seating",
+      "x": 17.1,
+      "y": 4.7,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_1_0",
+      "kind": "seating",
+      "x": 13.1,
+      "y": 7.5,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_1_1",
+      "kind": "seating",
+      "x": 17.1,
+      "y": 7.5,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_2_0",
+      "kind": "seating",
+      "x": 13.1,
+      "y": 10.3,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_2_1",
+      "kind": "seating",
+      "x": 17.1,
+      "y": 10.3,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_3_0",
+      "kind": "seating",
+      "x": 13.1,
+      "y": 13.1,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_seats_3_1",
+      "kind": "seating",
+      "x": 17.1,
+      "y": 13.1,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 1.0,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "aud_stage",
+      "kind": "stage",
+      "x": 9.7,
+      "y": 9,
+      "z": 0.225,
+      "sx": 1.1,
+      "sy": 4.0,
+      "sz": 0.45,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_north_0",
+      "kind": "wall",
+      "x": 10.3,
+      "y": -2.0,
+      "z": 1.3,
+      "sx": 4.6,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_north_1",
+      "kind": "wall",
+      "x": 16.7,
+      "y": -2.0,
+      "z": 1.3,
+      "sx": 4.6,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_south_0",
+      "kind": "wall",
+      "x": 10.3,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 4.6,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_south_1",
+      "kind": "wall",
+      "x": 16.7,
+      "y": -12.0,
+      "z": 1.3,
+      "sx": 4.6,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_west_0",
+      "kind": "wall",
+      "x": 8.0,
+      "y": -9.8,
+      "z": 1.3,
+      "sx": 4.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "lecture_west_1",
+      "kind": "wall",
+      "x": 8.0,
+      "y": -4.2,
+      "z": 1.3,
+      "sx": 4.4,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "lecture_east_0",
+      "kind": "wall",
+      "x": 19.0,
+      "y": -7.0,
+      "z": 1.3,
+      "sx": 10.0,
+      "sy": 0.16,
+      "sz": 2.6,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "lecture_seats_0_0",
+      "kind": "seating",
+      "x": 10.8,
+      "y": -9.8,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_seats_0_1",
+      "kind": "seating",
+      "x": 16.2,
+      "y": -9.8,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_seats_1_0",
+      "kind": "seating",
+      "x": 10.8,
+      "y": -7.4,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_seats_1_1",
+      "kind": "seating",
+      "x": 16.2,
+      "y": -7.4,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_seats_2_0",
+      "kind": "seating",
+      "x": 10.8,
+      "y": -5.0,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_seats_2_1",
+      "kind": "seating",
+      "x": 16.2,
+      "y": -5.0,
+      "z": 0.475,
+      "sx": 2.5,
+      "sy": 0.9,
+      "sz": 0.95,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_0",
+      "kind": "pillar",
+      "x": -6,
+      "y": -6,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_1",
+      "kind": "pillar",
+      "x": -6,
+      "y": 3,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_2",
+      "kind": "pillar",
+      "x": 0,
+      "y": -6,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_3",
+      "kind": "pillar",
+      "x": 0,
+      "y": 3,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_4",
+      "kind": "pillar",
+      "x": 5,
+      "y": 8,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_5",
+      "kind": "pillar",
+      "x": 22,
+      "y": 7,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "pillar_6",
+      "kind": "pillar",
+      "x": 22,
+      "y": 13,
+      "z": 1.3,
+      "sx": 0.5,
+      "sy": 0.5,
+      "sz": 2.6,
+      "yaw": 0.0
+    },
+    {
+      "id": "reception",
+      "kind": "desk",
+      "x": 21,
+      "y": -16,
+      "z": 0.45,
+      "sx": 3,
+      "sy": 1.0,
+      "sz": 0.9,
+      "yaw": 0.0
+    },
+    {
+      "id": "lobby_bench",
+      "kind": "bench",
+      "x": 19,
+      "y": -18.5,
+      "z": 0.275,
+      "sx": 2,
+      "sy": 0.5,
+      "sz": 0.55,
+      "yaw": 0.0
+    },
+    {
+      "id": "hall_bench",
+      "kind": "bench",
+      "x": -8.5,
+      "y": 0,
+      "z": 0.275,
+      "sx": 0.6,
+      "sy": 2.4,
+      "sz": 0.55,
+      "yaw": 0.0
+    },
+    {
+      "id": "cart_0",
+      "kind": "cart",
+      "x": -1.8277890742374758,
+      "y": -0.8452273582358185,
+      "z": 0.425,
+      "sx": 0.8,
+      "sy": 0.6,
+      "sz": 0.85,
+      "yaw": 0.5235987755982988
+    },
+    {
+      "id": "cart_1",
+      "kind": "cart",
+      "x": 2.7702421890903888,
+      "y": -8.720721068182849,
+      "z": 0.425,
+      "sx": 0.8,
+      "sy": 0.6,
+      "sz": 0.85,
+      "yaw": 0.5235987755982988
+    },
+    {
+      "id": "cart_2",
+      "kind": "cart",
+      "x": 21.952467068725205,
+      "y": -4.829720846579137,
+      "z": 0.425,
+      "sx": 0.8,
+      "sy": 0.6,
+      "sz": 0.85,
+      "yaw": 0.5235987755982988
+    },
+    {
+      "id": "cart_3",
+      "kind": "cart",
+      "x": -16.466100002539914,
+      "y": 4.914829624816993,
+      "z": 0.425,
+      "sx": 0.8,
+      "sy": 0.6,
+      "sz": 0.85,
+      "yaw": 0
+    }
+  ],
+  "rooms": [
+    {
+      "id": "W101",
+      "bounds": [
+        -24,
+        -12,
+        -18.2,
+        -4
+      ],
+      "label": "W101",
+      "locked": false
+    },
+    {
+      "id": "W105",
+      "bounds": [
+        -15.2,
+        -12,
+        -10,
+        -4
+      ],
+      "label": "W105",
+      "locked": false
+    },
+    {
+      "id": "W102",
+      "bounds": [
+        -24,
+        -4,
+        -18.2,
+        4
+      ],
+      "label": "W102",
+      "locked": false
+    },
+    {
+      "id": "W106",
+      "bounds": [
+        -15.2,
+        -4,
+        -10,
+        4
+      ],
+      "label": "W106",
+      "locked": false
+    },
+    {
+      "id": "W103",
+      "bounds": [
+        -24,
+        4,
+        -18.2,
+        12
+      ],
+      "label": "W103",
+      "locked": false
+    },
+    {
+      "id": "W107",
+      "bounds": [
+        -15.2,
+        4,
+        -10,
+        12
+      ],
+      "label": "W107",
+      "locked": false
+    },
+    {
+      "id": "W104",
+      "bounds": [
+        -24,
+        12,
+        -18.2,
+        20
+      ],
+      "label": "W104",
+      "locked": false
+    },
+    {
+      "id": "W108",
+      "bounds": [
+        -15.2,
+        12,
+        -10,
+        20
+      ],
+      "label": "W108",
+      "locked": false
+    },
+    {
+      "id": "N201",
+      "bounds": [
+        -10,
+        12,
+        -4,
+        20
+      ],
+      "label": "Office",
+      "locked": false
+    },
+    {
+      "id": "N202",
+      "bounds": [
+        -4,
+        12,
+        2,
+        20
+      ],
+      "label": "Computer lab",
+      "locked": false
+    },
+    {
+      "id": "N203",
+      "bounds": [
+        2,
+        12,
+        8,
+        20
+      ],
+      "label": "Seminar",
+      "locked": false
+    },
+    {
+      "id": "S301",
+      "bounds": [
+        -10,
+        -20,
+        -4,
+        -12
+      ],
+      "label": "Seminar",
+      "locked": false
+    },
+    {
+      "id": "S302",
+      "bounds": [
+        -4,
+        -20,
+        2,
+        -12
+      ],
+      "label": "Lab",
+      "locked": false
+    },
+    {
+      "id": "S303",
+      "bounds": [
+        2,
+        -20,
+        8,
+        -12
+      ],
+      "label": "Project room",
+      "locked": false
+    },
+    {
+      "id": "STAIR",
+      "bounds": [
+        -24,
+        -20,
+        -20,
+        -12
+      ],
+      "label": "Stairs / closed",
+      "locked": true
+    },
+    {
+      "id": "LIFT",
+      "bounds": [
+        -20,
+        -20,
+        -18.2,
+        -12
+      ],
+      "label": "Lift / closed",
+      "locked": true
+    },
+    {
+      "id": "SERVICE",
+      "bounds": [
+        -15.2,
+        -20,
+        -10,
+        -12
+      ],
+      "label": "Service room",
+      "locked": false
+    },
+    {
+      "id": "AUD",
+      "bounds": [
+        8,
+        2,
+        20,
+        16
+      ],
+      "label": "Auditorium",
+      "locked": false
+    },
+    {
+      "id": "LEC",
+      "bounds": [
+        8,
+        -12,
+        19,
+        -2
+      ],
+      "label": "Lecture hall",
+      "locked": false
+    }
+  ],
+  "doors": [
+    {
+      "id": "west_spine_door_0",
+      "center": [
+        -18.2,
+        -8.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_door_1",
+      "center": [
+        -18.2,
+        0.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_door_2",
+      "center": [
+        -18.2,
+        8.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "west_spine_door_3",
+      "center": [
+        -18.2,
+        16.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_door_4",
+      "center": [
+        -15.2,
+        -8.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_door_5",
+      "center": [
+        -15.2,
+        0.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_door_6",
+      "center": [
+        -15.2,
+        8.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_spine_door_7",
+      "center": [
+        -15.2,
+        16.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "classroom_hall_boundary_door_8",
+      "center": [
+        -10.0,
+        -8.0
+      ],
+      "width": 2.4,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "classroom_hall_boundary_door_9",
+      "center": [
+        -10.0,
+        10.0
+      ],
+      "width": 2.4,
+      "yaw": 1.5707963267948966
+    },
+    {
+      "id": "east_partition_0_door_10",
+      "center": [
+        -12.6,
+        -12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_door_11",
+      "center": [
+        -7.0,
+        12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_door_12",
+      "center": [
+        -1.0,
+        12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "north_services_door_13",
+      "center": [
+        5.0,
+        12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_door_14",
+      "center": [
+        -7.0,
+        -12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_door_15",
+      "center": [
+        -1.0,
+        -12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "south_seminars_door_16",
+      "center": [
+        5.0,
+        -12.0
+      ],
+      "width": 1.2,
+      "yaw": 0.0
+    },
+    {
+      "id": "auditorium_1_door_17",
+      "center": [
+        17.0,
+        2.0
+      ],
+      "width": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "id": "auditorium_3_door_18",
+      "center": [
+        17.0,
+        16.0
+      ],
+      "width": 1.8,
+      "yaw": 3.141592653589793
+    },
+    {
+      "id": "auditorium_5_door_19",
+      "center": [
+        8.0,
+        9.0
+      ],
+      "width": 1.8,
+      "yaw": -1.5707963267948966
+    },
+    {
+      "id": "lecture_north_door_20",
+      "center": [
+        13.5,
+        -2.0
+      ],
+      "width": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_south_door_21",
+      "center": [
+        13.5,
+        -12.0
+      ],
+      "width": 1.8,
+      "yaw": 0.0
+    },
+    {
+      "id": "lecture_west_door_22",
+      "center": [
+        8.0,
+        -7.0
+      ],
+      "width": 1.2,
+      "yaw": 1.5707963267948966
+    }
+  ],
+  "footprint": [
+    [
+      0.35,
+      0.2
+    ],
+    [
+      0.2,
+      0.35
+    ],
+    [
+      -0.2,
+      0.35
+    ],
+    [
+      -0.35,
+      0.2
+    ],
+    [
+      -0.35,
+      -0.2
+    ],
+    [
+      -0.2,
+      -0.35
+    ],
+    [
+      0.2,
+      -0.35
+    ],
+    [
+      0.35,
+      -0.2
+    ]
+  ],
+  "smoke_tasks": [
+    {
+      "id": "enter_lecture",
+      "start": [
+        13.5,
+        -16.0,
+        0.0
+      ],
+      "goal": [
+        13.5,
+        -7,
+        0
+      ],
+      "expected": "reachable",
+      "ability": "seat aisle and 1.8m entry"
+    },
+    {
+      "id": "exit_120cm_door",
+      "start": [
+        13.5,
+        -7,
+        0
+      ],
+      "goal": [
+        5.5,
+        -7,
+        0
+      ],
+      "expected": "reachable",
+      "ability": "1.2m side doorway"
+    },
+    {
+      "id": "enter_project_room",
+      "start": [
+        5.5,
+        -7,
+        0
+      ],
+      "goal": [
+        5,
+        -15,
+        0
+      ],
+      "expected": "reachable",
+      "ability": "turn and 1.2m classroom doorway"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T01_narrow_door",
+      "start": [
+        5,
+        -10,
+        0
+      ],
+      "goal": [
+        5,
+        -15,
+        0
+      ],
+      "expected": "reachable",
+      "ability": "1.20m doorway"
+    },
+    {
+      "id": "T02_classroom_turn",
+      "start": [
+        -12.5,
+        -8,
+        0
+      ],
+      "goal": [
+        -16.7,
+        -2,
+        1.5707963267948966
+      ],
+      "expected": "reachable",
+      "ability": "classroom exit and right-angle turns"
+    },
+    {
+      "id": "T03_repeated_rooms",
+      "start": [
+        -16.7,
+        -8,
+        1.5707963267948966
+      ],
+      "goal": [
+        -21,
+        16,
+        3.141592653589793
+      ],
+      "expected": "reachable",
+      "ability": "repeated classroom localization"
+    },
+    {
+      "id": "T04_pillar_hall",
+      "start": [
+        -3,
+        -9,
+        0
+      ],
+      "goal": [
+        4,
+        6,
+        1.5707963267948966
+      ],
+      "expected": "reachable",
+      "ability": "pillar avoidance"
+    },
+    {
+      "id": "T05_ring_north",
+      "start": [
+        5,
+        9,
+        0
+      ],
+      "goal": [
+        22,
+        11,
+        1.5707963267948966
+      ],
+      "expected": "reachable",
+      "ability": "auditorium ring and alternate routes"
+    },
+    {
+      "id": "T06_auditorium",
+      "start": [
+        17,
+        18,
+        0
+      ],
+      "goal": [
+        15.1,
+        10.5,
+        -1.5707963267948966
+      ],
+      "expected": "reachable",
+      "ability": "seating aisle and auditorium entry"
+    },
+    {
+      "id": "T07_deadend_office",
+      "start": [
+        -7,
+        16,
+        0
+      ],
+      "goal": [
+        -3,
+        9,
+        -1.5707963267948966
+      ],
+      "expected": "reachable",
+      "ability": "office exit"
+    },
+    {
+      "id": "T08_long_return",
+      "start": [
+        22,
+        11,
+        -1.5707963267948966
+      ],
+      "goal": [
+        13.5,
+        -16,
+        0
+      ],
+      "expected": "reachable",
+      "ability": "long multi-turn circulation"
+    },
+    {
+      "id": "T09_lobby_loop",
+      "start": [
+        13.5,
+        -16.0,
+        0.0
+      ],
+      "goal": [
+        -16.7,
+        -16,
+        3.141592653589793
+      ],
+      "expected": "reachable",
+      "ability": "south classroom block detour"
+    },
+    {
+      "id": "T10_unreachable",
+      "start": [
+        13.5,
+        -16.0,
+        0.0
+      ],
+      "goal": [
+        -22,
+        -16,
+        0
+      ],
+      "expected": "unreachable",
+      "ability": "closed stairs rejection"
+    }
+  ],
+  "assumptions": [
+    "All building dimensions inferred for a synthetic training environment.",
+    "Reference photo influences functional layout only; no pixel thresholding.",
+    "Seats grouped into blocks; stairs/elevators are closed single-floor zones.",
+    "Existing ideal_kinematic_sim is a navigation software abstraction; contacts are not simulated."
+  ],
+  "map": {
+    "resolution": 0.05,
+    "origin": [
+      -24.5,
+      -20.5,
+      0
+    ],
+    "width": 980,
+    "height": 820
+  }
+}

@@ -1,0 +1,13 @@
+# Generated from urdf/common.xacro; regenerate with scripts/generate_geometry.py.
+# Plate outline requested for Geometry v0.1; wheel protrusion is not included.
+# Nav2 uses a string parameter for a polygon, not a nested ROS parameter array.
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      robot_base_frame: base_footprint
+      footprint: "[[0.35, 0.2], [0.2, 0.35], [-0.2, 0.35], [-0.35, 0.2], [-0.35, -0.2], [-0.2, -0.35], [0.2, -0.35], [0.35, -0.2]]"
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      robot_base_frame: base_footprint
+      footprint: "[[0.35, 0.2], [0.2, 0.35], [-0.2, 0.35], [-0.35, 0.2], [-0.35, -0.2], [-0.2, -0.35], [0.2, -0.35], [0.35, -0.2]]"

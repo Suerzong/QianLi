@@ -1,8 +1,12 @@
 # qianli_slam
 
-SLAM 与建图：2D/3D LiDAR SLAM、LiDAR Odometry、Map Generation。
-真实 3D LiDAR 缺失期间使用**仿真 / Mock 雷达**（不阻塞开发）。
+使用官方 slam_toolbox online_async，/scan + /odom + TF，输出 /map 与唯一 map→odom。
+不同时运行 AMCL。采用 2D 360° 虚拟 LiDAR，未来 PointCloud2 驱动在感知层替换，不绑定品牌型号。
 
-- 状态：⏳ 占位（虚拟 LiDAR 并行路线时初始化为可编译 ROS 2 package）
-- 未来：FAST-LIO2 / LIO-SAM
-- 相关文档：[docs/ROADMAP.md](../../docs/ROADMAP.md)
+```bash
+ros2 launch qianli_slam slam.launch.py
+ros2 run nav2_map_server map_saver_cli -f /tmp/qianli_test_map --ros-args -p use_sim_time:=true -p map_subscribe_transient_local:=true
+```
+
+分辨率 0.05 m，地图更新 1 s，最小移动 0.10 m/转角 0.10 rad。
+里程计默认为 commanded odometry，地图匹配可矫正小误差；不宣称实车定位精度。

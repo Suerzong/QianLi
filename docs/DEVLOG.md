@@ -120,3 +120,91 @@
 
 - [ ] Milestone 1 收尾：虚拟机桌面运行 `ros2 launch qianli_description display.launch.py` 确认 RViz 显示
 - [ ] Milestone 2：qianli_arm 接入真实机械臂（参考 ~/arm-final 的 so101_bringup 驱动栈）
+
+## 2026-10-04（续 3）— 拖动示教工具 qianli_teach
+
+### 背景
+
+用户询问"能否自然进入拖动示教"。现状：机械臂（SO-101，direct 只读模式）可自由拖动，
+`/joint_states` 实时反映真实姿态（绝对式编码器），但缺"记录"和"回放"两个环节。
+
+### 完成内容
+
+- 新建 `qianli_ws/src/qianli_teach`（ament_python 包）：
+  - `teach_node.py`：record（订阅 /joint_states + 键盘触发录制，存 YAML）/ playback（读 YAML，按原间隔发布 /joint_commands，--speed 倍率）
+- 修复记录：
+  - `setup.cfg` 中 `install_scripts=$base/lib/qianli_teach`（初版缺 `$base` 键导致 colcon 构建失败）
+  - 录制 dt 防御：第一帧仅作起点；`dt>1s` 帧跳过（避免消息源切换/时钟跳变污染轨迹）
+- VM 验证（模拟数据）：
+  - 录制 79 帧 / 3.95s，dt 干净（最大 0.0536s）
+  - 回放完整发出 79 帧 /joint_commands（时长与录制一致）
+
+### 闭环说明
+
+```
+拖（人手搬动，扭矩关闭）→ 记（teach_node record）→ 放（teach_node playback → /joint_commands → driver）
+```
+
+安全：record 零风险；playback 是否动真臂由 driver `allow_motion` 决定（sim 仅 RViz 演示）。
+
+### 待办（下一步）
+
+- [ ] 真实硬件拖动示教演练：record 录一段真实拖动轨迹 → sim 回放确认 → （确认校准后）direct 回放
+- [ ] Milestone 2：把 so101 驱动栈整合进 QianLi（qianli_arm），teach 工具直接对接
+
+## 2026-10-05 — QianLi Simulation v0.3
+
+在原有 `/home/ros/QianLi/qianli_ws` 推进；保留机械臂模型、真实驱动和当前 Domain 0 会话。
+所有新增仿真测试使用 ROS_DOMAIN_ID=73 / GZ_PARTITION=qianli_v03，Xvfb :98。
+用户授权后安装 slam-toolbox / navigation2 / nav2-bringup，92 个新依赖包，0 升级/删除。
+
+阶段提交：
+
+| Commit | 内容 |
+|---|---|
+| 7def68c | Geometry v0.1 checkpoint |
+| 6d33f1a | 修正 Omni X-drive 定义 |
+| ab03705 | 官方 ros2_control omni controller、mock、运动学/运动测试 |
+| 06c9578 | Harmonic、gz_ros2_control、ideal_kinematic_sim |
+| 579f2c8 | IMU/LiDAR、bridge、系统验收 |
+| 0f4b6d2 | SLAM 与保存测试地图 |
+| ccbd677 | Holonomic Nav2、整机 bringup、三目标验收 |
+| 1c7ba81 | 保存地图 AMCL localization、TF 重复发布检查、验收脚本可执行位 |
+
+验证事实：
+
+- 9 packages `colcon build --symlink-install` 成功；几何与运动学 `colcon test` 零失败。
+- Default Xacro 仍为 6 links / 5 joints；28-triangle closed convex STL、八边形和四 outward axes 通过自动检查。
+- 官方 4.40.1 controller 的实际 mock 回显命令与独立接触几何公式一致：
+  前进/横移/旋转/斜移和 0.5 s 超时停止通过。R=0.4157787873、r=0.075、wheel_offset=π/4。
+- Gazebo independent ground truth 的固定时长 forward/strafe/rotate/diagonal 与 commanded odometry 匹配。
+- `/scan` 360 束、10 Hz、0.12–12 m、frame lidar_link，实际墙/box 距离有效；
+  IMU 50 Hz / imu_link，CCW 0.3 rad/s 测得 0.3，停止后零。
+- 在线 SLAM 与 Nav2 整套启动：三个目标均 status=SUCCEEDED；最大 |vx|/|vy|/|wz| = 0.25/0.25/0.6。
+  收到 39 条计划，1752 个独立 Gazebo 位姿样本，padded octagonal footprint 与场景障碍相交次数 0。
+- RViz 实际点击 Nav2 Goal，目标约 (-1.0,1.01)，最终 map pose (-0.923,0.892)，action 成功。
+- 保存地图 AMCL（OmniMotionModel）模式：同样三目标成功，44 条计划、2017 个位姿样本、相交次数 0。
+- 保存地图 159×159、0.05 m/cell，已知 23690 cells，occupied 1069。地图来自实际 scan/SLAM，非场景投影生成。
+- map→odom 由 SLAM 或 AMCL 互斥发布；odom→base_footprint 仅由 omni controller；TF 发布者数量检查通过。
+- Nav2 五个 lifecycle server active、local/global octagonal footprint 和 padding=0.06、所有检查的仿真节点 sim_time=true。
+
+修复记录：
+
+- GenericSystem 与 Gazebo manager 不同场景串行运行，避免 transient robot_description 串扰。
+- `--controller-ros-args=-r` 精确 remap，~/cmd_vel→/cmd_vel、~/odom→/odom。
+- joint_state_broadcaster 成功后顺序启动 omni controller，service/switch timeout=30 s。
+- VM EGL headless 渲染会产生全 infinity scan；GLX/Xvfb 软件渲染有效，默认关闭 EGL headless。
+- IMU 动态测试等待 DDS 发现完成后再发命令；避免将未送达的短命令误判为传感器失效。
+- VM 软件渲染下 Nav2 的默认 20 ms action acknowledge 不稳定，改为 1000 ms。
+- GroupAction 隔离子 launch 参数，确保顶层 rviz 参数不被覆盖。
+- 保存地图定位由独立 localization.launch 显式检查/传入 map_file；消除外部 launch 参数歧义。
+- 失败 launch 遗留测试进程组已清理；测试结束发送零速度。原机械臂四个进程仍运行。
+
+边界：这是 **ideal_kinematic_sim**，机器人接触/重力禁用，scene 感知与控制软件链有效；
+不能验证 omni 滚子摩擦、打滑、力矩或碰撞停止。`/odom` 是 commanded/open-loop，非实测。
+simulation inertial 为集中 PLACEHOLDER，等待称重；实机方向、encoder、STM32、反馈里程计/EKF 尚未实现。
+当前 LiDAR 360 束会在地图远端留下少量未知栅格；地图是测试样本，非完整环境覆盖或定位精度标定。
+RViz 初始 map shader / TF cache 日志警告不影响随后 Global Status OK 与地图/激光显示，后续关注 VM 渲染性能。
+
+新增 qianli_exploration 仅为可编译 package skeleton、标准 action/map 接口与 TODO，没有探索算法。
+复现命令见根 README；验收 JSON、运行日志和截图在 `qianli_ws/log/sim_v03`，不纳入 Git。

@@ -1,4 +1,4 @@
-# 项目目标平台为 Linux（Ubuntu 22.04），统一 LF 行尾
+# 项目目标平台为 Linux（Ubuntu 24.04），统一 LF 行尾
 * text=auto
 
 *.sh text eol=lf
@@ -9,3 +9,20 @@ CMakeLists.txt text eol=lf
 *.md text eol=lf
 *.gitignore text eol=lf
 *.gitattributes text eol=lf
+
+*.yaml text eol=lf
+
+*.yml text eol=lf
+
+*.xacro text eol=lf
+
+*.urdf text eol=lf
+
+*.sdf text eol=lf
+
+*.rviz text eol=lf
+
+*.json text eol=lf
+
+# Preserve frozen policy/config bytes and recorded SHA-256 hashes.
+qianli_ws/src/qianli_omni_learning/**/*.json -text -eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

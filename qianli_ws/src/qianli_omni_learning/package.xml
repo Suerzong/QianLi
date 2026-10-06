@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>qianli_omni_learning</name>
+  <version>0.1.0</version>
+  <description>Omni X-drive specialty benchmarks and reproducible CEM parameter-policy learning.</description>
+  <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>qianli_training_scenarios</exec_depend>
+  <exec_depend>qianli_bringup</exec_depend>
+  <exec_depend>qianli_control</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-pil</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

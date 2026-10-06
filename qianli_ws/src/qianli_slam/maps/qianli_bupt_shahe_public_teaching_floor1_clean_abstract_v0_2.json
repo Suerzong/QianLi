@@ -1,0 +1,25 @@
+{
+  "status": "clean abstract wall raster",
+  "source": "E:\\AAA-ALL-DOWNLOAD\\qq_downloads\\IMG_1950.JPG",
+  "resolution": 0.02,
+  "extent_m": [
+    44.4,
+    35.9
+  ],
+  "origin": [
+    -22.2,
+    -17.95,
+    0
+  ],
+  "excluded": [
+    "colors",
+    "arrows",
+    "fire symbols",
+    "fine text",
+    "large lecture-hall seating"
+  ],
+  "limitations": [
+    "automatic long-line extraction",
+    "door openings and exact scale need manual trace"
+  ]
+}

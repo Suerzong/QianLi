@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- TODO / PLACEHOLDER: solely for preliminary simulation.
+       仅供初步仿真，等待实车称重后更新。No hardware mass claim. -->
+  <xacro:property name="sim_base_mass" value="10.0"/>
+  <xacro:property name="sim_wheel_mass" value="0.5"/>
+  <xacro:property name="sim_frame_mass" value="0.001"/>
+  <xacro:macro name="sim_plate_inertial" params="">
+    <inertial>
+      <mass value="${sim_base_mass}"/>
+      <!-- Conservative box approximation, not measured plate inertia. -->
+      <inertia ixx="${sim_base_mass*(base_size**2+base_thickness**2)/12}" ixy="0" ixz="0"
+               iyy="${sim_base_mass*(base_size**2+base_thickness**2)/12}" iyz="0"
+               izz="${sim_base_mass*base_size**2/6}"/>
+    </inertial>
+  </xacro:macro>
+  <xacro:macro name="sim_wheel_inertial" params="">
+    <inertial>
+      <mass value="${sim_wheel_mass}"/>
+      <inertia ixx="${sim_wheel_mass*(3*wheel_radius**2+wheel_width**2)/12}" ixy="0" ixz="0"
+               iyy="${sim_wheel_mass*(3*wheel_radius**2+wheel_width**2)/12}" iyz="0"
+               izz="${sim_wheel_mass*wheel_radius**2/2}"/>
+    </inertial>
+  </xacro:macro>
+  <xacro:macro name="sim_frame_inertial" params="">
+    <inertial><mass value="${sim_frame_mass}"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+    </inertial>
+  </xacro:macro>
+</robot>

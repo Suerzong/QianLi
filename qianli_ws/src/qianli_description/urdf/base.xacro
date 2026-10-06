@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="qianli_base" params="">
+    <link name="base_footprint">
+      <xacro:if value="${simulation}"><xacro:sim_frame_inertial/></xacro:if>
+    </link>
+    <link name="base_link">
+      <xacro:if value="${simulation}"><xacro:sim_plate_inertial/></xacro:if>
+      <visual name="octagonal_plate">
+        <geometry><mesh filename="package://qianli_description/meshes/base/qianli_base.stl"/></geometry>
+        <material name="qianli_plate"/>
+      </visual>
+      <!-- Closed convex prism: only 28 triangles, in metres. -->
+      <collision name="octagonal_plate_collision">
+        <geometry><mesh filename="package://qianli_description/meshes/base/qianli_base.stl"/></geometry>
+      </collision>
+    </link>
+    <joint name="base_footprint_joint" type="fixed">
+      <parent link="base_footprint"/>
+      <child link="base_link"/>
+      <origin xyz="0 0 ${base_height}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+</robot>

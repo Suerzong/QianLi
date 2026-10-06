@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Geometry v0.1: metres, radians. Single source of dimensional truth.
+       After editing plate dimensions, regenerate STL + footprint with
+       python3 scripts/generate_geometry.py. Keep these dimensions numeric. -->
+  <xacro:property name="base_size" value="0.70"/>
+  <xacro:property name="base_long_edge" value="0.40"/>
+  <xacro:property name="base_cut" value="0.15"/>
+  <xacro:property name="base_thickness" value="0.004"/>
+  <!-- Height means plate MIDPLANE, not lower/upper face. -->
+  <xacro:property name="base_height" value="0.09"/>
+  <xacro:property name="wheel_radius" value="0.075"/>
+  <xacro:property name="wheel_width" value="0.038"/>
+  <xacro:property name="wheel_x" value="0.294"/>
+  <xacro:property name="wheel_y" value="0.294"/>
+  <xacro:property name="wheel_z" value="0.075"/>
+  <xacro:property name="wheel_mount_angle" value="${pi/4}"/>
+
+  <material name="qianli_plate"><color rgba="0.85 0.65 0.12 1"/></material>
+  <material name="qianli_tire"><color rgba="0.13 0.14 0.16 1"/></material>
+  <!-- No inertial or actuator parameters: mass/COM/polarity remain unknown. -->
+</robot>

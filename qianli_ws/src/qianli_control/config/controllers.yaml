@@ -1,0 +1,25 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    omni_base_controller:
+      type: omni_wheel_drive_controller/OmniWheelDriveController
+omni_base_controller:
+  ros__parameters:
+    # Launch derives these three values from description/common.xacro.
+    wheel_offset: 0.7853981633974483
+    wheel_names: [front_left_wheel_joint, rear_left_wheel_joint, rear_right_wheel_joint, front_right_wheel_joint]
+    robot_radius: 0.4157787873376899
+    wheel_radius: 0.075
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    tf_frame_prefix_enable: false
+    open_loop: true
+    position_feedback: false
+    enable_odom_tf: true
+    cmd_vel_timeout: 0.5
+    # Simulation placeholders, not calibrated hardware covariances.
+    diagonal_covariance:
+      pose: [0.001, 0.001, 0.01, 0.01, 0.01, 0.01]
+      twist: [0.001, 0.001, 0.01, 0.01, 0.01, 0.01]
