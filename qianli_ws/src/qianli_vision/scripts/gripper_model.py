@@ -145,6 +145,8 @@ class GripperModel:
         out = {}
         for i, name in enumerate(self.chain_child):
             out[name] = np.asarray(fk[i], dtype=float).copy()
+        # 链首是 base element，它的名字在 URDF 里是 base_link
+        out.setdefault('base_link', np.eye(4))
         # 活动爪不在链上，从 gripper_link 再乘一次 gripper 关节
         if FLANGE_LINK in out:
             R, t = self.joint_tf(JAW_JOINT, joints.get(JAW_JOINT, 0.0))

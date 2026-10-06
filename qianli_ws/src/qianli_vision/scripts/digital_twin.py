@@ -33,8 +33,14 @@ URDF = os.path.expanduser(
     '/urdf/so101.urdf')
 
 # ---- 实测场景参数 ----
-TABLE_Z = -0.0524        # 桌面上表面（base_link 坐标系）
-BASE_BOTTOM = -0.0024    # 机械臂底座最低点
+# TABLE_Z：2026-10-06 实测（夹爪最低点碰桌、6 点拟合平面，残差 RMS 0.469mm）。
+# 旧值 -0.0524 是**推算**的（"最下端离桌约 5cm" + URDF 底座 -0.0024），
+# 实测比它低 16.7mm —— 那个垫台实际不是 5cm。
+# 注意：碰到桌面的是"夹爪几何最低点"，不是 TCP；TCP 相对最低点的高度
+# 随姿态从 +5.1mm 变到 +100.6mm，所以不能用 TCP 的 Z 当桌面高度。
+TABLE_Z = -0.06909
+TABLE_TILT_DEG = 0.202   # 实测平面倾角，建模按水平处理
+BASE_BOTTOM = -0.0024    # 机械臂底座最低点（URDF）
 BOARD_ORIGIN = (0.3420, 0.0584)   # 棋盘原点（左上内角）在 base 平面位置
 BOARD_YAW_DEG = -97.75
 BOARD_W, BOARD_H = 0.228, 0.162   # 8×6 格 × 3.25cm
@@ -59,7 +65,10 @@ def build_scene(object_grid=OBJECT_GRID):
     gt.pos = [0.3, 0.0, TABLE_Z - 0.15]
     gt.rgba = [0.55, 0.55, 0.58, 1]
 
-    # 底座（撑起机械臂 5cm）
+    # 底座（垫台）：高度由 实测桌面 与 base_link 安装面 之差反推
+    #   base_link 最低点（base_so101_v2.stl）= -2.40 mm
+    #   实测桌面 = -69.09 mm  →  垫台 = 66.69 mm
+    # （旧注释写"5cm"是估算，实测差 16.7 mm）
     gp = wb.add_geom()
     gp.name = 'pedestal'
     gp.type = mujoco.mjtGeom.mjGEOM_BOX
@@ -123,6 +132,11 @@ def main():
     ap.add_argument('--render')
     ap.add_argument('--q', nargs=6, type=float,
                     help='设置 6 个关节角（rad），顺序同 URDF')
+    ap.add_argument('--lookat', nargs=3, type=float,
+                    default=[0.3, 0.0, -0.03])
+    ap.add_argument('--distance', type=float, default=0.6)
+    ap.add_argument('--azimuth', type=float, default=130.0)
+    ap.add_argument('--elevation', type=float, default=-35.0)
     a = ap.parse_args()
 
     model, obj_pos = build_scene()
@@ -167,10 +181,10 @@ def main():
     if a.render:
         r = mujoco.Renderer(model, 480, 640)
         cam = mujoco.MjvCamera()
-        cam.lookat[:] = [0.3, 0.0, -0.03]
-        cam.distance = 0.6
-        cam.azimuth = 130
-        cam.elevation = -35
+        cam.lookat[:] = a.lookat
+        cam.distance = a.distance
+        cam.azimuth = a.azimuth
+        cam.elevation = a.elevation
         r.update_scene(data, cam)
         img = r.render()
         try:
@@ -179,7 +193,25 @@ def main():
         except ImportError:
             from PIL import Image
             Image.fromarray(img).save(a.render)
-        print(f'\n已渲染 {a.render}')
+        print(f'\n已渲染 {a.render}  '
+              f'(azimuth={a.azimuth} elevation={a.elevation} '
+              f'distance={a.distance})')
+        # 顺便报告夹爪最低点与桌面的关系
+        gjid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                                 'moving_jaw_so101_v1_link')
+        glid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                                 'gripper_link')
+        lows = []
+        for bid in (gjid, glid):
+            if bid < 0:
+                continue
+            for g in range(model.body_geomadr[bid],
+                           model.body_geomadr[bid] + model.body_geomnum[bid]):
+                lows.append(data.geom_xpos[g][2] - model.geom_size[g][2])
+        if lows:
+            print(f'夹爪最低点 z ≈ {min(lows)*1000:+.1f} mm，'
+                  f'桌面 z = {TABLE_Z*1000:+.1f} mm，'
+                  f'间隙 {(min(lows)-TABLE_Z)*1000:+.1f} mm')
 
 
 if __name__ == '__main__':
