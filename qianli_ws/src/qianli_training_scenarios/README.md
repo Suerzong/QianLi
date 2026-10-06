@@ -118,9 +118,12 @@ ros2 run qianli_training_scenarios run_vm_session.py stop
 
 ## Limits
 
+QianLi is a four-omni-wheel X-drive base, using OmniWheelDriveController with
+independent body vx, vy and yaw velocity. It is not a mecanum-wheel base.
+
 The current QianLi `ideal_kinematic_sim` imposes commanded body motion and
 removes robot contact physics. It does not validate wheel traction, roller
-configuration, motor dynamics or real encoder odometry. Evaluation therefore
+contact, motor dynamics or real encoder odometry. Evaluation therefore
 checks the physical Gazebo trajectory against obstacle polygons separately;
 an action success alone is insufficient evidence of collision-free motion.
 No machine-learning training algorithm is added in this milestone. This is

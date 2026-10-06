@@ -1,0 +1,501 @@
+{
+  "suite_id": "qianli_omnidirectional_v1",
+  "method": "Exact benchmark polygon offset/SAT and Euclidean separation, sampled SE(2) reference sweeps with rigid-body Lipschitz bounds between samples.",
+  "translation_step_max_m": 0.025,
+  "yaw_step_max_rad": 0.017453292519943295,
+  "raw_footprint": [
+    [
+      0.35,
+      0.2
+    ],
+    [
+      0.2,
+      0.35
+    ],
+    [
+      -0.2,
+      0.35
+    ],
+    [
+      -0.35,
+      0.2
+    ],
+    [
+      -0.35,
+      -0.2
+    ],
+    [
+      -0.2,
+      -0.35
+    ],
+    [
+      0.2,
+      -0.35
+    ],
+    [
+      0.35,
+      -0.2
+    ]
+  ],
+  "padded_footprint": [
+    [
+      0.41000000000000003,
+      0.22485281374238567
+    ],
+    [
+      0.22485281374238567,
+      0.41000000000000003
+    ],
+    [
+      -0.22485281374238567,
+      0.41000000000000003
+    ],
+    [
+      -0.41000000000000003,
+      0.22485281374238567
+    ],
+    [
+      -0.41000000000000003,
+      -0.22485281374238567
+    ],
+    [
+      -0.22485281374238567,
+      -0.41000000000000003
+    ],
+    [
+      0.22485281374238567,
+      -0.41000000000000003
+    ],
+    [
+      0.41000000000000003,
+      -0.22485281374238567
+    ]
+  ],
+  "scope": "Reference geometry only; actual controller trajectories need independent GT scoring.",
+  "variants": [
+    {
+      "variant": "train_000",
+      "split": "training",
+      "obstacle_count": 103,
+      "door_count": 23,
+      "tasks": [
+        {
+          "id": "O01_positive_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -12.2860103626943,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O02_negative_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -11.7139896373057,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O03_diagonal_pillar_bypass",
+          "passed": true,
+          "samples": 287,
+          "reference_path_length_m": 7.123105625617661,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.30617495730964406,
+          "sampled_min_padded_clearance_m": 0.24178702621138443,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.29367495730964405,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.22928702621138441,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              2.0,
+              -8.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O04_in_place_90",
+          "passed": true,
+          "samples": 91,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.8527217296152955,
+          "sampled_min_padded_clearance_m": 0.7882249581346642,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.8492039060439897,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.7841442941026742,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.12217304763960307
+            ]
+          }
+        },
+        {
+          "id": "O05_in_place_180",
+          "passed": true,
+          "samples": 181,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 3.141592653589793,
+          "sampled_min_raw_clearance_m": 0.8527217296152955,
+          "sampled_min_padded_clearance_m": 0.7882249581346642,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.8492039060439897,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.7841442941026742,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.12217304763960307
+            ]
+          }
+        },
+        {
+          "id": "O06_translation_and_rotation",
+          "passed": true,
+          "samples": 136,
+          "reference_path_length_m": 3.1365484905459393,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.8559506708579044,
+          "sampled_min_padded_clearance_m": 0.7937394260274865,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.8412250586181349,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.7786180665887984,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O07_fixed_heading_s_curve",
+          "passed": true,
+          "samples": 326,
+          "reference_path_length_m": 7.946427498927404,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.7424621202458749,
+          "sampled_min_padded_clearance_m": 0.6824621202458746,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.7299621202458749,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.6699621202458746,
+          "closest_padded_sample": {
+            "obstacle": "pillar_2",
+            "pose": [
+              1.0,
+              -4.9,
+              0.0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "variant": "train_001",
+      "split": "training",
+      "obstacle_count": 103,
+      "door_count": 23,
+      "tasks": [
+        {
+          "id": "O01_positive_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -12.2860103626943,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O02_negative_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -11.7139896373057,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O03_diagonal_pillar_bypass",
+          "passed": true,
+          "samples": 287,
+          "reference_path_length_m": 7.123105625617661,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.604055767221405,
+          "sampled_min_padded_clearance_m": 0.5396678361231454,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.591555767221405,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.5271678361231454,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              2.0,
+              -8.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O04_in_place_90",
+          "passed": true,
+          "samples": 91,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.5642463816439012,
+          "sampled_min_padded_clearance_m": 0.49974972401069123,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.5607285580725954,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.49566905997870125,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              1.2042771838760875
+            ]
+          }
+        },
+        {
+          "id": "O05_in_place_180",
+          "passed": true,
+          "samples": 181,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 3.141592653589793,
+          "sampled_min_raw_clearance_m": 0.5642463816439012,
+          "sampled_min_padded_clearance_m": 0.49974972401069123,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.5607285580725954,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.49566905997870125,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              1.2042771838760875
+            ]
+          }
+        },
+        {
+          "id": "O06_translation_and_rotation",
+          "passed": true,
+          "samples": 136,
+          "reference_path_length_m": 3.1365484905459393,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.5752375584429088,
+          "sampled_min_padded_clearance_m": 0.5152375584429085,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.5605119462031393,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.5001161990042204,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O07_fixed_heading_s_curve",
+          "passed": true,
+          "samples": 326,
+          "reference_path_length_m": 7.946427498927404,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.7424621202458749,
+          "sampled_min_padded_clearance_m": 0.6824621202458746,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.7299621202458749,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.6699621202458746,
+          "closest_padded_sample": {
+            "obstacle": "pillar_2",
+            "pose": [
+              1.0,
+              -4.9,
+              0.0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "variant": "test_101",
+      "split": "held_out_evaluation",
+      "obstacle_count": 104,
+      "door_count": 23,
+      "tasks": [
+        {
+          "id": "O01_positive_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -12.2860103626943,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O02_negative_lateral_door",
+          "passed": true,
+          "samples": 194,
+          "reference_path_length_m": 4.800000000000001,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.25,
+          "sampled_min_padded_clearance_m": 0.1899999999999995,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.23756476683937824,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.17756476683937775,
+          "closest_padded_sample": {
+            "obstacle": "south_seminars_2",
+            "pose": [
+              5.0,
+              -11.7139896373057,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O03_diagonal_pillar_bypass",
+          "passed": true,
+          "samples": 287,
+          "reference_path_length_m": 7.123105625617661,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.4493571333837888,
+          "sampled_min_padded_clearance_m": 0.3893571333837884,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.4368571333837888,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.3768571333837884,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              2.0,
+              -8.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O04_in_place_90",
+          "passed": true,
+          "samples": 91,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.4557772068648009,
+          "sampled_min_padded_clearance_m": 0.39128116917773226,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.452259383293495,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.3872005051457423,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.296705972839036
+            ]
+          }
+        },
+        {
+          "id": "O05_in_place_180",
+          "passed": true,
+          "samples": 181,
+          "reference_path_length_m": 0.0,
+          "reference_yaw_change_rad": 3.141592653589793,
+          "sampled_min_raw_clearance_m": 0.4557772068648009,
+          "sampled_min_padded_clearance_m": 0.39128116917773226,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.452259383293495,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.3872005051457423,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.296705972839036
+            ]
+          }
+        },
+        {
+          "id": "O06_translation_and_rotation",
+          "passed": true,
+          "samples": 136,
+          "reference_path_length_m": 3.1365484905459393,
+          "reference_yaw_change_rad": 1.5707963267948966,
+          "sampled_min_raw_clearance_m": 0.46988168215872317,
+          "sampled_min_padded_clearance_m": 0.4098816821587227,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.45515606991895363,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.3947603227200347,
+          "closest_padded_sample": {
+            "obstacle": "cart_1",
+            "pose": [
+              4.0,
+              -9.8,
+              0.0
+            ]
+          }
+        },
+        {
+          "id": "O07_fixed_heading_s_curve",
+          "passed": true,
+          "samples": 326,
+          "reference_path_length_m": 7.946427498927404,
+          "reference_yaw_change_rad": 0.0,
+          "sampled_min_raw_clearance_m": 0.7070450761851506,
+          "sampled_min_padded_clearance_m": 0.6470450761851505,
+          "certified_raw_sweep_clearance_lower_bound_m": 0.6945450761851506,
+          "certified_padded_sweep_clearance_lower_bound_m": 0.6345450761851505,
+          "closest_padded_sample": {
+            "obstacle": "cart_0",
+            "pose": [
+              -2.0,
+              -2.7,
+              0.0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "result": "PASS"
+}

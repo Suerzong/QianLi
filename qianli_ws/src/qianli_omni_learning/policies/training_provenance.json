@@ -1,0 +1,14 @@
+{
+  "python": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+  "executable": "E:\\Applications\\miniconda3\\python.exe",
+  "numpy": "2.5.1",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "trained_policy_sha256": "8587cf88912e87fb19545a9e1d1bd4929150168b9cce7bc4a3ad34807bdd1de8",
+  "script_sha256": {
+    "environment.py": "a41c4fafc6aa837f4f9b7c824269b77a04282d5f2893ed4cec6fa9e5744f1061",
+    "evaluate.py": "b832aa0d2aa6e70454b819254870d366b7c7fba0ad3ee093abd7b45712364779",
+    "omni_ros_eval.py": "73d7aadc71f46cc64fe509d03a01778590207c0a44400a56fb718846a9a157eb",
+    "policy.py": "b00e1fb898366b673f05f09dbe9f25a06f816b8164176eaaf8a36ddf5cf37fce",
+    "train.py": "02222e4d47b3618feacc603054eab8e87deda26e008bb651fa7c2a83397d7ee0"
+  }
+}

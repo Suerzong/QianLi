@@ -1,0 +1,1003 @@
+{
+  "schema_version": 1,
+  "suite_id": "qianli_omnidirectional_v1",
+  "scene_id": "teaching_training_v1",
+  "training_variants": [
+    "train_000",
+    "train_001"
+  ],
+  "evaluation_variants": [
+    "test_101"
+  ],
+  "training_tasks": [
+    {
+      "id": "O01_positive_lateral_door",
+      "ability": "+Y translation through 1.20m door, yaw locked at zero",
+      "start": [
+        5.0,
+        -14.4,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          5.0,
+          -9.6,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": true,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max",
+        "lateral_cross_track"
+      ]
+    },
+    {
+      "id": "O02_negative_lateral_door",
+      "ability": "-Y reverse translation through the same door, yaw locked at zero",
+      "start": [
+        5.0,
+        -9.6,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          5.0,
+          -14.4,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": true,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max",
+        "lateral_cross_track"
+      ]
+    },
+    {
+      "id": "O03_diagonal_pillar_bypass",
+      "ability": "Go around pillar [0,-6], then move diagonally while retaining heading",
+      "start": [
+        2.0,
+        -8.0,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          2.0,
+          -5.0,
+          0.0
+        ],
+        [
+          -2.0,
+          -4.0,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 45.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max"
+      ]
+    },
+    {
+      "id": "O04_in_place_90",
+      "ability": "Rotate +90deg at fixed physical XY",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.0,
+          -9.8,
+          1.5707963267948966
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 12.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 1.6707963267948966
+      },
+      "pure_lateral": false,
+      "pure_rotation": true,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "rotation_position_drift"
+      ]
+    },
+    {
+      "id": "O05_in_place_180",
+      "ability": "Rotate +180deg at fixed physical XY",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.0,
+          -9.8,
+          3.141592653589793
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 15.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 3.241592653589793
+      },
+      "pure_lateral": false,
+      "pure_rotation": true,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "rotation_position_drift"
+      ]
+    },
+    {
+      "id": "O06_translation_and_rotation",
+      "ability": "Quarter-circle translation with simultaneous +90deg yaw change",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.390180644032257,
+          -9.761570560806462,
+          0.19634954084936207
+        ],
+        [
+          4.765366864730179,
+          -9.647759065022573,
+          0.39269908169872414
+        ],
+        [
+          5.111140466039204,
+          -9.46293922460509,
+          0.5890486225480862
+        ],
+        [
+          5.414213562373095,
+          -9.214213562373095,
+          0.7853981633974483
+        ],
+        [
+          5.662939224605091,
+          -8.911140466039203,
+          0.9817477042468103
+        ],
+        [
+          5.847759065022574,
+          -8.56536686473018,
+          1.1780972450961724
+        ],
+        [
+          5.961570560806461,
+          -8.190180644032257,
+          1.3744467859455345
+        ],
+        [
+          6.0,
+          -7.8,
+          1.5707963267948966
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.35
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": true,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "combined_motion_duration",
+        "tracked_yaw_reference"
+      ]
+    },
+    {
+      "id": "O07_fixed_heading_s_curve",
+      "ability": "Two-lobe S trajectory using both translation axes while yaw remains zero",
+      "start": [
+        -3.0,
+        -3.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          -2.0,
+          -2.7,
+          0.0
+        ],
+        [
+          -1.0,
+          -2.7,
+          0.0
+        ],
+        [
+          0.0,
+          -3.8,
+          0.0
+        ],
+        [
+          1.0,
+          -4.9,
+          0.0
+        ],
+        [
+          2.0,
+          -4.9,
+          0.0
+        ],
+        [
+          3.0,
+          -3.8,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 45.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max"
+      ]
+    }
+  ],
+  "evaluation_tasks": [
+    {
+      "id": "O01_positive_lateral_door",
+      "ability": "+Y translation through 1.20m door, yaw locked at zero",
+      "start": [
+        5.0,
+        -14.4,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          5.0,
+          -9.6,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": true,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max",
+        "lateral_cross_track"
+      ]
+    },
+    {
+      "id": "O02_negative_lateral_door",
+      "ability": "-Y reverse translation through the same door, yaw locked at zero",
+      "start": [
+        5.0,
+        -9.6,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          5.0,
+          -14.4,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": true,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max",
+        "lateral_cross_track"
+      ]
+    },
+    {
+      "id": "O03_diagonal_pillar_bypass",
+      "ability": "Go around pillar [0,-6], then move diagonally while retaining heading",
+      "start": [
+        2.0,
+        -8.0,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          2.0,
+          -5.0,
+          0.0
+        ],
+        [
+          -2.0,
+          -4.0,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 45.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max"
+      ]
+    },
+    {
+      "id": "O04_in_place_90",
+      "ability": "Rotate +90deg at fixed physical XY",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.0,
+          -9.8,
+          1.5707963267948966
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 12.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 1.6707963267948966
+      },
+      "pure_lateral": false,
+      "pure_rotation": true,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "rotation_position_drift"
+      ]
+    },
+    {
+      "id": "O05_in_place_180",
+      "ability": "Rotate +180deg at fixed physical XY",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.0,
+          -9.8,
+          3.141592653589793
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 15.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 3.241592653589793
+      },
+      "pure_lateral": false,
+      "pure_rotation": true,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "rotation_position_drift"
+      ]
+    },
+    {
+      "id": "O06_translation_and_rotation",
+      "ability": "Quarter-circle translation with simultaneous +90deg yaw change",
+      "start": [
+        4.0,
+        -9.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          4.390180644032257,
+          -9.761570560806462,
+          0.19634954084936207
+        ],
+        [
+          4.765366864730179,
+          -9.647759065022573,
+          0.39269908169872414
+        ],
+        [
+          5.111140466039204,
+          -9.46293922460509,
+          0.5890486225480862
+        ],
+        [
+          5.414213562373095,
+          -9.214213562373095,
+          0.7853981633974483
+        ],
+        [
+          5.662939224605091,
+          -8.911140466039203,
+          0.9817477042468103
+        ],
+        [
+          5.847759065022574,
+          -8.56536686473018,
+          1.1780972450961724
+        ],
+        [
+          5.961570560806461,
+          -8.190180644032257,
+          1.3744467859455345
+        ],
+        [
+          6.0,
+          -7.8,
+          1.5707963267948966
+        ]
+      ],
+      "yaw_mode": "track",
+      "max_sim_time_s": 30.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.35
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": true,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "combined_motion_duration",
+        "tracked_yaw_reference"
+      ]
+    },
+    {
+      "id": "O07_fixed_heading_s_curve",
+      "ability": "Two-lobe S trajectory using both translation axes while yaw remains zero",
+      "start": [
+        -3.0,
+        -3.8,
+        0.0
+      ],
+      "startup_yaw": 0.0,
+      "waypoints": [
+        [
+          -2.0,
+          -2.7,
+          0.0
+        ],
+        [
+          -1.0,
+          -2.7,
+          0.0
+        ],
+        [
+          0.0,
+          -3.8,
+          0.0
+        ],
+        [
+          1.0,
+          -4.9,
+          0.0
+        ],
+        [
+          2.0,
+          -4.9,
+          0.0
+        ],
+        [
+          3.0,
+          -3.8,
+          0.0
+        ]
+      ],
+      "yaw_mode": "fixed",
+      "max_sim_time_s": 45.0,
+      "tolerances": {
+        "position_m": 0.12,
+        "yaw_rad": 0.08
+      },
+      "thresholds": {
+        "final_position_m": 0.15,
+        "final_yaw_rad": 0.12,
+        "fixed_heading_max_rad": 0.1,
+        "pure_lateral_cross_track_m": 0.15,
+        "rotation_drift_m": 0.06,
+        "combined_motion_min_s": 0.5,
+        "max_path_deviation_m": 0.3,
+        "raw_collision_samples_max": 0,
+        "padded_collision_samples_max": 0,
+        "max_yaw_error_rad": 0.1
+      },
+      "pure_lateral": false,
+      "pure_rotation": false,
+      "require_combined_motion": false,
+      "reference_interpolation": "piecewise_linear_se2",
+      "score_weights": {
+        "completion": 0.4,
+        "terminal_pose": 0.25,
+        "heading": 0.2,
+        "tracking": 0.15
+      },
+      "required_constraints": [
+        "all_waypoints_completed",
+        "within_sim_timeout",
+        "physical_final_position",
+        "physical_final_yaw",
+        "zero_raw_intersections",
+        "zero_padded_intersections",
+        "fixed_heading_max"
+      ]
+    }
+  ],
+  "shared_limits": {
+    "max_translation_norm_m_s": 0.25,
+    "max_yaw_rate_rad_s": 0.6,
+    "training_dt_s": 0.1,
+    "ros_control_dt_s": 0.05,
+    "policy_observation": [
+      "goal_body",
+      "yaw_error",
+      "scan_ranges",
+      "scan_angles",
+      "dt"
+    ],
+    "policy_output": [
+      "vx_body_m_s",
+      "vy_body_m_s",
+      "yaw_rate_rad_s"
+    ]
+  },
+  "control_ownership": {
+    "command_publishers_allowed": 1,
+    "rule": "Stop or disable Nav2 velocity command publication before the same omnidirectional policy runner takes command ownership.",
+    "task_reset": "Independent simulation restart at each task start; never score a reposition route as task motion."
+  },
+  "scoring": {
+    "pass": "AND every applicable required constraint. Action/waypoint completion alone does not establish omnidirectional motion.",
+    "safety_gate": "Any raw or padded footprint intersection makes pass false and score zero.",
+    "score_range": [
+      0,
+      100
+    ],
+    "weighted_score_after_all_constraints_pass": "100*(0.40*completion + 0.25*terminal_pose + 0.20*heading + 0.15*tracking)",
+    "completion": "Reached waypoint count / waypoint count; all must be reached to pass.",
+    "terminal_pose": "exp(-0.5*((physical_position_error/0.15)^2 + (physical_yaw_error/0.12)^2))",
+    "heading_fixed": "exp(-(max_wrapped_yaw_deviation_from_start/0.10)^2)",
+    "heading_track": "exp(-(physical_terminal_yaw_error/0.12)^2); large intentional initial rotation errors are not fixed-heading violations.",
+    "tracking_lateral": "exp(-(maximum_absolute_world_X_deviation_from_start/0.15)^2)",
+    "tracking_rotation": "exp(-(maximum_physical_XY_drift_from_start/0.06)^2)",
+    "tracking_other": "exp(-(maximum_distance_to_reference_polyline/0.30)^2)",
+    "combined_motion": "At least 0.50 sim seconds with measured XY speed >=0.04m/s and measured absolute yaw rate >=0.08rad/s simultaneously.",
+    "metric_source": "Independent physical Gazebo ground truth; reported commanded velocity is not sufficient motion evidence."
+  },
+  "geometry_limits": {
+    "footprint": [
+      [
+        0.35,
+        0.2
+      ],
+      [
+        0.2,
+        0.35
+      ],
+      [
+        -0.2,
+        0.35
+      ],
+      [
+        -0.35,
+        0.2
+      ],
+      [
+        -0.35,
+        -0.2
+      ],
+      [
+        -0.2,
+        -0.35
+      ],
+      [
+        0.2,
+        -0.35
+      ],
+      [
+        0.35,
+        -0.2
+      ]
+    ],
+    "padding_m": 0.06,
+    "scope": "XY octagonal plate, excluding wheel protrusion; static scene boxes."
+  },
+  "door": {
+    "id": "south_seminars_door_16",
+    "center": [
+      5.0,
+      -12.0
+    ],
+    "net_width_m": 1.2,
+    "source_opening_count": 23
+  },
+  "notes": [
+    "Training only uses train_000/train_001. test_101 is held out from policy fitting.",
+    "Identical task starts, goals, tolerances and limits across training/evaluation and policy comparisons.",
+    "Pure lateral tasks must preserve yaw zero throughout and meet cross-track constraints.",
+    "Geometry audit verifies prescribed reference sweeps, not the later controller execution.",
+    "No building geometry or doorway width has been edited by this suite."
+  ]
+}

@@ -23,9 +23,14 @@ QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义�
 
 中文描述：面向室内复杂环境的自主探索与语义导航移动机器人。
 
+## 地图、车型与训练汇总
+
+从 [docs/ASSETS_AND_TRAINING.md](docs/ASSETS_AND_TRAINING.md) 查看车型、教学楼地图、
+配套训练场景、CEM 参数学习和自主探索的统一入口。当前资产位于 `qianli_ws/src/` 各 ROS 包。
+
 ## 当前阶段
 
-**QianLi Simulation v0.3**：四全向轮 Omni X-drive 的 ros2_control、Gazebo 理想运动、虚拟 IMU/LiDAR、SLAM 和 Nav2 软件原型。真实机械臂开发路线继续保留。
+**QianLi Simulation v0.3**：四全向轮 Omni X-drive 的 ros2_control、Gazebo 理想运动、虚拟 IMU/LiDAR、SLAM 和 Nav2 软件原型。已包含教学楼训练场景及 CPU CEM 局部避障参数学习；自主探索目标选择仍待实现。真实机械臂开发路线继续保留。
 
 ## 目标平台与技术栈
 
@@ -142,6 +147,7 @@ Nav2 使用真实八边形与 0.06 m padding（包含轮子外探的保守余量
 
 | 文档 | 内容 |
 |---|---|
+| [docs/ASSETS_AND_TRAINING.md](docs/ASSETS_AND_TRAINING.md) | 地图、车型、场景、参数训练和探索接口汇总 |
 | [docs/PROJECT.md](docs/PROJECT.md) | 项目定义、目标能力、技术栈 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 软件架构、模块职责、TF / 地图 / Agent 架构 |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 开发路线与 Milestone 定义 |
