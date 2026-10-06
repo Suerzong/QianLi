@@ -172,6 +172,82 @@ class GripperModel:
         M = T.get('tcp_link')
         return None if M is None else M[:3, 3]
 
+    # ---------------- 爪口开度模型（可反解） ----------------
+    #
+    # 为什么不能用"两爪网格最近距离"：两片爪的侧面和铰链永远靠得很近，
+    # 全局最近点根本不在爪口上（实测落在 |Y|≈18-20mm 的铰链侧壁，会得出
+    # "最大爪口 0.3mm" 这种荒谬结果）。
+    #
+    # 正确做法（tcp_from_model.py 已验证）：
+    #   1. 全部换算到 gripper_frame_link 系；
+    #   2. 只看爪尖往内 front_mm 的前端区域；
+    #   3. 在抓取深度所在的 Z 薄层里取两爪的 X 跨度；
+    #   4. 爪口 = 固定爪内侧 X0 − 活动爪内侧 X。
+    # 实测固定爪内侧面稳定在 frame X≈0，活动爪随开度往 −X 走。
+    FRAME_LINK = 'gripper_frame_link'
+
+    def _jaw_sets(self):
+        if getattr(self, '_jawp', None) is None:
+            self._jawp = (self.link_points(FLANGE_LINK),
+                          self.link_points(JAW_LINK))
+        return self._jawp
+
+    def jaw_opening(self, gripper_angle, front_mm=25.0, band_mm=6.0,
+                    tcp_z_mm=2.373):
+        """给定夹爪关节角，返回爪口宽度（米）。量不到时返回 None。"""
+        fixed_l, jaw_l = self._jaw_sets()
+        j = {k: 0.0 for k in JOINTS}
+        j['gripper'] = float(gripper_angle)
+        T = self.solve(j)
+        Tf, Tl, Tj = T[self.FRAME_LINK], T[FLANGE_LINK], T[JAW_LINK]
+
+        def to_frame(T_link, pts):
+            w = (T_link[:3, :3] @ pts.T).T + T_link[:3, 3]
+            return (Tf[:3, :3].T @ (w - Tf[:3, 3]).T).T
+
+        ff, jf = to_frame(Tl, fixed_l), to_frame(Tj, jaw_l)
+        tip_z = max(ff[:, 2].max(), jf[:, 2].max())
+        z_cut = tip_z - front_mm / 1000.0
+        z0 = tcp_z_mm / 1000.0
+        band = band_mm / 1000.0
+        sf = ff[(ff[:, 2] >= z_cut) & (np.abs(ff[:, 2] - z0) < band)]
+        sj = jf[(jf[:, 2] >= z_cut) & (np.abs(jf[:, 2] - z0) < band)]
+        if len(sf) < 5 or len(sj) < 5:
+            return None
+        return float(sf[:, 0].min() - sj[:, 0].max())
+
+    def jaw_opening_curve(self, n=45, lo=-0.132, hi=1.745, **kw):
+        """扫描出 (角度, 开度) 曲线，缓存在实例上。"""
+        if getattr(self, '_jawcurve', None) is None:
+            pts = []
+            for g in np.linspace(lo, hi, n):
+                w = self.jaw_opening(g, **kw)
+                if w is not None:
+                    pts.append((float(g), w))
+            self._jawcurve = pts
+        return self._jawcurve
+
+    def angle_for_opening(self, width_m, **kw):
+        """反解：要让爪口达到 width_m，夹爪角该给多少。
+
+        开度随角度单调增（实测 -7.6°→5.2mm 到 38.3°→68.5mm），
+        所以直接线性插值即可；超出量程就返回端点的角度并置 clamped。
+        返回 (角度, 是否被限幅)。
+        """
+        curve = self.jaw_opening_curve(**kw)
+        if not curve:
+            return None, True
+        ws = [w for _, w in curve]
+        if width_m <= min(ws):
+            return curve[int(np.argmin(ws))][0], True
+        if width_m >= max(ws):
+            return curve[int(np.argmax(ws))][0], True
+        for (g0, w0), (g1, w1) in zip(curve, curve[1:]):
+            if w0 <= width_m <= w1:
+                t = (width_m - w0) / (w1 - w0) if w1 != w0 else 0.0
+                return float(g0 + t * (g1 - g0)), False
+        return curve[-1][0], True
+
     # ---------------- 整机净空（不只夹爪） ----------------
     # 撞桌子的不一定是夹爪：肘部、前臂在低姿态下都可能先碰到。
     # 所以安全判定必须扫全部 link 的网格。
