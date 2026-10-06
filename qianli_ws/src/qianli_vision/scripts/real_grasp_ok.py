@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """真机抓取（孪生验证过的参数）
 
 孪生验证结论（20mm 物块）：
@@ -41,8 +41,19 @@ from grasp_guard import down_quat_xyzw, finite_position, require_fresh, read_obs
 DX_MM, DY_MM, DZ_MM = 8.0, -4.0, 2.0   # dz=+2mm：孪生实测能抓起且爪尖在棋盘面上方 2.2mm
 APPROACH_GRIP = 0.6
 CLOSE_GRIP = 0.0
-BOARD_Z = -0.0494          # 棋盘上表面（桌面 -0.0524 + 板厚 3mm）
-OBJ_Z = -0.0394            # 2cm 物块中心高度
+
+# ---- 桌面 / 棋盘 / 物块高度：2026-10-06 全部重新实测 ----
+# 旧值 BOARD_Z=-0.0494（"桌面 -0.0524 + 板厚 3mm"）里的桌面 -0.0524 是从
+# "最下端离桌约 5cm" 反推的；实测（夹爪最低点碰桌、6 点拟合，残差 RMS
+# 0.469mm）是 **-0.06909**，差 16.7mm。棋盘纸实测厚 0.5mm 不是 3mm。
+TABLE_Z = -0.06909
+BOARD_THICK = 0.0005
+BOARD_Z = TABLE_Z + BOARD_THICK      # -0.06859
+# 物块换成 **4cm EVA 泡棉方块**（旧值 2cm 是上一轮的塑料小方块）
+OBJ_SIZE = 0.04
+OBJ_HALF = OBJ_SIZE / 2              # 0.02；旧代码里硬编码的 .010 就是 2cm 的半高
+OBJ_Z = BOARD_Z + OBJ_HALF           # -0.04859（物块中心）
+
 SAFE_MARGIN = 0.001
 YAW_DEG = -90.0            # 与孪生一致（实测偏航不敏感）
 

@@ -30,17 +30,55 @@ SO101_PKG = os.environ.get(
                        '/share/so101_bringup'))
 URDF = os.path.join(SO101_PKG, 'urdf/so101.urdf')
 
-TABLE_Z = -0.0524
+# ---- 场景常量：全部改成 2026-10-06 的实测值 ----
+#
+# 这里原先是整个仿真链的**根**：TABLE_Z=-0.0524 与 BOARD_ORIGIN=(0.3420,
+# 0.0584) 都被 rl_env.py 等下游继承，而这两个值都是**推算/已废弃**的：
+#   · TABLE_Z -0.0524 是"最下端离桌约 5cm"+URDF 底座 -0.0024 反推出来的；
+#     实测（夹爪最低点碰桌、6 点拟合，残差 RMS 0.469mm）是 **-0.06909**，
+#     差 16.7mm —— 那个垫台实际不是 5cm。
+#   · BOARD_ORIGIN/YAW 出自已被判定不可信的两点法标定（两个内角点 Z 差
+#     9.5mm、反推格宽 34.6mm），见 docs/GRASP_REAL_AUDIT.md。
+# 所以：桌面用实测值；棋盘位姿**不再内置**，改为从外参文件读（没有就不画）。
+TABLE_Z = -0.06909
 BASE_BOTTOM = -0.0024
-BOARD_ORIGIN = (0.3420, 0.0584)
-BOARD_YAW = math.radians(-97.75)
 CELL_SIZE = .033
-BOARD_COLS, BOARD_ROWS = 7,5  # 内角点数；外部为 8x6 方格
-BOARD_W, BOARD_H = (BOARD_COLS+1)*CELL_SIZE, (BOARD_ROWS+1)*CELL_SIZE
-OBJ_SIZE = 0.02
+BOARD_COLS, BOARD_ROWS = 7, 5  # 内角点数；外部为 8x6 方格
+# 图案跨 (COLS-1) x (ROWS-1) 格。旧代码写 (COLS+1)/(ROWS+1) 是错的：
+# 7 个内角点只跨 6 格，加 1 变成 8 格就把棋盘画大了 1/3。
+BOARD_W = (BOARD_COLS - 1) * CELL_SIZE
+BOARD_H = (BOARD_ROWS - 1) * CELL_SIZE
+BOARD_ORIGIN = None      # 必须由外参填充；None = 未知，不画棋盘
+BOARD_YAW = None
+
+# 物块：现在是 **4cm EVA 泡棉方块**（旧值 2cm 是上一轮的塑料小方块）。
+# 这不是小事：抓取规划里的开度、贴面余量、夹爪角全部按物块宽度算。
+OBJ_SIZE = 0.04
 OBJ_GRID = (0.111, 0.0)
 # 运行时覆盖物块尺寸（孪生里扫不同尺寸，找爪口能容纳的上限）
 _OBJ_SIZE_OVERRIDE = [None]
+
+
+def load_extrinsics(path='/tmp/extrinsic.txt'):
+    """读棋盘位姿。**没有质量标记的一律拒绝** —— 旧的两点法写入方会往
+    同一路径写，手滑跑一次就会静默覆盖掉标好的值。"""
+    global BOARD_ORIGIN, BOARD_YAW
+    if not os.path.exists(path):
+        return None, f'外参文件不存在（{path}）'
+    kv = {}
+    for line in open(path, encoding='utf-8'):
+        s = line.strip()
+        if s and not s.startswith('#') and '=' in s:
+            k, v = s.split('=', 1)
+            kv[k.strip()] = v.strip()
+    if float(kv.get('quality_ok', 0) or 0) < 0.5:
+        return None, f'外参未通过质量裁决（quality_ok={kv.get("quality_ok", "缺失")}）'
+    try:
+        BOARD_ORIGIN = (float(kv['grid_origin_x']), float(kv['grid_origin_y']))
+        BOARD_YAW = math.radians(float(kv['grid_theta_deg']))
+    except (KeyError, ValueError) as exc:
+        return None, f'外参字段不完整: {exc}'
+    return (BOARD_ORIGIN, math.degrees(BOARD_YAW)), None
 
 
 def obj_size():
@@ -55,9 +93,11 @@ FRAME_IN_GRIPPER = np.array([-0.0079, -0.000218121, -0.0981274])
 
 def board_center_world():
     """Extrinsic origin is the first inner corner, one cell inside the board."""
-    x,y = BOARD_W/2-CELL_SIZE, BOARD_H/2-CELL_SIZE
-    c,s = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
-    return BOARD_ORIGIN[0]+c*x-s*y, BOARD_ORIGIN[1]+s*x+c*y
+    if BOARD_ORIGIN is None:
+        return None
+    x, y = BOARD_W / 2 - CELL_SIZE, BOARD_H / 2 - CELL_SIZE
+    c, s = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
+    return BOARD_ORIGIN[0] + c * x - s * y, BOARD_ORIGIN[1] + s * x + c * y
 
 
 def rot_x(a):
@@ -71,6 +111,10 @@ def rot_z(a):
 
 
 def obj_world_pos():
+    # 棋盘位姿未知时（外参没标好）退到臂前的默认可达位 —— 不要拿旧的
+    # (0.3420, 0.0584) 糊上去，那个值本身已被判定不可信。
+    if BOARD_ORIGIN is None:
+        return np.array([0.26, 0.0, TABLE_Z + 0.003 + obj_size() / 2])
     cy, sy = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
     ox = BOARD_ORIGIN[0] + cy * OBJ_GRID[0] - sy * OBJ_GRID[1]
     oy = BOARD_ORIGIN[1] + sy * OBJ_GRID[0] + cy * OBJ_GRID[1]
@@ -96,15 +140,19 @@ def build_model():
     gp.pos = [0.0, 0.0, (TABLE_Z + BASE_BOTTOM) / 2]
     gp.rgba = [0.3, 0.3, 0.32, 1]
 
-    cy, sy = math.cos(BOARD_YAW), math.sin(BOARD_YAW)
-    cx,cyy = board_center_world()
-    gb = wb.add_geom()
-    gb.name = 'board'
-    gb.type = mujoco.mjtGeom.mjGEOM_BOX
-    gb.size = [BOARD_W / 2, BOARD_H / 2, 0.0015]
-    gb.pos = [cx, cyy, TABLE_Z + 0.0015]
-    gb.quat = [math.cos(BOARD_YAW / 2), 0, 0, math.sin(BOARD_YAW / 2)]
-    gb.rgba = [0.9, 0.9, 0.9, 1]
+    # 棋盘：位姿未知就不画（旧值来自已废弃的两点法标定，画出来只会误导）
+    bc = board_center_world()
+    if bc is not None:
+        cx, cyy = bc
+        gb = wb.add_geom()
+        gb.name = 'board'
+        gb.type = mujoco.mjtGeom.mjGEOM_BOX
+        gb.size = [BOARD_W / 2, BOARD_H / 2, 0.0005]
+        gb.pos = [cx, cyy, TABLE_Z + 0.0005]
+        gb.quat = [math.cos(BOARD_YAW / 2), 0, 0, math.sin(BOARD_YAW / 2)]
+        gb.rgba = [0.9, 0.9, 0.9, 1]
+    else:
+        print('⚠️ 棋盘位姿未知（外参不可用），仿真场景里不画棋盘。')
 
     op = obj_world_pos()
     ob = wb.add_body(name='object')
@@ -114,8 +162,10 @@ def build_model():
     go.name = 'cube'
     go.type = mujoco.mjtGeom.mjGEOM_BOX
     go.size = [obj_size() / 2] * 3
-    go.rgba = [0.75, 0.75, 0.78, 1]
-    go.mass = 0.008
+    go.rgba = [0.95, 0.85, 0.20, 1]      # 黄，对应现场那块
+    # EVA 泡棉密度 ~60 kg/m^3（旧值 0.008kg 是按 2cm 塑料块给的，
+    # 换 4cm EVA 后沿用会让物块重 4 倍、抓起时的手感完全不同）
+    go.mass = 60.0 * obj_size() ** 3
 
     servo = {'shoulder_pan': 120, 'shoulder_lift': 120, 'elbow_flex': 120,
              'wrist_flex': 60, 'wrist_roll': 30, 'gripper': 8}

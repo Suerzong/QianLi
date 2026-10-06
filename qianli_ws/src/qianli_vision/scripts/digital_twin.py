@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 """数字孪生场景：SO-101 + 桌面 + 底座 + 棋盘 + 物块（MuJoCo）
 
-为什么需要底座：
-  URDF 里机械臂最低点是 base_link - 0.0024 m；
-  实测"机械臂最下端离桌面 5 cm" → 桌面在 base_link - 0.0524 m。
-  两者差 5cm，说明机械臂下面有个约 5cm 高的底座/垫块。
-  这是之前所有高度矛盾的根源（我把桌面当成了 5cm 更低）。
+场景参数（2026-10-06 全部重新实测）
+-----------------------------------
+  桌面高度    z = -0.06909 m   夹爪最低点碰桌、6 点拟合平面，残差 RMS 0.469mm
+  平面倾角      0.202°         实测法向 (0.0030, -0.0019, 0.99999)
+  底座        z 从 -0.06909 到 -0.0024  = 66.69 mm
+              （base_link 安装面 -2.40mm 与实测桌面之差）
+  棋盘        7x5 内角点 ⇒ 图案跨 6x4 格，格边长 33mm
+              位姿**从外参文件读**，不再内置
+  物块        4cm EVA 泡棉方块，立在棋盘上
 
-场景参数（全部来自实测）：
-  桌面高度      z = -0.0524 m（base_link 坐标系）
-  底座          z 从 -0.0524 到 -0.0024（5cm）
-  棋盘中心      base (0.3420, 0.0584) 为棋盘原点(左上内角)
-                棋盘 22.8 × 16.2 cm，绕 z 转 -97.75°
-  物块          2cm 立方体，立在棋盘上（中心 z = 桌面 + 0.01）
+三条被推翻的旧结论（留着是为了别再犯）
+--------------------------------------
+1. **桌面不是 -0.0524**。旧值是从"机械臂最下端离桌面约 5cm"这句估话 +
+   URDF 底座 -0.0024 反推的，实测比它低 16.7mm —— 那个垫台实际是 66.7mm
+   不是 50mm。
+2. **碰到桌面的是"夹爪几何最低点"，不是 TCP**。TCP 相对最低点的高度随
+   姿态从 +5.1mm 变到 +100.6mm，所以用 TCP 的 Z 当桌面高度会随姿态漂移。
+3. **棋盘位姿不能用那轮两点法标定的值**（0.3420, 0.0584 / -97.75°）：
+   两个内角点 Z 差 9.5mm、反推格宽 34.6mm，它连自己都不自洽
+   （见 docs/GRASP_REAL_AUDIT.md）。现在必须从带 quality_ok 的外参文件读。
 
 用法：
   ~/mj/bin/python digital_twin.py --check          # 场景自检
@@ -41,11 +49,61 @@ URDF = os.path.expanduser(
 TABLE_Z = -0.06909
 TABLE_TILT_DEG = 0.202   # 实测平面倾角，建模按水平处理
 BASE_BOTTOM = -0.0024    # 机械臂底座最低点（URDF）
-BOARD_ORIGIN = (0.3420, 0.0584)   # 棋盘原点（左上内角）在 base 平面位置
-BOARD_YAW_DEG = -97.75
-BOARD_W, BOARD_H = 0.228, 0.162   # 8×6 格 × 3.25cm
-OBJECT_SIZE = 0.02
+
+# 棋盘：7x5 个**内角点** ⇒ 图案跨 6x4 **格**；格边长 33mm（用户确认）。
+# 旧值 (0.228, 0.162) 配注释"8x6 格 x 3.25cm"是自相矛盾的：
+# 22.8cm 其实是 7x3.257，16.2cm 是 5x3.24 —— 把"角点数"当成了"格数"，
+# 而且格宽用了 32.5mm。两处都错。
+CELL_M = 0.033
+BOARD_COLS, BOARD_ROWS = 7, 5          # 内角点
+BOARD_W = (BOARD_COLS - 1) * CELL_M    # 0.198 m
+BOARD_H = (BOARD_ROWS - 1) * CELL_M    # 0.132 m
+
+# 棋盘在 base_link 下的位姿 **必须来自外参标定**。
+# 旧的 (0.3420, 0.0584) / -97.75° 出自那轮已被判定不可信的两点法标定
+# （见 docs/GRASP_REAL_AUDIT.md：两个内角点 Z 差 9.5mm、反推格宽 34.6mm），
+# 所以这里**不再内置旧值**，改成读外参文件；读不到就明确报警并跳过棋盘。
+EXTRINSIC_PATH = '/tmp/extrinsic.txt'
+BOARD_ORIGIN = None      # 由外参填充；None = 未知，不画棋盘
+BOARD_YAW_DEG = None
+
+# 物块：现在是 **4cm EVA 泡棉方块**（旧值 2cm 是上一轮的塑料小方块）
+OBJECT_SIZE = 0.04
 OBJECT_GRID = (0.111, 0.0)        # 物块在棋盘坐标 (11.1cm, 0) → 可达区内
+# 5 种颜色（2026-10-06 现场实测色相，OpenCV H 0~179）
+OBJECT_COLORS = {
+    'red':    (0.85, 0.15, 0.15),
+    'yellow': (0.95, 0.85, 0.20),
+    'green':  (0.25, 0.75, 0.30),
+    'blue':   (0.20, 0.35, 0.85),
+    'purple': (0.55, 0.30, 0.80),
+}
+
+
+def load_extrinsics(path=EXTRINSIC_PATH):
+    """从外参文件读棋盘位姿，带质量标记校验。
+
+    为什么要校验 quality_ok：外参文件被多个脚本消费，而旧的写入方
+    （extrinsic_calib.py 两点法）会往同一路径写。手滑跑一次旧的就会把
+    标好的值覆盖掉，下游全静默用错值 —— 所以没有质量标记的一律拒绝。
+    """
+    if not os.path.exists(path):
+        return None, f'外参文件不存在（{path}）—— 棋盘位姿未知'
+    kv = {}
+    for line in open(path, encoding='utf-8'):
+        s = line.strip()
+        if not s or s.startswith('#') or '=' not in s:
+            continue
+        k, v = s.split('=', 1)
+        kv[k.strip()] = v.strip()
+    if 'quality_ok' not in kv or float(kv.get('quality_ok', 0)) < 0.5:
+        return None, (f'外参未通过质量裁决（quality_ok='
+                      f'{kv.get("quality_ok", "缺失")}）—— 拒绝使用')
+    try:
+        return (float(kv['grid_origin_x']), float(kv['grid_origin_y']),
+                float(kv['grid_theta_deg'])), None
+    except (KeyError, ValueError) as exc:
+        return None, f'外参字段不完整: {exc}'
 
 
 def build_scene(object_grid=OBJECT_GRID):
@@ -76,22 +134,32 @@ def build_scene(object_grid=OBJECT_GRID):
     gp.pos = [0.0, 0.0, (TABLE_Z + BASE_BOTTOM) / 2]
     gp.rgba = [0.3, 0.3, 0.32, 1]
 
-    # 棋盘（薄板，按实测位置与朝向）
-    yaw = math.radians(BOARD_YAW_DEG)
-    cy, sy = math.cos(yaw), math.sin(yaw)
-    cx = BOARD_ORIGIN[0] + cy * (BOARD_W / 2) + (-sy) * (BOARD_H / 2)
-    cyy = BOARD_ORIGIN[1] + sy * (BOARD_W / 2) + cy * (BOARD_H / 2)
-    gb = wb.add_geom()
-    gb.name = 'board'
-    gb.type = mujoco.mjtGeom.mjGEOM_BOX
-    gb.size = [BOARD_W / 2, BOARD_H / 2, 0.0015]
-    gb.pos = [cx, cyy, TABLE_Z + 0.0015]
-    gb.quat = [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)]
-    gb.rgba = [0.9, 0.9, 0.9, 1]
+    # 棋盘（薄板）。位姿**必须来自外参**；外参不可用时明确报警并跳过，
+    # 而不是拿旧值糊上去 —— 旧值来自已废弃的两点法，画出来只会误导。
+    board_xy = None
+    if BOARD_ORIGIN is not None and BOARD_YAW_DEG is not None:
+        yaw = math.radians(BOARD_YAW_DEG)
+        cy, sy = math.cos(yaw), math.sin(yaw)
+        cx = BOARD_ORIGIN[0] + cy * (BOARD_W / 2) + (-sy) * (BOARD_H / 2)
+        cyy = BOARD_ORIGIN[1] + sy * (BOARD_W / 2) + cy * (BOARD_H / 2)
+        gb = wb.add_geom()
+        gb.name = 'board'
+        gb.type = mujoco.mjtGeom.mjGEOM_BOX
+        gb.size = [BOARD_W / 2, BOARD_H / 2, 0.0005]
+        gb.pos = [cx, cyy, TABLE_Z + 0.0005]
+        gb.quat = [math.cos(yaw / 2), 0, 0, math.sin(yaw / 2)]
+        gb.rgba = [0.92, 0.92, 0.90, 1]
+        board_xy = (cy, sy)
+    else:
+        print('⚠️ 棋盘位姿未知（外参不可用），场景里不画棋盘。')
 
-    # 物块（动态，可被抓/掉落）
-    ox = BOARD_ORIGIN[0] + cy * object_grid[0] - sy * object_grid[1]
-    oy = BOARD_ORIGIN[1] + sy * object_grid[0] + cy * object_grid[1]
+    # 物块（动态，可被抓/掉落）。4cm EVA 泡棉方块，密度按 EVA 约 60kg/m^3。
+    if board_xy is not None:
+        cy, sy = board_xy
+        ox = BOARD_ORIGIN[0] + cy * object_grid[0] - sy * object_grid[1]
+        oy = BOARD_ORIGIN[1] + sy * object_grid[0] + cy * object_grid[1]
+    else:
+        ox, oy = 0.26, 0.0            # 棋盘未知时放在臂前的默认可达位
     ob = wb.add_body(name='object')
     ob.pos = [ox, oy, TABLE_Z + 0.003 + OBJECT_SIZE / 2]
     ob.add_freejoint()
@@ -99,8 +167,9 @@ def build_scene(object_grid=OBJECT_GRID):
     go.name = 'cube'
     go.type = mujoco.mjtGeom.mjGEOM_BOX
     go.size = [OBJECT_SIZE / 2] * 3
-    go.rgba = [0.75, 0.75, 0.78, 1]
-    go.mass = 0.008          # 8g（2cm 塑料块）
+    # EVA 密度 ~60 kg/m^3 → 4cm 立方体约 3.8g（旧值 8g 是按 2cm 塑料块给的）
+    go.mass = 60.0 * OBJECT_SIZE ** 3
+    go.rgba = list(OBJECT_COLORS.get('yellow', (0.9, 0.8, 0.2))) + [1.0]
 
     return spec.compile(), (ox, oy, TABLE_Z + 0.003 + OBJECT_SIZE / 2)
 
@@ -126,6 +195,7 @@ def tcp_pos(model, data):
 
 
 def main():
+    global BOARD_ORIGIN, BOARD_YAW_DEG
     ap = argparse.ArgumentParser()
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--compare', action='store_true')
@@ -138,6 +208,18 @@ def main():
     ap.add_argument('--azimuth', type=float, default=130.0)
     ap.add_argument('--elevation', type=float, default=-35.0)
     a = ap.parse_args()
+
+    # 棋盘位姿只能来自外参（内置旧值是废弃的两点法结果，不能用）
+    ext, why = load_extrinsics()
+    if ext is None:
+        print(f'⚠️ 外参不可用：{why}')
+        print('   → 场景里不画棋盘，物块放在臂前默认位。')
+        print('     标完外参后重跑即可自动对齐。')
+    else:
+        BOARD_ORIGIN = (ext[0], ext[1])
+        BOARD_YAW_DEG = ext[2]
+        print(f'✅ 外参已加载：棋盘原点 ({ext[0]:.4f}, {ext[1]:.4f}) m  '
+              f'yaw {ext[2]:+.3f}°')
 
     model, obj_pos = build_scene()
     data = mujoco.MjData(model)
