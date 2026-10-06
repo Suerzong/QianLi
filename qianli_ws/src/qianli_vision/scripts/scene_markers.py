@@ -158,28 +158,44 @@ def main():
     arr = MarkerArray()
 
     # ---- 桌面（板体，上表面正好在 table_z）----
+    # 颜色用暖木色而不是灰白：实测桌子是浅灰工作台，但 RViz 里灰板
+    # 跟背景对比太弱、看着"不明显"，所以刻意压暖一点让它跳出来。
+    # alpha 0.88：既要看得清是块实体板，又不能完全不透明（安全闸门的
+    # "最低点->桌面"间隙竖线要在桌面附近可见）。
     arr.markers.append(box(
         1, 'table', [0.0, 0.0, args.table_z - args.table_thick / 2.0],
-        [tsx, tsy, args.table_thick], (0.78, 0.76, 0.72, 0.55), q))
-    # 桌面边缘描一圈，深色，让轮廓清楚
+        [tsx, tsy, args.table_thick], (0.62, 0.51, 0.38, 0.88), q))
+    # 桌面四周描一条粗边框，让"这是张桌子"一眼可辨
     hx, hy = tsx / 2.0, tsy / 2.0
-    zt = args.table_z + 0.0002
+    zt = args.table_z + 0.0004
     edge = [(hx, hy, zt), (-hx, hy, zt), (-hx, -hy, zt),
             (hx, -hy, zt), (hx, hy, zt)]
-    arr.markers.append(line(2, 'table_edge', edge, (0.35, 0.35, 0.38, 1.0),
-                            0.003))
+    arr.markers.append(line(2, 'table_edge', edge, (0.30, 0.22, 0.14, 1.0),
+                            0.006))
+    # 桌板厚度方向也描一圈，做出"有厚度"的立体感
+    for i, (ex, ey) in enumerate([(hx, hy), (-hx, hy), (-hx, -hy), (hx, -hy)]):
+        arr.markers.append(line(20 + i, 'table_side', [
+            (ex, ey, zt), (ex, ey, args.table_z - args.table_thick)],
+            (0.30, 0.22, 0.14, 1.0), 0.006))
+    arr.markers.append(line(30, 'table_side', [
+        (hx, hy, args.table_z - args.table_thick),
+        (-hx, hy, args.table_z - args.table_thick),
+        (-hx, -hy, args.table_z - args.table_thick),
+        (hx, -hy, args.table_z - args.table_thick),
+        (hx, hy, args.table_z - args.table_thick)],
+        (0.30, 0.22, 0.14, 1.0), 0.006))
 
     # ---- 垫台：从桌面顶到 base_link 安装面 ----
     arr.markers.append(box(
         3, 'pedestal', [0.0, 0.0, (args.table_z + args.pedestal_top) / 2.0],
-        [psx, psy, max(ped_h, 1e-4)], (0.22, 0.23, 0.25, 1.0)))
+        [psx, psy, max(ped_h, 1e-4)], (0.28, 0.30, 0.34, 1.0)))
     arr.markers.append(line(4, 'pedestal_edge', [
         (psx / 2, psy / 2, args.pedestal_top), (-psx / 2, psy / 2,
                                                 args.pedestal_top),
         (-psx / 2, -psy / 2, args.pedestal_top),
         (psx / 2, -psy / 2, args.pedestal_top),
         (psx / 2, psy / 2, args.pedestal_top)],
-        (0.55, 0.57, 0.60, 1.0), 0.002))
+        (0.85, 0.88, 0.92, 1.0), 0.004))
 
     # ---- 桌面上的 5cm 网格（目测尺度用）----
     if args.with_grid:
@@ -187,15 +203,17 @@ def main():
         span = args.grid_span
         step = args.grid_step
         n = int(span / step)
+        # 网格线画在桌面上方一点点，避免和桌面共面产生 z-fighting 闪烁
+        zg = zt + 0.0006
         for i in range(-n, n + 1):
             x = i * step
             arr.markers.append(line(mid, 'table_grid',
-                                    [(x, -span, zt), (x, span, zt)],
-                                    (0.45, 0.48, 0.52, 0.35), 0.0012))
+                                    [(x, -span, zg), (x, span, zg)],
+                                    (0.22, 0.16, 0.10, 0.55), 0.0015))
             mid += 1
             arr.markers.append(line(mid, 'table_grid',
-                                    [(-span, x, zt), (span, x, zt)],
-                                    (0.45, 0.48, 0.52, 0.35), 0.0012))
+                                    [(-span, x, zg), (span, x, zg)],
+                                    (0.22, 0.16, 0.10, 0.55), 0.0015))
             mid += 1
 
     # ---- 尺寸标注 ----
