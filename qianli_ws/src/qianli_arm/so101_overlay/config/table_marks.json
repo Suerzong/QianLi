@@ -1,0 +1,8 @@
+[
+  {"p": [0.1196, -0.2595, -0.0707], "tilt": 2.3, "link": "gripper_link", "at": "user"},
+  {"p": [0.0696, -0.2706, -0.0692], "tilt": 2.1, "link": "gripper_link", "at": "user"},
+  {"p": [0.2903, -0.0920, -0.0702], "tilt": 3.6, "link": "gripper_link", "at": "user"},
+  {"p": [0.3084, -0.0147, -0.0703], "tilt": 2.8, "link": "gripper_link", "at": "user"},
+  {"p": [0.2957,  0.0825, -0.0699], "tilt": 2.9, "link": "gripper_link", "at": "user"},
+  {"p": [0.3089, -0.0653, -0.0696], "tilt": 0.2, "link": "gripper_link", "at": "user"}
+]

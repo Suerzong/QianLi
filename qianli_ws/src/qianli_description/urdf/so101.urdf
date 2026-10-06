@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Generated using onshape-to-robot -->
 <!-- Onshape https://cad.onshape.com/documents/7715cc284bb430fe6dab4ffd/w/4fd0791b683777b02f8d975a/e/826c553ede3b7592eb9ca800 -->
 <robot name="so101_new_calib">
@@ -450,4 +450,25 @@
     </actuator>
   </transmission> 
 
+  <!-- ===== TCP：爪口抓取点（tcp_from_model.py 由网格算出） =====
+       由两爪最接近处求得；固定爪内侧面落在 frame X≈0，
+       开口中心 = X0 - W/2，W 为目标物块宽度。
+       本次按 W = 14.0 mm 生成。
+       父节点选 gripper_frame_link，使 tcp_link 成为链末端，
+       IK 的 tip 自然就是真正的抓取点。 -->
+  <link name="tcp_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-9"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="tcp_joint" type="fixed">
+    <origin xyz="-0.007000 0.000000 0.002373" rpy="0 0 0"/>
+    <parent link="gripper_frame_link"/>
+    <child link="tcp_link"/>
+    <axis xyz="0 0 0"/>
+  </joint>
 </robot>

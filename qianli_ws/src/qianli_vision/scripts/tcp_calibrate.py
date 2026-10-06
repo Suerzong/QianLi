@@ -48,6 +48,7 @@ import numpy as np
 TRIGGER = '/tmp/tcp_mark'
 OUT_JSON = '/tmp/tcp_marks.json'
 OUT_TXT = '/tmp/tcp_calib.txt'
+PROGRESS = '/tmp/tcp_calibrate_progress.txt'
 FLANGE = 'gripper_link'
 BASE = 'base_link'
 
@@ -196,8 +197,19 @@ def solve_tcp(poses, iterations=None, plane=None):
 
 
 # ------------------------------- ROS 采集端 -------------------------------
+def write_progress(lines):
+    tmp = PROGRESS + '.tmp'
+    try:
+        with open(tmp, 'w') as fh:
+            fh.write('\n'.join(lines) + '\n')
+        os.replace(tmp, PROGRESS)
+    except OSError:
+        pass
+
+
 def collect(args):
     import rclpy
+    from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
     from tf2_ros import Buffer, TransformListener
 
@@ -207,6 +219,10 @@ def collect(args):
             self.buf = Buffer()
             self.listener = TransformListener(self.buf, self)
             self.marks = []
+            self.index = 0
+            self.last_pose = None
+            self.stable_since = time.monotonic()
+            self.last_note = ''
 
         def current(self):
             try:
@@ -217,7 +233,14 @@ def collect(args):
             q = tr.transform.rotation
             return quat_to_R(q.x, q.y, q.z, q.w), np.array([t.x, t.y, t.z])
 
-        def tick(self):
+        def add(self, R, p, note=''):
+            self.marks.append({'R': R.tolist(), 'p': p.tolist(),
+                               'at': time.strftime('%H:%M:%S'), 'note': note})
+            self.index += 1
+            self.stable_since = time.monotonic()
+            self.last_note = ''
+
+        def tick_trigger(self):
             if os.path.exists(TRIGGER):
                 try:
                     os.remove(TRIGGER)
@@ -228,37 +251,142 @@ def collect(args):
                     self.get_logger().warning('读不到 TF，本次打点忽略')
                     return
                 R, p = pose
-                self.marks.append({'R': R.tolist(), 'p': p.tolist(),
-                                   'at': time.strftime('%H:%M:%S')})
+                self.add(R, p, 'manual trigger')
                 self.get_logger().info(
                     f'📍 打点 {len(self.marks)}/{args.marks}  '
-                    f'{FLANGE} @ ({p[0]:.4f}, {p[1]:.4f}, {p[2]:.4f})  '
                     f'工具轴 = {np.round(R @ [0,0,1], 2)}')
+
+        def tick_auto(self, tolerance_deg, stable_s, move_mm=0.4, move_deg=0.4):
+            """引导式自动采集：**只要求姿态彼此错开**，不强求绝对朝向。
+
+            一开始要求"工具轴必须指向某个绝对方向"是不现实的：SO-101 的
+            wrist_flex 只有 ±95°，某些绝对朝向在那个臂型下根本够不到，
+            用户会被卡死在一个永远满足不了的目标上。
+
+            改成：只要当前姿态与**已记录的所有姿态**工具轴夹角都超过
+            min_angle，且静止 stable_s 秒，就记录。想省事的话第一个姿态
+            随便摆，之后按要求岔开就行。
+            """
+            pose = self.current()
+            now = time.monotonic()
+            if pose is None:
+                write_progress(['⚠️ 读不到 TF —— robot_state_publisher 在跑吗？'])
+                return
+            R, p = pose
+            axis = R @ np.array([0.0, 0.0, 1.0])
+
+            # 静止判定
+            stationary = True
+            if self.last_pose is not None:
+                R0, p0 = self.last_pose
+                if np.linalg.norm(p - p0) * 1000 > move_mm:
+                    stationary = False
+                angle = math.degrees(math.acos(
+                    float(np.clip((np.trace(R0.T @ R) - 1) / 2, -1, 1))))
+                if angle > move_deg:
+                    stationary = False
+            if not stationary:
+                self.stable_since = now
+            self.last_pose = (R, p)
+            stable_for = now - self.stable_since
+
+            if self.index >= args.marks:
+                return
+
+            # 与已记录姿态的最小夹角
+            if self.marks:
+                angles = []
+                for mark in self.marks:
+                    other = np.array(mark['R'], dtype=float)
+                    a2 = other @ np.array([0.0, 0.0, 1.0])
+                    angles.append(math.degrees(math.acos(
+                        float(np.clip(axis @ a2, -1, 1)))))
+                min_angle = min(angles)
+                worst = self.marks[int(np.argmin(angles))]['at']
+            else:
+                min_angle = None
+                worst = '-'
+
+            lines = [
+                f'进度 {len(self.marks)}/{args.marks}',
+                f'当前工具轴 (base)  {np.round(axis, 3).tolist()}',
+                f'当前法兰位置      ({p[0]:.4f}, {p[1]:.4f}, {p[2]:.4f})',
+            ]
+            if min_angle is None:
+                lines.append('这是第 1 个点：随便摆一个舒服的姿态，'
+                             '爪口顶住定点、稳住即可')
+                ok_angle = True
+            else:
+                lines.append(f'与已记录姿态的最小夹角  {min_angle:.1f}° '
+                             f'(需要 >= {tolerance_deg:.0f}°)  最接近的是 {worst}')
+                lines.append('→ 把爪子往另一个方向多歪一点，让这个夹角变大'
+                             if min_angle < tolerance_deg else
+                             '→ 姿态已足够岔开 ✅')
+                ok_angle = min_angle >= tolerance_deg
+            lines.append(f'静止              {"✅" if stationary else "…移动中"}  '
+                         f'{stable_for:.1f}s / {stable_s:.1f}s')
+            write_progress(lines)
+
+            if ok_angle and stable_for >= stable_s:
+                self.add(R, p, f'auto axis={np.round(axis, 3).tolist()} '
+                               f'min_sep={min_angle}')
+                self.get_logger().info(
+                    f'📍 自动打点 {len(self.marks)}/{args.marks}  '
+                    f'工具轴 {np.round(axis, 3).tolist()}  '
+                    f'与已有最小夹角 {min_angle}')
 
     rclpy.init()
     node = Collector()
-    print(f'采集 TCP 标定点：需要 {args.marks} 个不同的工具姿态（{args.mode} 法）')
-    if getattr(args, 'mode', 'point') == 'point':
-        print('  1) 桌上固定一个**尖点**（针尖 / 立起来的螺丝 / 笔尖）')
-        print('  2) 松开扭矩，用手把**爪口抓取点**（两爪之间、想夹物块的位置）')
-        print('     对准这个尖点')
-        print('  3) 每次换一个明显不同的姿态（转 wrist_flex ±40°、再转 wrist_roll）')
+    mode = 'auto' if args.auto else 'trigger'
+    print(f'采集 TCP 标定点：{args.marks} 个不同工具姿态（{args.mode} 法 / {mode}）')
+
+    # 先等 TF 真正可用，否则开头几个触发会被白白丢掉
+    print('  等待 TF (base_link -> gripper_link) …', end='', flush=True)
+    wait_until = time.monotonic() + 30.0
+    while rclpy.ok() and time.monotonic() < wait_until:
+        rclpy.spin_once(node, timeout_sec=0.1)
+        if node.current() is not None:
+            break
+    if node.current() is None:
+        print('\n❌ 30 秒内拿不到 TF —— '
+              'robot_state_publisher / 驱动没在跑？')
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.try_shutdown()
+        return []
+    print(' 就绪')
+    time.sleep(0.5)
+
+    if args.auto:
+        print('  · 松开扭矩，用手把**爪口抓取点**对准桌上的固定尖点')
+        print('  · 第 1 个点随便摆个舒服的姿态；之后每换一个姿态，'
+              '让工具轴跟已记录的方向岔开')
+        print(f'  · 摆稳约 {args.stable:.1f}s 自动记录；'
+              f'够不到的朝向不用勉强')
     else:
-        print('  1) 松开扭矩，用手把爪口两片爪子**同时轻触桌面**')
-        print('  2) 每次换一个明显不同的倾角（±40° 以上）')
-    print(f'  4) 摆好后执行： touch {TRIGGER}')
-    print('  做完 Ctrl+C 结束\n')
+        print('  · 松开扭矩，把爪口抓准尖点')
+        print(f'  · 每次摆好后执行： touch {TRIGGER}')
+    print()
+
+    stop = False
     try:
-        while rclpy.ok() and len(node.marks) < args.marks:
+        while rclpy.ok() and len(node.marks) < args.marks and not stop:
             rclpy.spin_once(node, timeout_sec=0.1)
-            node.tick()
-    except KeyboardInterrupt:
-        pass
+            if args.auto:
+                node.tick_auto(args.tolerance, args.stable)
+            else:
+                node.tick_trigger()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        stop = True
     marks = node.marks
-    node.destroy_node()
+    try:
+        node.destroy_node()
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
     if rclpy.ok():
         rclpy.try_shutdown()
 
+    write_progress([f'采集结束，共 {len(marks)} 个点'])
     with open(args.json, 'w') as fh:
         json.dump(marks, fh, indent=2)
     print(f'\n📄 已保存 {len(marks)} 个打点到 {args.json}')
@@ -273,6 +401,14 @@ def main():
     ap.add_argument('--mode', default='point', choices=['point', 'plane'],
                     help='point=定点法(准, 需一个固定尖点); '
                          'plane=平面法(易, 只需桌面, 精度约 2~4mm)')
+    ap.add_argument('--auto', action='store_true',
+                    help='引导式自动采集：摆到接近目标姿态并静止即自动打点，'
+                         '不用手动 touch 触发文件')
+    ap.add_argument('--tolerance', type=float, default=25.0,
+                    help='自动模式：与已记录姿态的最小工具轴夹角（度）。'
+                         '越大越准，但越难摆')
+    ap.add_argument('--stable', type=float, default=1.5,
+                    help='自动模式下判定"摆稳"所需的静止时长（秒）')
     ap.add_argument('--json', default=OUT_JSON)
     ap.add_argument('--out', default=OUT_TXT)
     ap.add_argument('--solve-only', help='只用已有打点文件求解，不连 ROS')
@@ -280,9 +416,14 @@ def main():
 
     if args.solve_only:
         with open(args.solve_only) as fh:
-            raw = json.load(fh)
+            payload = json.load(fh)
+        raw = payload['poses'] if isinstance(payload, dict) else payload
     else:
         raw = collect(args)
+
+    if not raw:
+        print('❌ 没有采到任何标定点')
+        return 1
 
     poses = [(np.array(m['R'], dtype=float), np.array(m['p'], dtype=float))
              for m in raw]
