@@ -518,9 +518,22 @@ class So101DriverNode(Node):
             # powerless arm can sag slightly beyond a URDF soft limit; using
             # a clipped joint angle here would create a jump at torque-on.
             hold_raw = self.bus.read_positions()
-            if any(raw < 0 or raw > 4095 for raw in hold_raw):
+            # 舵机停在量程端点时会读回 4096/4097/4104…（或多圈边界的负值）。
+            # 这是**合法的物理读数**（Present_Position 是 16 位、可多圈），
+            # 不该因此拒绝使能 —— 否则某个关节一旦停在机械死点上，
+            # 整条臂就永远使能不了（实测踩到：elbow 读回 4104）。
+            #
+            # 但 Goal_Position 只有一个 12 位字，所以**写回时必须夹到 0..4095**。
+            # 注意夹紧而不是取模：4104 → 4095 只差 9 个计数，而 4104 % 4096 = 8
+            # 会让舵机反向转将近一整圈，非常危险。
+            if any(raw < -4096 or raw > 8191 for raw in hold_raw):
                 raise RuntimeError(
-                    f'invalid encoder value while enabling: {hold_raw}')
+                    f'encoder value far out of range while enabling: {hold_raw}')
+            hold_goal = [min(4095, max(0, raw)) for raw in hold_raw]
+            if hold_goal != hold_raw:
+                self.get_logger().warning(
+                    'encoder read outside 0..4095 while enabling; goal clamped '
+                    f'(not wrapped): {hold_raw} -> {hold_goal}')
             self.last_raw = list(hold_raw)
             self.q_current = self._raw_to_joint(hold_raw)
             self.q_output = self.q_current.copy()
@@ -529,8 +542,8 @@ class So101DriverNode(Node):
             self.recovering_outside_limits = bool(np.any(
                 (self.q_output < self.joint_lower)
                 | (self.q_output > self.joint_upper)))
-            self.bus.write_positions(hold_raw)
-            self.last_written_raw = list(hold_raw)
+            self.bus.write_positions(hold_goal)
+            self.last_written_raw = list(hold_goal)
             self.last_write_time = time.monotonic()
             self.bus.set_torque(True)
             torque_states = self.bus.read_torque_states()
