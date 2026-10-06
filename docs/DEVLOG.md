@@ -2,6 +2,122 @@
 
 > 按时间顺序记录 QianLi 开发过程、决策与验证结果。
 
+## 2026-10-06（上午）— 机械限位实测重标定：找回被静默吞掉的 71.2° ✅
+
+### 结论先行
+
+用户报的症状是"某些关节某个方向到头了，但手推还有很大余量，软件把它判成
+危险区、直接卡住吞掉"。实测确认主因是 **`wrist_roll` 正向被 12 位量程吃掉
+71.2° 行程**，外加**三处静默 clip**。
+
+### 1. 旧限位根本不是实测值（关键发现）
+
+`driver_params.yaml` 的 `raw_min/raw_max` 抄自 lerobot 标定文件
+`~/.cache/huggingface/lerobot/calibration/robots/so_follower/my_so101_arm.json`：
+
+| 关节 | 那份文件里的值 | 真相 |
+|---|---|---|
+| `shoulder_pan` | 826 ~ 3330 | 与 URDF 换算值**逐位相同** → 是照 URDF 摆位录的 |
+| `wrist_roll` | **0 ~ 4095** | 明显是默认值，压根没测 |
+| `elbow_flex` | 2057 ~ 4095 | 上限被截到 4095 |
+
+所以软限位既不是 URDF 设计值也不是机械行程，而是**两边都不是**。
+
+### 2. 手动扫行程测真实机械死点
+
+写了 `joint_range_calibrate.py`（扭矩确认为 0，30 Hz 记录，跨界按 4096 展开）。
+150 秒 4431 个样本、0 读失败：
+
+| 关节 | 机械死点 | 行程 | 旧软限位 | 差异 |
+|---|---|---|---|---|
+| shoulder_pan | 746 ~ 3299 | 224.4° | 826 ~ 3330 | 旧限位**越过死点** |
+| shoulder_lift | 784 ~ 3192 | 211.6° | 842 ~ 3118 | 与 URDF 一致 |
+| elbow_flex | 1865 ~ 4084 | 195.0° | 1974 ~ 4095 | 旧限位**越过死点** |
+| wrist_flex | 831 ~ 3180 | 206.5° | 954 ~ 3116 | 与 URDF 一致 |
+| **wrist_roll** | **1144 ~ 4993** | **338.3°** | 1264 ~ 4095 | **跨过 4095，正向吞掉 71.2°** |
+| gripper | 1921 ~ 3329 | 123.8° | 1916 ~ 3168 | 旧限位**越过死点** |
+
+### 3. wrist_roll 重新定零（本次修复的核心）
+
+`wrist_roll` 实测行程 338.3° 跨过 4095 单圈边界，而 `Goal_Position` 只有
+一个 12 位字。零位在 3053 时 URDF 窗口 `[1264, 4905]` 有 810 计数落在量程外
+—— 旧代码把 `raw_max` 截到 4095，那 71.2° 就无声无息地没了。
+
+改用 lerobot `set_half_turn_homings()` 的思路平移行程，而不是截断行程：
+
+| | 值 |
+|---|---|
+| Homing_Offset | −1215 → **−195** |
+| Present_Position | 4970 → **3950** |
+| zero_raw | 3053 → **2033** |
+| 软限位包络 | [−157.24°, +91.58°] → **[−157.24°, +162.77°]** |
+
+**踩到的坑：`Homing_Offset` 写入与回读编码不同。**
+写是 12 位"符号+幅值"（符号位 bit 11，见 lerobot
+`feetech/tables.py: STS_SMS_SERIES_ENCODINGS_TABLE = {"Homing_Offset": 11}`），
+回读却是 16 位二进制补码。第一次按补码写，回读全对不上，还误以为写失败把
+零位挪了 +382 计数。最后用"写→读 Present_Position→算偏差→闭环修正"确定下来，
+并且**只认 `Present_Position`**，不信 offset 回读。
+断电重启后 offset 仍为 −195、Present 仍为 3950 → EEPROM 生效且跨上电稳定。
+
+### 4. 静默 clip 全部改为显式报告
+
+三处会悄悄改目标、不留痕迹的地方：
+
+| 位置 | 旧行为 | 新行为 |
+|---|---|---|
+| `driver_node._on_command` | `np.clip` 改成限位值 | 限流告警 + `/arm/status` 的 `clip_events`/`clip_last`/`clip_seen`，可选 `reject_out_of_range` |
+| `driver_node._joint_to_raw` | 静默夹到 raw 窗口 | 同上（说明两侧限位已不自洽） |
+| `ik_node._clip_bounds` | 静默夹 IK 解 | 解算后汇报被夹关节与最大越界量 |
+
+另外把驱动里硬编码的 `LOWER_LIMITS/UPPER_LIMITS` 删掉，
+关节限位改为**从 `raw_min/raw_max` 推导**——限位从此只有一个来源；
+`raw_*` 超出 `0..4095` 直接拒绝启动，而不是截断。
+
+回归测试 `verify_limit_reporting.py` 通过，日志现在会喊出来：
+
+```
+clamped: wrist_roll requested +171.89 deg but soft limit allows +91.58 deg
+         -> applied +91.58 deg (+80.31 deg swallowed, total 2 clip events)
+```
+
+### 5. 我自己踩的坑（记录以免重犯）
+
+* 探测"多圈目标"时把 `Goal_Position` 恢复成原值 `0`，而 0 低于舵机的
+  `Min_Position_Limit`，**ID1 因此锁死了 0x02 角度限位标志**，驱动连不上。
+  写合法 Goal 清不掉，**只能断电重启**（与 ID2 编码器跑飞同因）。
+  教训：动 `Goal_Position` 前先确认它落在该舵机的电子限位内。
+* 诊断脚本一开始没校验checksum，把总线噪声当成了舵机错误标志。
+  现在 `servo_status_diag.py` 带校验和并多次采样。
+
+### 6. TCP / 外参（进行中）
+
+* `tcp_calibrate.py`：定点法 + 平面约束法，自检显示
+  **定点法 4 个点即 0.74mm**，平面法要 12 个点才 2.0mm → 默认定点法。
+* `extrinsic_calib_multi.py`：多点最小二乘（闭式）替换旧两点法，
+  输出残差与**反推格宽**两个可信度指标。自检 σ=1mm 时平移误差 0.66mm。
+* 两者都**不需要使能扭矩**：松扭矩后用手摆，零运动风险。
+* 旧两点法的系统性错误：记录的是 `gripper_frame_link` 的位置，
+  而人是按**爪口**去对格点的，两者差几十毫米。
+
+### 复现命令
+
+```bash
+~/mj/bin/python joint_range_calibrate.py --duration 150
+~/mj/bin/python derive_joint_limits.py --ranges /tmp/joint_ranges.json
+~/mj/bin/python servo_homing_shift.py --joint wrist_roll --shift -1020
+~/mj/bin/python verify_limit_reporting.py       # 需 sim 驱动在跑
+~/mj/bin/python tcp_calibrate.py --mode point --marks 6
+~/mj/bin/python extrinsic_calib_multi.py --cell-cm 3.3
+```
+
+### 待办
+
+- [ ] 与用户一起跑一次真机 TCP 标定（定点法，需要一个固定尖点）
+- [ ] 标定后重新跑外参，对比旧两点法的残差
+- [ ] 抓取链路改用标定后的 TCP（现在仍用 `gripper_frame_link`）
+- [ ] 换 14mm 物块（2cm 物块物理上塞不进 19.6mm 爪口）
+
 ## 2026-10-06（凌晨）— 真机根源：shoulder_lift 舵机编码器跑飞 + RL 结果
 
 ### 🎯 真机所有怪现象的根源：ID2 舵机位置计数跑飞
