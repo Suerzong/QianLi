@@ -28,6 +28,9 @@ def include(package, launch, arguments=None, condition=None):
 
 
 def setup(context):
+    explore = LaunchConfiguration('explore').perform(context).lower() == 'true'
+    if explore and not all(LaunchConfiguration(name).perform(context).lower() == 'true' for name in ('slam', 'nav2')):
+        raise RuntimeError('explore:=true requires slam:=true and nav2:=true (online mapping)')
     variant = LaunchConfiguration('variant').perform(context)
     if not variant or any(character not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for character in variant):
         raise RuntimeError('variant must be a scenario name containing letters, digits, underscores or hyphens')
@@ -72,6 +75,9 @@ def setup(context):
             'initial_yaw': spawn['spawn_yaw'],
         }, condition=localization),
         include('qianli_navigation', 'navigation.launch.py', condition=IfCondition(nav2)),
+        include('qianli_exploration', 'exploration.launch.py', {
+            'report_file': LaunchConfiguration('exploration_report'),
+        }, condition=IfCondition(LaunchConfiguration('explore'))),
         Node(package='rviz2', executable='rviz2', name='qianli_training_rviz',
              arguments=['-d', str(scene_share / 'rviz/training.rviz'), '-f', fixed_frame],
              parameters=[{'use_sim_time': True}], condition=IfCondition(LaunchConfiguration('rviz'))),
@@ -80,6 +86,8 @@ def setup(context):
 
 def generate_launch_description():
     return LaunchDescription([
+        DeclareLaunchArgument('explore', default_value='false'),
+        DeclareLaunchArgument('exploration_report', default_value=''),
         DeclareLaunchArgument('variant', default_value='baseline'),
         DeclareLaunchArgument('world', default_value='', description='Override generated variant SDF'),
         DeclareLaunchArgument('map', default_value='', description='Override generated variant map YAML'),

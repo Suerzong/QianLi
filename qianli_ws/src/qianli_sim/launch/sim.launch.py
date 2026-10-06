@@ -80,6 +80,7 @@ def setup(context):
              arguments=['-name', 'qianli', '-file', model_path,
                         '-x', spawn_x, '-y', spawn_y, '-z', spawn_z, '-Y', spawn_yaw],
              parameters=[{'use_sim_time': True}], output='screen'),
+        Node(package='qianli_sim', executable='normalize_sim_scan.py', parameters=[{'use_sim_time': True}], output='screen'),
         Node(package='qianli_sim', executable='ideal_kinematic_sim.py', parameters=[{'use_sim_time': True}], output='screen'),
         Node(package='rviz2', executable='rviz2', arguments=['-d', str(desc / 'rviz/qianli.rviz')],
              parameters=[{'use_sim_time': True}], condition=IfCondition(LaunchConfiguration('rviz'))),

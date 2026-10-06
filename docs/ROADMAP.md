@@ -42,7 +42,7 @@
 - [x] 虚拟 LiDAR（Simulation / Mock 模式，qianli_slam）
 - [x] SLAM（先 2D，真实 3D LiDAR 到位后切换 FAST-LIO2 / LIO-SAM）
 - [x] Nav2（Costmap / Planner / Controller，qianli_navigation）
-- [ ] Frontier Exploration（qianli_exploration）
+- [x] Frontier Exploration 基线（qianli_exploration；整栋楼覆盖验收待办）
 - [ ] robot_localization EKF 融合（qianli_localization）
 
 真实 LiDAR（RS-LiDAR-16 / Livox Mid-360）到位后，替换模拟传感器驱动即可。
@@ -71,7 +71,8 @@ YOLO → Semantic Mapping → Natural Language Agent → Multi-floor Navigation 
 - [x] Nav2 holonomic / 三目标 action 成功 / 独立轨迹障碍相交检查
 - [x] 模块化 bringup / 自动系统验收
 - [x] qianli_exploration 可编译骨架、接口与 TODO
-- [ ] 实现 Frontier Exploration（Nav2 后续任务）
+- [x] 实现 Frontier Exploration 与标准 Nav2 action 委托
+- [ ] 整栋楼覆盖/回环与多出生点探索验收
 - [ ] wheel_physics_sim：Harmonic 各向异性接触/滚子接触独立评估
 - [ ] 整车称重、重心/惯量、实机电机/编码器正方向校准
 - [ ] STM32 hardware interface、反馈里程计、EKF、安全急停

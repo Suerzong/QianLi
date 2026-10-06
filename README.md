@@ -30,7 +30,7 @@ QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义�
 
 ## 当前阶段
 
-**QianLi Simulation v0.3**：四全向轮 Omni X-drive 的 ros2_control、Gazebo 理想运动、虚拟 IMU/LiDAR、SLAM 和 Nav2 软件原型。已包含教学楼训练场景及 CPU CEM 局部避障参数学习；自主探索目标选择仍待实现。真实机械臂开发路线继续保留。
+**QianLi Simulation v0.3**：四全向轮 Omni X-drive 的 ros2_control、Gazebo 理想运动、虚拟 IMU/LiDAR、SLAM 和 Nav2 软件原型。已包含教学楼训练场景及 CPU CEM 局部避障参数学习；已接入 Frontier 自主探索基线，整栋楼长时覆盖仍待验收。真实机械臂开发路线继续保留。
 
 ## 目标平台与技术栈
 
@@ -40,7 +40,7 @@ QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义�
 | ROS 版本 | ROS 2 Jazzy |
 | 主要语言 | C++ / Python |
 | 核心框架 | ROS2、RViz2、URDF/Xacro、TF2、ros2_control、MoveIt2、Gazebo、Nav2、robot_localization |
-| 未来 | FAST-LIO2/LIO-SAM、Frontier Exploration、YOLO、AprilTag、OCR、Semantic Mapping、VLM、LLM Agent、Behavior Tree、Multi-floor Navigation |
+| 未来 | FAST-LIO2/LIO-SAM、学习型探索、YOLO、AprilTag、OCR、Semantic Mapping、VLM、LLM Agent、Behavior Tree、Multi-floor Navigation |
 
 > 注意：当前开发机为 Windows 11，ROS 2 工具链运行在 VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）中，详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -142,6 +142,20 @@ Nav2 使用真实八边形与 0.06 m padding（包含轮子外探的保守余量
 `wheel_physics_sim`、真实质量/重心/惯量、实机电机/编码器方向与 STM32 interface 均为后续工作。
 
 当前自动验收日志位于 `qianli_ws/log/sim_v03`（Git 忽略），源码与地图随阶段 Git commits 保存。
+
+## 自主探索
+
+从空白地图开始建图并自动选择探索目标：
+
+```bash
+ros2 launch qianli_bringup training.launch.py variant:=train_000 \
+  slam:=true nav2:=true explore:=true rviz:=true
+```
+
+启动前加载构建环境和同一 ROS Domain/Gazebo Partition；虚拟机显示设置见上文。
+探索运行方式、停止服务和安全边界见
+[qianli_exploration](qianli_ws/src/qianli_exploration/README.md)，
+验收证据见 [docs/EXPLORATION_VALIDATION.md](docs/EXPLORATION_VALIDATION.md)。
 
 ## 文档索引
 

@@ -1,0 +1,24 @@
+Starting >>> qianli_description
+Starting >>> qianli_training_scenarios
+Starting >>> qianli_slam
+Starting >>> qianli_interfaces
+Starting >>> qianli_teach
+Finished <<< qianli_interfaces [0.19s]
+Finished <<< qianli_slam [0.21s]
+Finished <<< qianli_training_scenarios [0.22s]
+Starting >>> qianli_exploration
+Finished <<< qianli_description [0.23s]
+Starting >>> qianli_control
+Finished <<< qianli_exploration [0.07s]
+Finished <<< qianli_control [0.07s]
+Starting >>> qianli_sim
+Finished <<< qianli_sim [0.36s]
+Starting >>> qianli_navigation
+Finished <<< qianli_navigation [0.07s]
+Starting >>> qianli_bringup
+Finished <<< qianli_bringup [0.08s]
+Starting >>> qianli_omni_learning
+Finished <<< qianli_omni_learning [0.08s]
+Finished <<< qianli_teach [1.30s]
+
+Summary: 11 packages finished [1.43s]

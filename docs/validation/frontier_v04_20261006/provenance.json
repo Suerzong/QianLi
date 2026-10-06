@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-06",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "ros_distro": "jazzy",
+  "slam_toolbox_debian_version": "2.8.5-1noble.20260905.070219",
+  "domain": 81,
+  "partition": "qianli_exploration_v1",
+  "test_domain": 82,
+  "source_sha256": {
+    "qianli_exploration/scripts/frontier_core.py": "0ef5585ad49b300d819e57ad4ecb171cedc9b3046e958e1af2f06526c7ee61f7",
+    "qianli_exploration/scripts/frontier_explorer.py": "25f440f082cd9de382af1fc770537a060aa595d56861b893a7029baf74c0c744",
+    "qianli_exploration/scripts/exploration_check.py": "6a24f9015e29b1c6ae0b656bc6dc135665d9333e00577799772d3395d54e5ba7",
+    "qianli_exploration/config/exploration.yaml": "c0cf0ecc96f6f462f0aa148769479162efc9c2dafce95d3186a0061ba02b98bf",
+    "qianli_exploration/test/test_frontier_core.py": "dd8f0be2ae653175336932bbcfae4ade8020bac7570a38b2c3069aeb9ad760ac",
+    "qianli_exploration/test/test_frontier_lifecycle.py": "80b35bc7e13d53c4ab1303205f7a95af328c107b7795aa25344d73cf443c6427",
+    "qianli_slam/config/mapper_params.yaml": "ebc6340c8e75281a7283e4ca677205cab85aea8141b04f4e860e9339a9e3bb97",
+    "qianli_navigation/config/nav2_params.yaml": "a8dfed84fac5e65232b3d58d19f2d72214102f03538a979ff8305c8811c4fc29",
+    "qianli_sim/scripts/normalize_sim_scan.py": "c4d349fe96212584376f874aee67233e5b01514bc904fae1145d7aa5a357e499",
+    "qianli_sim/scripts/scan_ranges.py": "e6392813f40a14dbbd56415967b26f0bd788f3aeb9666fb4717300a2f24ee069",
+    "qianli_sim/config/bridge.yaml": "62841d5dd0178f60efab06cd1a020ea48d587251aa2a92d97b2d813f26d55524",
+    "qianli_sim/launch/sim.launch.py": "8c3818a1914256877325c81bdf523cdaf2c8502130c75c294a9d0cf476f65acc",
+    "qianli_sim/CMakeLists.txt": "37595e01183af908244f9c76e09b058249c883c8500773dd541db4e141717b0f",
+    "qianli_sim/test/test_scan_ranges.py": "808f6e77c2cda9c112a7c88a1b77f958eb3d7af9e116747d38d8203bbdebfe84",
+    "qianli_bringup/launch/sim.launch.py": "799344b2e6bb55082bd84188f691b0c625a58a072fb98512ce21cb8d852bfe75",
+    "qianli_bringup/launch/training.launch.py": "e744c987d622a879cb315759c58983fc3dcd637a37c906f6e4b8de9ae411f0dc",
+    "qianli_sim/worlds/qianli_test_world.sdf": "3acd9491cc89e26314b4e9ed35516afb5f50856bdce9f27c5a0fd763dc863e90",
+    "qianli_training_scenarios/generated/train_000/manifest.json": "a6ff424477ab01eb4bccdd69ab77d5c0b6882ccb37f4d8789a5a0ae2d1f9fa84"
+  },
+  "parameters": {
+    "robot_radius_m": 0.47,
+    "goal_clearance_margin_m": 0.1,
+    "slam_range_threshold_m": 11.99,
+    "sim_no_hit_clear_range_m": 11.999
+  },
+  "scope": "Ideal simulation, 2D SLAM; no physical wheel/contact or whole-floor accuracy validation",
+  "installed_scripts_match_source": true
+}

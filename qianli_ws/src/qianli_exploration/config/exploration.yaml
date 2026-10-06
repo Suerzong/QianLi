@@ -1,0 +1,33 @@
+qianli_frontier_explorer:
+  ros__parameters:
+    use_sim_time: true
+    enabled: true
+    base_frame: base_footprint
+    map_frame: map
+    # Circumscribed plate radius + 0.06 m Nav2 padding, rounded up.
+    # Recompute when the robot's complete footprint changes.
+    robot_radius: 0.47
+    free_threshold: 20
+    min_frontier_length: 0.35
+    approach_distance: 1.5
+    min_goal_distance: 0.55
+    goal_clearance_margin: 0.1
+    selection_interval_s: 2.0
+    sensor_timeout_s: 5.0
+    map_timeout_s: 15.0
+    tf_timeout_s: 2.0
+    plan_timeout_s: 15.0
+    goal_timeout_s: 150.0
+    progress_timeout_s: 45.0
+    blacklist_duration_s: 120.0
+    revisit_delay_s: 40.0
+    blacklist_radius: 0.65
+    settle_time_s: 2.0
+    stagnation_timeout_s: 150.0
+    growth_cells: 100
+    max_duration_s: 900.0
+    initial_spin: true
+    initial_spin_angle: 1.57
+    stable_empty_rounds: 3
+    max_candidates: 32
+    report_file: ''

@@ -17,7 +17,7 @@ def generate_launch_description():
         'map': str(slam / 'maps/qianli_bupt_shahe_public_teaching_floor1_clean_abstract_v0_2.yaml'),
         'spawn_x': '7.80', 'spawn_y': '8.30', 'spawn_z': '0.0', 'spawn_yaw': '0.0',
         'slam': 'false', 'nav2': 'true', 'rviz': 'false', 'gui': 'false',
-        'headless_rendering': 'false',
+        'headless_rendering': 'false', 'explore': 'false', 'exploration_report': '',
     }
     return LaunchDescription([
         *(DeclareLaunchArgument(name, default_value=value) for name, value in defaults.items()),

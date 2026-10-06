@@ -17,7 +17,7 @@
 | 雷达避障参数学习 | [qianli_omni_learning](../qianli_ws/src/qianli_omni_learning/README.md) | CPU CEM 参数搜索、冻结策略、离线及 ROS 评测 |
 | SLAM | [qianli_slam](../qianli_ws/src/qianli_slam/README.md) | 在线二维建图 |
 | 导航 | [qianli_navigation](../qianli_ws/src/qianli_navigation/README.md) | Nav2、已知地图定位、规划和避障 |
-| 自主探索 | [qianli_exploration](../qianli_ws/src/qianli_exploration/README.md) | 当前只有接口与待办，尚无 frontier 节点 |
+| 自主探索 | [qianli_exploration](../qianli_ws/src/qianli_exploration/README.md) | 已实现 frontier 基线、Nav2 委托和停止/恢复 |
 | 统一场景启动 | [training.launch.py](../qianli_ws/src/qianli_bringup/launch/training.launch.py) | 选择场景、在线 SLAM 或预建地图定位、Nav2 |
 
 `simulation/` 是早期规划目录；当前可运行资产以 `qianli_ws/src/` 中的 ROS 包为准。
@@ -48,7 +48,11 @@ ros2 launch qianli_bringup training.launch.py variant:=train_000 slam:=true rviz
 ```
 
 `slam:=true` 禁用预建地图 AMCL，由 slam_toolbox 维护 `/map` 和 `map -> odom`。
-该命令不会自动启动自主探索，目前需要导航目标或手动驾驶来移动机器人。
+该命令只启动在线建图。增加 `explore:=true` 后会自动选取 frontier 目标，例如：
+
+```bash
+ros2 launch qianli_bringup training.launch.py variant:=train_000 slam:=true nav2:=true explore:=true rviz:=true
+```
 同一 ROS Domain/Gazebo Partition 中只运行一套仿真，并在所有配套终端加载相同环境。
 现有虚拟机的 GPU LiDAR 需要正常的桌面 DISPLAY 或 Xvfb；不能仅因收到导航成功结果
 就判断传感器正常，应检查 `/scan` 持续含有有效距离。
@@ -78,21 +82,16 @@ ros2 run qianli_omni_learning train.py \
 新的实验输出保存在 `log/`，不会覆盖这些冻结记录。ROS/Gazebo 独立任务评测见该包
 README；它会禁用 Nav2，防止两个控制器同时向 `/cmd_vel` 发指令。
 
-## 自主探索接下来接在哪里
+## 自主探索接在哪里
 
-实现工作集中在 `qianli_exploration`，遵循现有
-[接口契约](../qianli_ws/src/qianli_exploration/interfaces.md) 与
-[待办](../qianli_ws/src/qianli_exploration/TODO.md)：
+`qianli_exploration` 已实现 frontier 提取、保守净空/连通性筛选、信息增益评分、
+Nav2 路径查询、导航委托、黑名单与取消处理。通过 `explore:=true` 与在线 SLAM
+一起启动。状态、停止服务、保存地图命令见
+[探索说明](../qianli_ws/src/qianli_exploration/README.md)，验证范围见
+[验收记录](EXPLORATION_VALIDATION.md)。
 
-1. 读取实时 `/map`，提取、聚类已知空地与未知区域之间的 frontier。
-2. 按机器人轮廓净空、可达路径、信息增益和距离筛选目标。
-3. 通过 `/navigate_to_pose` 委托 Nav2 执行；探索模块不直接发送底盘速度。
-4. 处理无进展、超时、失败候选、取消和探索完成。
-5. 记录新增覆盖、路程、时间、轨迹穿障碍等指标，再训练目标选择策略。
-
-当前仿真是理想运动模型，不模拟真实滚子摩擦、打滑和碰撞停止；训练与评测要使用
-独立几何碰撞检查。现有 CEM 局部控制器和未来 frontier 目标选择属于不同层次，
-不能直接把 CEM 任务成功率当作整栋楼自主探索成功率。
+当前为确定性探索基线。下一阶段先验证整栋楼覆盖、回环和真实传感器，再训练
+目标选择策略。CEM 局部控制器与 frontier 目标选择属于不同层次，测试分别进行。
 
 ## 版本与同步
 
@@ -120,3 +119,7 @@ git clone --branch codex/cloud-model-training https://github.com/Suerzong/QianLi
   总模拟时间分别 132.1 s 和 119.8 s。冻结策略原始 JSON 字节和 SHA-256 保留。
 - 本次没有重新运行完整 Gazebo 14 回合对比，也没有进行真机测试；
   既有 ROS 对比记录与命令见学习包 README。
+
+- 自主探索最终仿真：小场景 6 个目标、19.87 m，frontier 耗尽验收通过；
+  教学楼 2 个目标、6.36 m，探索进展验收通过；两次原始/扩展轮廓相交采样均为零。
+  构建与 22 个行为回归用例通过，原始记录见 [自主探索验收](EXPLORATION_VALIDATION.md)。

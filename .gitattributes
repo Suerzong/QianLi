@@ -26,3 +26,6 @@ CMakeLists.txt text eol=lf
 
 # Preserve frozen policy/config bytes and recorded SHA-256 hashes.
 qianli_ws/src/qianli_omni_learning/**/*.json -text -eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Keep captured validation logs unchanged, including terminal whitespace.
+docs/validation/frontier_v04_20261006/*.txt text eol=lf whitespace=-blank-at-eol

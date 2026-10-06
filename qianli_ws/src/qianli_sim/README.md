@@ -29,6 +29,17 @@ ros2 run qianli_control motion_test.py --gazebo --ros-args -p use_sim_time:=true
 距地面 0.25 m，360 束覆盖 360°，10 Hz，量程 0.12–12 m，`/scan` / `lidar_link`。
 这些位置仅用于软件原型，后续替换为实测安装位姿；未来 3D PointCloud2 接口不绑定传感器型号。
 
+Gazebo 原始扫描保留在 `/simulation/scan_raw`。仿真适配器只把健康扫描中的
+`+inf` 无命中读数转换为 `range_max - 0.001 m`（当前 11.999 m），时间戳、frame、
+角度和有限障碍读数保持原值；NaN、负无穷和量程内过近读数保持无效。
+`qianli_slam` 的建图截断距离为 11.99 m：Karto 可以清空无命中射线，却不会在
+12 m 处画出虚假障碍墙。Nav2 的障碍标记距离为 8 m，无命中端点不进入标记范围。
+
+仅当至少 5%（且至少 3 条）原始射线有有效有限距离时才转换，整帧 infinity 的
+渲染故障仍保持无效并被上层暂停。这一语义仅用于当前 Gazebo 驱动；实车雷达接入时
+应确认无命中/故障的区别，不能直接套用。转换没有场景几何、地图或真值输入。
+
+
 VM 软件渲染验收使用 Xvfb（已安装），EGL `--headless-rendering` 在本机导致激光全 infinity，
 因此默认关闭该选项。无桌面环境先启动 `Xvfb :98 -screen 0 1500x950x24`，
 再设置 `DISPLAY=:98 LIBGL_ALWAYS_SOFTWARE=1`。有桌面时直接使用原有 DISPLAY。

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -19,23 +19,35 @@ def include(package, launch, arguments=None, condition=None):
         str(Path(get_package_share_directory(package)) / 'launch' / launch)), **kwargs)])
 
 
+def validate_exploration(context):
+    if LaunchConfiguration('explore').perform(context).lower() == 'true':
+        if not all(LaunchConfiguration(name).perform(context).lower() == 'true' for name in ('slam', 'nav2')):
+            raise RuntimeError('explore:=true requires slam:=true and nav2:=true (online mapping)')
+    return []
+
+
 def generate_launch_description():
     slam, nav2, rviz, gui = [LaunchConfiguration(p) for p in ('slam', 'nav2', 'rviz', 'gui')]
     sim = Path(get_package_share_directory('qianli_sim'))
     localization = IfCondition(PythonExpression(["'", nav2, "' == 'true' and '", slam, "' != 'true'"]))
     fixed_frame = PythonExpression(["'map' if '", slam, "' == 'true' or '", nav2, "' == 'true' else 'odom'"])
     return LaunchDescription([
+        DeclareLaunchArgument('explore', default_value='false'),
+        DeclareLaunchArgument('exploration_report', default_value=''),
         DeclareLaunchArgument('slam', default_value='false'),
         DeclareLaunchArgument('nav2', default_value='false'),
         DeclareLaunchArgument('rviz', default_value='false'),
         DeclareLaunchArgument('gui', default_value='true'),
         DeclareLaunchArgument('sim_mode', default_value='ideal_kinematic_sim'),
         DeclareLaunchArgument('map', default_value=str(Path(get_package_share_directory('qianli_slam')) / 'maps/qianli_test_map.yaml')),
+        OpaqueFunction(function=validate_exploration),
         include('qianli_sim', 'sim.launch.py', {'gui': gui, 'rviz': 'false', 'sim_mode': LaunchConfiguration('sim_mode')}),
         include('qianli_slam', 'slam.launch.py', condition=IfCondition(slam)),
         include('qianli_navigation', 'localization.launch.py',
                 {'map_file': LaunchConfiguration('map')}, condition=localization),
         include('qianli_navigation', 'navigation.launch.py', condition=IfCondition(nav2)),
+        include('qianli_exploration', 'exploration.launch.py',
+                {'report_file': LaunchConfiguration('exploration_report')}, condition=IfCondition(LaunchConfiguration('explore'))),
         Node(package='rviz2', executable='rviz2', name='qianli_sim_rviz',
              arguments=['-d', str(sim / 'rviz/simulation.rviz'), '-f', fixed_frame],
              parameters=[{'use_sim_time': True}], condition=IfCondition(rviz)),

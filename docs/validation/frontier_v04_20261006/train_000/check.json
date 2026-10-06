@@ -1,0 +1,161 @@
+{
+  "result": "PASS",
+  "reason": "growth_verified",
+  "stop_confirmed": true,
+  "wall_elapsed_s": 51.566,
+  "initial_known_cells": 1441,
+  "final_known_cells": 69504,
+  "known_gain_cells": 68063,
+  "free_gain_cells": 65215,
+  "path_length_m": 6.360333215936717,
+  "truth_samples": 2347,
+  "geometry_samples": 294,
+  "raw_collision_samples": 0,
+  "padded_collision_samples": 0,
+  "min_padded_clearance_m": 0.23275169073157237,
+  "exploration_before_stop": {
+    "schema_version": 1,
+    "phase": "waiting",
+    "reason": "",
+    "enabled": true,
+    "terminal": "",
+    "wall_elapsed_s": 51.036,
+    "initial_known_cells": 1441,
+    "known_cells": 69504,
+    "known_gain_cells": 68063,
+    "known_area_m2": 173.76000517845156,
+    "successful_goals": 2,
+    "failed_candidates": 0,
+    "map_resets": 0,
+    "blacklisted_goals": 2,
+    "frontier_cells": 2559,
+    "frontier_clusters": 33,
+    "candidate_goals": 16,
+    "scan_age_s": 0.055,
+    "map_age_s": 0.915,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 11.838,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 15.06,
+        "x": -1.3312941764086172,
+        "y": 2.2038236481532385,
+        "yaw": 1.7415315382701795,
+        "frontier_x": -1.5812941801339075,
+        "frontier_y": 3.6538236697599222,
+        "gain_m2": 4.240000126361847,
+        "score": 1.1878203135208825,
+        "path_length_m": 2.626509971524151
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 29.411,
+        "goal": [
+          -1.3312941764086172,
+          2.2038236481532385
+        ],
+        "known_cells": 57784
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 31.552,
+        "x": 1.0187058586091116,
+        "y": 5.2381829042252575,
+        "yaw": 0.23554498072086333,
+        "frontier_x": 2.268705877235563,
+        "frontier_y": 5.538182908695606,
+        "gain_m2": 8.035000239461661,
+        "score": 1.643401776568517,
+        "path_length_m": 3.9643559961735795
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 50.293,
+        "goal": [
+          1.0187058586091116,
+          5.2381829042252575
+        ],
+        "known_cells": 69504
+      }
+    ]
+  },
+  "exploration_after_stop": {
+    "schema_version": 1,
+    "phase": "stopped",
+    "reason": "stopped",
+    "enabled": false,
+    "terminal": "stopped",
+    "wall_elapsed_s": 51.038,
+    "initial_known_cells": 1441,
+    "known_cells": 69504,
+    "known_gain_cells": 68063,
+    "known_area_m2": 173.76000517845156,
+    "successful_goals": 2,
+    "failed_candidates": 0,
+    "map_resets": 0,
+    "blacklisted_goals": 2,
+    "frontier_cells": 2559,
+    "frontier_clusters": 33,
+    "candidate_goals": 16,
+    "scan_age_s": 0.057,
+    "map_age_s": 0.916,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 11.838,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 15.06,
+        "x": -1.3312941764086172,
+        "y": 2.2038236481532385,
+        "yaw": 1.7415315382701795,
+        "frontier_x": -1.5812941801339075,
+        "frontier_y": 3.6538236697599222,
+        "gain_m2": 4.240000126361847,
+        "score": 1.1878203135208825,
+        "path_length_m": 2.626509971524151
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 29.411,
+        "goal": [
+          -1.3312941764086172,
+          2.2038236481532385
+        ],
+        "known_cells": 57784
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 31.552,
+        "x": 1.0187058586091116,
+        "y": 5.2381829042252575,
+        "yaw": 0.23554498072086333,
+        "frontier_x": 2.268705877235563,
+        "frontier_y": 5.538182908695606,
+        "gain_m2": 8.035000239461661,
+        "score": 1.643401776568517,
+        "path_length_m": 3.9643559961735795
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 50.293,
+        "goal": [
+          1.0187058586091116,
+          5.2381829042252575
+        ],
+        "known_cells": 69504
+      }
+    ]
+  },
+  "scope": "Partial exploration smoke check unless exhausted_verified; sampled ideal geometry, no wheel dynamics"
+}

@@ -1,0 +1,103 @@
+Starting >>> qianli_exploration
+Starting >>> qianli_sim
+UpdateCTestConfiguration  from :/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/CTestConfiguration.ini
+Parse Config file:/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/CTestConfiguration.ini
+   Site: ros2-ubuntu
+   Build name: (empty)
+ Add coverage exclude regular expressions.
+Create new tag: 20261006-1029 - Experimental
+UpdateCTestConfiguration  from :/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/CTestConfiguration.ini
+Parse Config file:/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/CTestConfiguration.ini
+Test project /tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: frontier_core
+
+1: Test command: /usr/bin/python3 "-u" "/opt/ros/jazzy/share/ament_cmake_test/cmake/run_test.py" "/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/test_results/qianli_exploration/frontier_core.xml" "--package-name" "qianli_exploration" "--generate-result-on-success" "--command" "/usr/bin/python3" "/tmp/qianli-exploration-20261006/qianli_ws/src/qianli_exploration/test/test_frontier_core.py"
+1: Working Directory: /tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration
+1: Test timeout computed to be: 60
+UpdateCTestConfiguration  from :/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/CTestConfiguration.ini
+Parse Config file:/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/CTestConfiguration.ini
+   Site: ros2-ubuntu
+   Build name: (empty)
+ Add coverage exclude regular expressions.
+Create new tag: 20261006-1029 - Experimental
+UpdateCTestConfiguration  from :/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/CTestConfiguration.ini
+Parse Config file:/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/CTestConfiguration.ini
+Test project /tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: scan_ranges
+
+1: Test command: /usr/bin/python3 "-u" "/opt/ros/jazzy/share/ament_cmake_test/cmake/run_test.py" "/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/test_results/qianli_sim/scan_ranges.xml" "--package-name" "qianli_sim" "--generate-result-on-success" "--command" "/usr/bin/python3" "/tmp/qianli-exploration-20261006/qianli_ws/src/qianli_sim/test/test_scan_ranges.py"
+1: Working Directory: /tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim
+1: Test timeout computed to be: 60
+1: -- run_test.py: invoking following command in '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim':
+1:  - /usr/bin/python3 /tmp/qianli-exploration-20261006/qianli_ws/src/qianli_sim/test/test_scan_ranges.py
+1: -- run_test.py: invoking following command in '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration':
+1:  - /usr/bin/python3 /tmp/qianli-exploration-20261006/qianli_ws/src/qianli_exploration/test/test_frontier_core.py
+1: .....
+1: ----------------------------------------------------------------------
+1: Ran 5 tests in 0.001s
+1: 
+1: OK
+1: -- run_test.py: return code 0
+1: -- run_test.py: generate result file '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_sim/test_results/qianli_sim/scan_ranges.xml' with successful test
+1/1 Test #1: scan_ranges ......................   Passed    0.08 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.08 sec
+Finished <<< qianli_sim [0.11s]
+1: .........
+1: ----------------------------------------------------------------------
+1: Ran 9 tests in 0.007s
+1: 
+1: OK
+1: -- run_test.py: return code 0
+1: -- run_test.py: generate result file '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/test_results/qianli_exploration/frontier_core.xml' with successful test
+1/2 Test #1: frontier_core ....................   Passed    0.15 sec
+test 2
+    Start 2: frontier_lifecycle
+
+2: Test command: /usr/bin/python3 "-u" "/opt/ros/jazzy/share/ament_cmake_test/cmake/run_test.py" "/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/test_results/qianli_exploration/frontier_lifecycle.xml" "--package-name" "qianli_exploration" "--generate-result-on-success" "--command" "/usr/bin/python3" "/tmp/qianli-exploration-20261006/qianli_ws/src/qianli_exploration/test/test_frontier_lifecycle.py"
+2: Working Directory: /tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration
+2: Environment variables: 
+2:  ROS_DOMAIN_ID=82
+2: Test timeout computed to be: 60
+2: -- run_test.py: invoking following command in '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration':
+2:  - /usr/bin/python3 /tmp/qianli-exploration-20261006/qianli_ws/src/qianli_exploration/test/test_frontier_lifecycle.py
+2: .[INFO] [1791282591.830123054] [qianli_frontier_explorer]: {"event": "cancel_requested", "wall_elapsed_s": 0.002, "kind": "navigate", "reason": "goal_timeout"}
+2: [INFO] [1791282591.830459917] [qianli_frontier_explorer]: {"event": "action_terminated", "wall_elapsed_s": 0.012, "kind": "navigate", "reason": "goal_timeout", "status": 4}
+2: [INFO] [1791282591.830603134] [qianli_frontier_explorer]: {"event": "candidate_failed", "wall_elapsed_s": 0.012, "goal": [1.0, 0.0], "reason": "goal_timeout"}
+2: .[INFO] [1791282591.841827871] [qianli_frontier_explorer]: {"event": "candidate_failed", "wall_elapsed_s": 0.003, "goal": [1.0, 0.0], "reason": "unreachable_or_unsafe_path: 208"}
+2: .[INFO] [1791282591.851856170] [qianli_frontier_explorer]: {"event": "planner_retry", "wall_elapsed_s": 0.002, "error": "", "error_code": 202}
+2: .[INFO] [1791282591.863599144] [qianli_frontier_explorer]: {"event": "initial_observation", "wall_elapsed_s": 0.003, "succeeded": false, "error": "goal_rejected"}
+2: .[INFO] [1791282591.873464231] [qianli_frontier_explorer]: {"event": "cancel_requested", "wall_elapsed_s": 0.002, "kind": "navigate", "reason": "scan_invalid_or_stale"}
+2: ..[INFO] [1791282591.901330839] [qianli_frontier_explorer]: {"event": "cancel_requested", "wall_elapsed_s": 0.002, "kind": "navigate", "reason": "stopped"}
+2: [INFO] [1791282591.901539262] [qianli_frontier_explorer]: {"event": "action_terminated", "wall_elapsed_s": 0.002, "kind": "navigate", "reason": "stopped", "status": 5}
+2: .
+2: ----------------------------------------------------------------------
+2: Ran 8 tests in 0.154s
+2: 
+2: OK
+2: -- run_test.py: return code 0
+2: -- run_test.py: generate result file '/tmp/qianli-exploration-20261006/qianli_ws/build/qianli_exploration/test_results/qianli_exploration/frontier_lifecycle.xml' with successful test
+2/2 Test #2: frontier_lifecycle ...............   Passed    0.73 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.88 sec
+Finished <<< qianli_exploration [0.91s]
+
+Summary: 2 packages finished [1.00s]
