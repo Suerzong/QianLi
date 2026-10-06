@@ -1,85 +1,191 @@
-# QianLi
+<div align="center">
 
-千里之行，始于足下。
+# 千里 · QianLi
 
-An autonomous mobile manipulation robot for indoor exploration, semantic navigation and embodied task execution.
+> **千里之行，始于足下。** _A journey of a thousand miles begins with a single step._
 
-## 项目简介
+**Autonomous Mobile Manipulator × Semantic Navigation × Embodied Agent**
 
-QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义认知与任务执行移动机器人项目。
+一个面向室内复杂环境的自主探索、语义认知与任务执行移动机器人项目。
 
-项目最终目标：
+![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy-22314E?logo=ros&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-E95420?logo=ubuntu&logoColor=white)
+![Language](https://img.shields.io/badge/C%2B%2B%20%7C%20Python-3776AB?logo=python&logoColor=white)
+![Simulation](https://img.shields.io/badge/Simulation-MuJoCo-000000)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- 在未知室内环境中自主探索（不依赖人工提前建图），利用 SLAM 构建环境几何地图；
-- 自动寻找未探索区域并持续扩展地图，自主定位、规划路径、动态避障；
-- 视觉识别门、房间、走廊、电梯、自动售货机等语义目标，并与空间坐标关联建立 Semantic Map；
-- 接收自然语言指令（如"去自动售货机帮我拿一瓶水"），转换为结构化任务并自主执行；
-- 使用机械臂完成抓取、按按钮等操作；
-- 长期保存已探索的地图、语义与环境知识，使机器人逐渐"认识"所在建筑。
+---
 
-系统定位：
+</div>
 
-- **Autonomous Mobile Manipulator** + **Semantic Navigation** + **Embodied Agent**
+## 项目简介 · About
 
-中文描述：面向室内复杂环境的自主探索与语义导航移动机器人。
+**QianLi（千里）** 是一款面向**室内复杂环境**的自主移动操作机器人 —— 它探索未知的空间，理解世界的语义，并动手完成任务。
 
-## 当前阶段
+取名自《道德经》"千里之行，始于足下"：每一个复杂的系统，都始于一段能跑通的代码。
 
-**Phase 0 — Foundation**：建立可维护、可扩展、可正常 `colcon build` 的 QianLi ROS 2 工作区。
+### 最终目标
 
-## 目标平台与技术栈
+- 🌍 **自主探索** —— 在未知室内环境中自主探索，不依赖人工提前建图，利用 SLAM 构建环境几何地图
+- 🗺️ **持续建图** —— 自动寻找未探索区域并扩展地图，自主定位、规划路径、动态避障
+- 👁️ **语义认知** —— 视觉识别门、房间、走廊、电梯、自动售货机等语义目标，并与空间坐标关联建立 Semantic Map
+- 🗣️ **自然语言指令** —— 接收"去自动售货机帮我拿一瓶水"这样的指令，转化为结构化任务并自主执行
+- 🦾 **实体操作** —— 使用机械臂完成抓取、按按钮等操作
+- 🧠 **长期记忆** —— 长期保存已探索的地图、语义与环境知识，让机器人逐渐"认识"所在建筑
 
-| 项 | 内容 |
+## 当前进展 · Current Status
+
+> 当前阶段从 **Phase 0 — Foundation** 起步，已完成真实机械臂接入与"视觉定位 → 逆解 → 抓取"全链路打通。
+
+| 领域 | 状态 | 说明 |
+|---|---|---|
+| ROS 2 工作区 | ✅ 完成 | 17 个 packages，Ubuntu 24.04 + ROS 2 Jazzy 下 `colcon build` 通过 |
+| 机械臂建模 | ✅ 完成 | **SO-ARM101** 6-DOF + 夹爪 URDF 建模，STL 网格资产整合，RViz 显示 |
+| 真实机械臂驱动 | ✅ 完成 | Feetech 舵机总线（SYNC_WRITE / GroupSyncRead），关节状态、限位与健康检查 |
+| 机械限位实测重标定 | ✅ 完成 | 实测各关节机械死点，**找回被静默吞掉的 71.2°** 腕部行程 |
+| 逆运动学（DLS IK） | ✅ 完成 | 阻尼最小二乘逆解内置真机驱动，亚毫米级定位，限位/姿态约束与可达性拒绝 |
+| TCP / 外参标定 | ✅ 完成 | 定点法残差 **0.74mm**，多点最小二乘外参标定（自检 σ=1mm 时平移误差 0.66mm） |
+| 视觉感知 | ✅ 里程碑 | 相机内参标定、像素管线、实时物块识别；网格纸 Homography 像素→物理坐标 |
+| 数字孪生仿真 | ✅ 完成 | **MuJoCo 数字孪生**，1mm 保真度，修复 4 个建模隐藏坑，支持物理接触与反馈修正 |
+| 仿真抓取验证 | 🚧 进行中 | 标准场景 3/3 稳定持稳；独立扰动样本 31~34/40，固定偏移方案鲁棒性持续迭代 |
+| 真机自主抓取 | ✅ 里程碑 | 真实机械臂自主抓取跑通至 **"抓起 + 抬升"**，视觉误检修复 + 运动安全闸门 |
+| 强化学习 / 行为克隆 | 🧪 实验 | 孪生环境中训练出可用抓取策略（孪生验证 100% 成功） |
+| 移动底盘 / 3D LiDAR | ⏳ 规划 | 四全向轮底盘、RS-LiDAR-16 / Livox Mid-360，先以仿真/Mock 模式推进 |
+| Nav2 / SLAM / 语义地图 | ⏳ 规划 | 2D SLAM → 3D LiDAR SLAM → Frontier Exploration → Semantic Map |
+
+## 系统架构 · Architecture
+
+### 职责划分
+
+```
+┌──────────────────────────────────────────────────────────┐
+│        Linux 上位机（主计算单元）                            │
+│   SLAM · Navigation · Perception · Semantic Mapping       │
+│   Task Planning · Agent · MoveIt2                         │
+├──────────────────────────────────────────────────────────┤
+│    STM32 / MCU（实时底层）                                 │
+│   电机实时控制 · Encoder · PID · 安全保护 · 急停            │
+└──────────────────────────────────────────────────────────┘
+```
+
+**设计原则：**
+- ❌ STM32 不承担 SLAM / 导航 / 感知等上层计算
+- ❌ Linux 不直接生成电机 PWM
+- ✅ 系统间通过 ROS 2 Topic / Service / Action 与串口 / CAN / Ethernet 解耦
+- ✅ 每个真实硬件模块都有 Simulation / Mock 替代实现
+
+### TF 树
+
+```
+map
+└── odom
+    └── base_link
+        ├── lidar_link
+        ├── camera_link
+        ├── imu_link
+        └── arm_base_link
+            └── ... └── end_effector_link
+```
+
+### 地图架构
+
+| 地图 | 内容 |
 |---|---|
-| 操作系统 | Ubuntu 24.04 |
-| ROS 版本 | ROS 2 Jazzy |
+| Geometry Map | 三维点云 / 几何环境 |
+| Navigation Map | 2D Occupancy Grid / Costmap |
+| Semantic Map | 语义实体 + 地图坐标（如 `VendingMachine_01: floor 1, x 12.4, y 7.8`） |
+| Topological Map | 楼层 / 房间 / 电梯高层连接关系 |
+
+### Agent 原则
+
+**LLM / Agent 只做高层任务规划，绝不直接控制电机。**
+
+```
+用户: "去自动售货机帮我拿一瓶水"
+Agent: find(vending_machine)        # 查询 Semantic Map → 坐标
+       navigate_to(vending_machine) # Nav2 导航
+       detect(water)                # 视觉识别（YOLO / AprilTag）
+       pick(water)                  # MoveIt2 规划 + 机械臂执行
+       navigate_to(user)            # 回到用户位置
+```
+
+## 技术栈 · Tech Stack
+
+| 类别 | 技术 |
+|---|---|
+| 目标平台 | Ubuntu 24.04 + ROS 2 Jazzy |
 | 主要语言 | C++ / Python |
-| 核心框架 | ROS2、RViz2、URDF/Xacro、TF2、ros2_control、MoveIt2、Gazebo、Nav2、robot_localization |
-| 未来 | FAST-LIO2/LIO-SAM、Frontier Exploration、YOLO、AprilTag、OCR、Semantic Mapping、VLM、LLM Agent、Behavior Tree、Multi-floor Navigation |
+| 中间件 | ROS 2（Topic / Service / Action） |
+| 建模与可视化 | URDF / Xacro / TF2 / RViz2 |
+| 控制与运动 | ros2_control / MoveIt2 / DLS IK（已内置真机驱动） |
+| 仿真 | MuJoCo（数字孪生）/ Gazebo（虚拟平台） |
+| 感知 | OpenCV / AprilTag / YOLO / OCR |
+| 智能 | Semantic Mapping / VLM / LLM Agent / Behavior Tree |
+| 定位建图（规划） | FAST-LIO2 / LIO-SAM / robot_localization / Nav2 |
+| 探索（规划） | Frontier Exploration / Information Gain |
+| 硬件 | SO-ARM101 机械臂 · HX-30HM 舵机 · 四全向轮底盘 · STM32 |
 
-> 注意：当前开发机为 Windows 11，ROS 2 工具链运行在 VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）中，详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
-
-## 目录结构
+## 目录结构 · Repository Layout
 
 ```
 QianLi/
-├── docs/          # 项目文档（PROJECT / ARCHITECTURE / ROADMAP / ENVIRONMENT / HARDWARE / DEVLOG）
+├── docs/          # 项目文档（PROJECT / ARCHITECTURE / ROADMAP / ENVIRONMENT / HARDWARE / DEVLOG / GRASP）
 ├── hardware/      # 硬件资料（机械臂 / 底盘 / 传感器 / 电子 / CAD）
 ├── firmware/      # 固件（STM32 底层控制器）
-├── simulation/    # Gazebo 仿真（worlds / models / configs）
+├── simulation/    # 仿真（worlds / models / configs）
 ├── datasets/      # 数据集（不纳入版本控制）
-├── scripts/       # 辅助脚本（setup / tools）
+├── scripts/       # 辅助脚本（setup / tools / vm）
 └── qianli_ws/     # ROS 2 工作区（colcon）
-    └── src/       # ROS 2 packages
+    └── src/       # 17 个 ROS 2 packages
 ```
 
-## 快速开始
+## 快速开始 · Quick Start
 
-工作区基于 **Ubuntu 24.04 + ROS 2 Jazzy**（虚拟机 `192.168.26.128`，用户 `ros`）：
+> 开发环境为 Windows 11 + VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy，`192.168.26.128`），详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
 ```bash
-# 1. 在 Ubuntu 24.04 上安装 ROS 2 Jazzy（基础环境，一般已装好）
+# 1. 安装 ROS 2 Jazzy（基础环境，一般已装好）
 bash scripts/setup/install_ros2_jazzy.sh
 
-# 2. 构建工作区
+# 2. 构建工作区（等价于 cd qianli_ws && colcon build --symlink-install）
 source /opt/ros/jazzy/setup.bash
-bash scripts/tools/build.sh            # 等价于: cd qianli_ws && colcon build --symlink-install
+bash scripts/tools/build.sh
 
 # 3. 加载工作区环境
 source scripts/setup/source_env.sh
 ```
 
-## 文档索引
+## 文档索引 · Documentation
 
 | 文档 | 内容 |
 |---|---|
-| [docs/PROJECT.md](docs/PROJECT.md) | 项目定义、目标能力、技术栈 |
+| [docs/PROJECT.md](docs/PROJECT.md) | 项目定义、目标能力、技术栈、设计原则 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 软件架构、模块职责、TF / 地图 / Agent 架构 |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 开发路线与 Milestone 定义 |
 | [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | 开发环境检查结果与环境差异 |
 | [docs/HARDWARE.md](docs/HARDWARE.md) | 硬件清单、接口规划、缺失项 |
-| [docs/DEVLOG.md](docs/DEVLOG.md) | 开发日志 |
+| [docs/DEVLOG.md](docs/DEVLOG.md) | 开发日志（决策与验证结果） |
+| [docs/GRASP_SIM_VALIDATION.md](docs/GRASP_SIM_VALIDATION.md) | 仿真抓取验收与复现命令 |
+| [docs/SSH.md](docs/SSH.md) | 开发机 ↔ 虚拟机 SSH 配置与排查 |
 
-## 许可证
+## 路线图 · Roadmap
 
-[MIT](LICENSE)
+```
+Phase 0  Foundation ✅
+    ↓
+M1  机械臂建模 ✅ ───→  M2  真实机械臂接入 ✅
+    ↓                              ↓
+M3  MoveIt2 ⏳ ───────→  M4  Camera + AprilTag 🚧
+    ↓                              ↓
+最终 Demo：机械臂自动识别带 AprilTag 的"按钮"并完成按压
+    ↓
+并行：Gazebo 虚拟平台 → SLAM → Nav2 → Frontier Exploration
+    ↓
+远期：Semantic Map → LLM Agent → 多楼层导航 → 电梯交互
+```
+
+详细里程碑定义见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+
+## 许可证 · License
+
+[MIT](LICENSE) © 2026 QianLi Contributors
