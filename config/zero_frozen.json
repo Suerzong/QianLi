@@ -1,0 +1,149 @@
+{
+  "frozen_at": "2026-10-06 21:10:30",
+  "source": "/tmp/joint_ranges_merged.json",
+  "old_zero": [
+    2078,
+    1980,
+    3076,
+    2035,
+    2033,
+    2030
+  ],
+  "new_zero": [
+    2020,
+    1980,
+    2988,
+    2014,
+    2013,
+    2030
+  ],
+  "per_joint": [
+    {
+      "joint": "shoulder_pan",
+      "measured": [
+        741,
+        3298
+      ],
+      "urdf_counts": [
+        -1252,
+        1252
+      ],
+      "old_zero": 2078,
+      "new_zero": 2020,
+      "zero_shift": -58,
+      "urdf_window_new": [
+        768,
+        3272
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": false
+    },
+    {
+      "joint": "shoulder_lift",
+      "measured": [
+        781,
+        3180
+      ],
+      "urdf_counts": [
+        -1138,
+        1138
+      ],
+      "old_zero": 1980,
+      "new_zero": 1980,
+      "zero_shift": 0,
+      "urdf_window_new": [
+        842,
+        3118
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": false
+    },
+    {
+      "joint": "elbow_flex",
+      "measured": [
+        1886,
+        4089
+      ],
+      "urdf_counts": [
+        -1102,
+        1102
+      ],
+      "old_zero": 3076,
+      "new_zero": 2988,
+      "zero_shift": -88,
+      "urdf_window_new": [
+        1886,
+        4090
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": false
+    },
+    {
+      "joint": "wrist_flex",
+      "measured": [
+        838,
+        3190
+      ],
+      "urdf_counts": [
+        -1081,
+        1081
+      ],
+      "old_zero": 2035,
+      "new_zero": 2014,
+      "zero_shift": -21,
+      "urdf_window_new": [
+        933,
+        3095
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": false
+    },
+    {
+      "joint": "wrist_roll",
+      "measured": [
+        117,
+        3972
+      ],
+      "urdf_counts": [
+        -1789,
+        1852
+      ],
+      "old_zero": 2033,
+      "new_zero": 2013,
+      "zero_shift": -20,
+      "urdf_window_new": [
+        224,
+        3865
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": false
+    },
+    {
+      "joint": "gripper",
+      "measured": [
+        1904,
+        3278
+      ],
+      "urdf_counts": [
+        -114,
+        1138
+      ],
+      "old_zero": 2030,
+      "new_zero": 2030,
+      "zero_shift": 0,
+      "urdf_window_new": [
+        1916,
+        3168
+      ],
+      "fits_12bit": true,
+      "window_inside_measured": true,
+      "skipped": true
+    }
+  ],
+  "note": "零点已按\"实测机械行程 ↔ URDF 行程\"对齐；改零点后 FK 角度变化，棋盘外参必须重做"
+}

@@ -1,0 +1,72 @@
+{
+  "frozen_at": "2026-10-06 21:08:53",
+  "source": "/tmp/joint_ranges_merged.json",
+  "sampled_at": "2026-10-06 21:05:33",
+  "samples": 2999,
+  "margin_counts": 25,
+  "names": [
+    "shoulder_pan",
+    "shoulder_lift",
+    "elbow_flex",
+    "wrist_flex",
+    "wrist_roll",
+    "gripper"
+  ],
+  "raw_min": [
+    766,
+    806,
+    1911,
+    863,
+    142,
+    1929
+  ],
+  "raw_max": [
+    3273,
+    3155,
+    4064,
+    3165,
+    3947,
+    3253
+  ],
+  "zero_raw_unchanged": [
+    2078,
+    1980,
+    3076,
+    2035,
+    2033,
+    2030
+  ],
+  "measured": {
+    "shoulder_pan": [
+      741,
+      3298
+    ],
+    "shoulder_lift": [
+      781,
+      3180
+    ],
+    "elbow_flex": [
+      1886,
+      4089
+    ],
+    "wrist_flex": [
+      838,
+      3190
+    ],
+    "wrist_roll": [
+      117,
+      3972
+    ],
+    "gripper": [
+      1904,
+      3278
+    ]
+  },
+  "notes": [
+    "shoulder_pan: 零点偏 +58 计数 (+5.1°) ❌",
+    "shoulder_lift: 零点偏 -0 计数 (-0.0°)",
+    "elbow_flex: 零点偏 +88 计数 (+7.8°) ❌",
+    "wrist_flex: 零点偏 +21 计数 (+1.8°)"
+  ],
+  "warning": "zero_raw 未改动；实测中点与零点的偏差见 notes，修正零点会使已标定的棋盘外参失效，需重做外参"
+}
