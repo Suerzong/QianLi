@@ -30,7 +30,7 @@ case "$action" in
   check)
     mkdir -p migration_assets/vm-acceptance
     bash scripts/tools/validate_ubuntu22.sh 2>&1 | tee migration_assets/vm-acceptance/ros-check.log
-    train_shell python -m pytest tests/test_migration.py tests/test_arm_acceptance.py -q 2>&1 | tee migration_assets/vm-acceptance/simulation-tests.log
+    train_shell python -m pytest tests -q 2>&1 | tee migration_assets/vm-acceptance/simulation-tests.log
     for size in 0.02 0.04; do
       train_shell python scripts/tools/train_smoke.py --device cpu --obj-size "$size" --steps 1024 \
         2>&1 | tee "migration_assets/vm-acceptance/train-${size}.log"

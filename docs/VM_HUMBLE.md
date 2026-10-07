@@ -73,4 +73,6 @@ bash "$HOME/QianLi/scripts/tools/qianli.sh" devices
 
 仿真和自检入口不会自动启动 direct 驱动、开启舵机运动或写 EEPROM。真机必须按 [迁移验收步骤](UBUNTU22_MIGRATION.md) 验证串口、相机、限位和合格标定后再操作。缺失的外参不能用仿真数据或旧错误拟合替代。
 
+采集新的棋盘触点时，`extrinsic_calib_multi.py` 要求新鲜且唯一的 direct 驱动反馈，并验证运动许可、使能、保持均为关闭；当前桌面自动运行的 sim 会话不能用于真机标定。`touch_frontend.py` 已支持当前固定爪日志的进度和拒绝原因，未锁定棋盘或采集器未就绪时拒绝记录；带点号的请求不能误记到下一点。两个脚本可用相同的 `--trigger` 路径隔离采集会话，旧的空触发文件仍兼容。
+
 安装过程与检查输出在 `migration_assets/vm-install/`。实际验收结果见 [迁移验证记录](MIGRATION_VALIDATION.md)。

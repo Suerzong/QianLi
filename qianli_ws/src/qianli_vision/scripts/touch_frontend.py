@@ -19,8 +19,10 @@ from project_paths import open_video_capture
 from project_paths import calibration_path, camera_source, default_camera
 
 import argparse
+import json
 import os
 import re
+import tempfile
 import threading
 import time
 
@@ -31,6 +33,43 @@ COLS, ROWS = 7, 5
 INTR = os.path.expanduser(calibration_path('camera_intrinsics.yaml'))
 LOG = '/tmp/touch_calib.log'
 TRIGGER = '/tmp/grid_mark'
+
+
+def parse_progress(text):
+    prompts = re.findall(r'第 (\d+)/(\d+) 点', text)
+    done = len(re.findall(r'✅\s*(?:固定爪顶端|接触点)\s*=', text))
+    note = ''
+    for line in reversed(text.splitlines()):
+        if re.search(r'✅\s*(?:固定爪顶端|接触点)\s*=', line):
+            break
+        if '⛔' in line or '⚠️' in line or '❌' in line:
+            note = line.strip()[:120]
+            break
+    cur, total = (map(int, prompts[-1]) if prompts else (0, 0))
+    return dict(cur=cur, total=total, done=done, note=note)
+
+
+def mark_request_error(progress, locked):
+    if not locked:
+        return '棋盘尚未锁定，请先露出完整棋盘'
+    if not 0 < progress['cur'] <= progress['total']:
+        return '标定采集器尚未准备好'
+    if progress['done'] >= progress['cur']:
+        return '当前点已经记录，请等待下一点提示'
+    return None
+
+
+def create_mark_request(path, point):
+    """Publish a complete request atomically without replacing a pending click."""
+    staged = tempfile.NamedTemporaryFile(
+        mode='w', encoding='utf-8', dir=os.path.dirname(os.path.abspath(path)),
+        prefix='.qianli-mark-', delete=False)
+    try:
+        with staged:
+            json.dump({'point': point}, staged)
+        os.link(staged.name, path)
+    finally:
+        os.unlink(staged.name)
 
 
 class Prog:
@@ -53,19 +92,8 @@ class Prog:
             except OSError:
                 time.sleep(0.4)
                 continue
-            m = re.findall(r'第 (\d+)/(\d+) 点', txt)
-            done = len(re.findall(r'✅ 接触点', txt))
-            note = ''
-            # 夹爪角不合格被拒的那一行，直接透出来，省得用户不知道为什么没记上
-            for ln in reversed(txt.splitlines()):
-                if '夹爪角' in ln and ('偏离' in ln or '⛔' in ln):
-                    note = ln.strip()[:60]
-                    break
             with self.lock:
-                if m:
-                    self.d['cur'], self.d['total'] = int(m[-1][0]), int(m[-1][1])
-                self.d['done'] = done
-                self.d['note'] = note
+                self.d = parse_progress(txt)
             time.sleep(0.4)
 
     def get(self):
@@ -105,7 +133,8 @@ PAGE = """<!doctype html><html><head><meta charset="utf-8">
  </div>
  <img id="v" src="/stream.mjpg">
  <div class="bar">画面上<b style="color:#3fb950">绿色大圈 + &gt;&gt;&gt; N &lt;&lt;&lt;</b>
-  就是要对准的点。爪口开到约 60mm，用固定爪内侧面中心对准十字，轻碰板面，然后按按钮。
+  就是要对准的点。将固定爪（不动的那片）爪尖对准标记，轻触棋盘表面后按按钮。
+  机械臂保持支撑，扭矩关闭。
   <a href="#" id="rl" style="color:#58a6ff;margin-left:10px">棋盘没对齐？重新锁定</a></div>
 </div>
 <script>
@@ -116,14 +145,15 @@ async function tick(){
     $('cur').textContent = s.cur||'-';
     $('sub').textContent = '共 ' + (s.total||'?') + ' 个点，已记录 ' + s.done + ' 个';
     $('msg').textContent = s.note||'';
+    const complete = s.total>0 && s.done>=s.total;
     if(!s.locked){
       $('lock').textContent = '⚠️ 棋盘未锁定：请让机械臂完全离开棋盘，看到绿色提示后再开始';
       $('go').disabled = true;
     }else{
       $('lock').textContent = '🔒 棋盘角点已锁定于 ' + s.lock_at;
-      $('go').disabled = !s.cur || s.done>=s.total;
+      $('go').disabled = !s.cur || s.done>=s.cur || complete;
     }
-    if(s.done>=s.total){$('go').textContent='全部完成';}
+    $('go').textContent = complete ? '全部完成' : '放好了，记录这个点';
   }catch(e){}
 }
 $('go').onclick = async ()=>{
@@ -148,6 +178,7 @@ def main():
                     help='必须和触标工具 --points 一字不差')
     ap.add_argument('--intrinsics', default=INTR)
     ap.add_argument('--log', default=LOG)
+    ap.add_argument('--trigger', default=TRIGGER)
     ap.add_argument('--cell-cm', type=float, default=3.3)
     args = ap.parse_args()
 
@@ -179,6 +210,9 @@ def main():
     print(f'目标 {len(pts)} 个点，内参 {size[0]}x{size[1]}，触发文件 {TRIGGER}')
 
     cap = open_video_capture(args.camera)
+    if not cap.isOpened():
+        cap.release()
+        raise SystemExit(f'无法打开相机：{args.camera}')
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1])
     time.sleep(1.0)
@@ -286,7 +320,6 @@ def main():
 
     threading.Thread(target=worker, daemon=True).start()
 
-    import json
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     class H(BaseHTTPRequestHandler):
@@ -323,9 +356,15 @@ def main():
                            'application/json')
                 return
             if path == '/mark':
-                # 按钮就是写这个触发文件 —— 触标进程在轮询它
+                progress = prog.get()
+                with frozen['lock']:
+                    reason = mark_request_error(progress, frozen['C'] is not None)
+                if reason:
+                    self._send(json.dumps({'ok': False, 'err': reason}).encode(), 'application/json')
+                    return
+                # Include the point number so delayed clicks cannot mark the next point.
                 try:
-                    open(TRIGGER, 'w').close()
+                    create_mark_request(args.trigger, progress['cur'])
                     self._send(json.dumps({'ok': True}).encode(),
                                'application/json')
                 except OSError as exc:

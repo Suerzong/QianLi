@@ -29,6 +29,8 @@ ROS 在线 GitHub 下载在 guest 内发生 TLS 断开，安装已通过宿主�
 
 旧 VM 原配置的最终只读验收记录在 `migration_assets/vm-acceptance/hardware/final-readonly/result.json`：六个舵机通信正常，前后扭矩均为 0，六个动态及两个静态 TF 均收到（含 `tcp_link`），使能请求明确拒绝；关闭 IK 后未发布候选运动指令。肩升降 788 / 下限 806，肘关节 4076 / 上限 4064，当前手摆姿态仍超旧软限位，因此 `hardware_ready=false`，没有验收运动或抓取。
 
+补充标定会话检查后，VM 完整迁移回归为 36 项通过。采点要求唯一、新鲜的 direct 驱动与六关节反馈，且运动许可、使能、保持均关闭。实际用当前 sim 会话启动采集器时明确拒绝，没有写点或外参；触标 HTTP 前端在未锁棋盘/采集器未就绪时拒绝请求，同时实际提供了 640×480 相机帧。成功记录与拒绝原因的日志解析、带点号请求及重复点击保护已验证。现场补采尚未执行，用户选择稍后采集。证据分别在 `migration_assets/vm-acceptance/calibration-session-tests.log`、`calibration-sim-rejection/`、`calibration-frontend/`。
+
 ## 已交付
 
 - 补齐完整 `so101_bringup` ROS 包、公开模块兼容入口、launch、模型、配置和原驱动测试。工作区现在有六个可构建包。

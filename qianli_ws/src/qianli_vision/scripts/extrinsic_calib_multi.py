@@ -10,17 +10,17 @@
 
 本工具
 ------
-1. 用**已标定的 TCP**（/tmp/tcp_calib.txt）而不是 gripper_frame_link；
+1. 用模型和新鲜真机关节反馈计算**固定爪顶端**，TCP 只用于诊断；
 2. 按提示依次触碰 **N 个已知格点**（默认 5 个，L 形铺开）；
 3. 闭式最小二乘（Umeyama，固定比例）解 θ 与平移；
 4. 输出**残差**、**反推的格宽**——这两个数直接告诉你标定可不可信。
 
-不需要使能扭矩：松扭矩后用手把爪口摆到格点上即可，零运动风险。
+不需要使能扭矩：支撑机械臂，扭矩关闭后用手把固定爪尖摆到格点上。
 
 用法::
 
-    # 先跑 tcp_calibrate.py 得到 /tmp/tcp_calib.txt
-    ~/mj/bin/python extrinsic_calib_multi.py --cell-cm 3.3
+    # 在独立 direct 只读 ROS 会话中使用现有模型
+    python3 extrinsic_calib_multi.py --cell-cm 3.3
     # 按提示摆好每个格点后： touch /tmp/grid_mark
 
 标定参考点：**固定爪顶端**（不是两爪的全局最低点）
@@ -56,6 +56,7 @@ import argparse
 import json
 import math
 import os
+from pathlib import Path
 import sys
 import time
 
@@ -123,6 +124,8 @@ def collect(args, points):
     import rclpy
     from rclpy.node import Node
     from tf2_ros import Buffer, TransformListener
+    from std_msgs.msg import String
+    from qianli_vision.calibration import physical_collection_error
 
     # 参考点优先级：URDF 的 tcp_link > 旧的 /tmp/tcp_calib.txt + 法兰。
     #
@@ -150,13 +153,40 @@ def collect(args, points):
             self.model = GripperModel(stride=14)
             self.joint_names = list(_J)
             self.joints = {}
+            self.joints_at = None
+            self.driver_status = None
+            self.status_at = None
             self.create_subscription(
                 __import__('sensor_msgs.msg', fromlist=['JointState'])
-                .JointState, '/joint_states', self._on_joints, 10)
+                .JointState, '/joint_states', self._on_joints, 1)
+            self.create_subscription(String, '/arm/status', self._on_status, 1)
 
         def _on_joints(self, m):
             if len(m.name) == len(m.position):
                 self.joints = dict(zip(m.name, m.position))
+                age = (self.get_clock().now() - rclpy.time.Time.from_msg(m.header.stamp)).nanoseconds / 1e9
+                self.joints_at = time.monotonic() - age
+
+        def _on_status(self, m):
+            try:
+                self.driver_status = json.loads(m.data)
+            except (TypeError, ValueError):
+                self.driver_status = None
+            self.status_at = time.monotonic()
+
+        def collection_error(self):
+            now = time.monotonic()
+            reason = physical_collection_error(
+                self.driver_status, self.joints,
+                None if self.status_at is None else now - self.status_at,
+                None if self.joints_at is None else now - self.joints_at)
+            if reason:
+                return reason
+            for topic in ('/joint_states', '/arm/status'):
+                sources = self.get_publishers_info_by_topic(topic)
+                if len(sources) != 1 or sources[0].node_name != 'so101_driver':
+                    return f'{topic} 必须由唯一 so101_driver 发布，暂停记录'
+            return None
 
         def tcp_above_lowest(self):
             """TCP 比"固定爪顶端"高多少（米），逐点按当前姿态算。
@@ -216,6 +246,10 @@ def collect(args, points):
             """启动时探一次：TF 里有没有 tcp_link。"""
             for _ in range(50):
                 rclpy.spin_once(self, timeout_sec=0.1)
+                if isinstance(self.driver_status, dict) and self.driver_status.get('mode') == 'sim':
+                    raise RuntimeError('检测到 sim 驱动，拒绝采集真机标定点；请使用独立 direct 只读会话')
+                if self.collection_error():
+                    continue
                 try:
                     self.buf.lookup_transform('base_link', 'tcp_link',
                                               rclpy.time.Time())
@@ -263,7 +297,16 @@ def collect(args, points):
 
     rclpy.init()
     node = Collector()
-    node.probe()
+    try:
+        node.probe()
+        reason = node.collection_error()
+        if reason:
+            raise RuntimeError(reason)
+    except Exception:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.try_shutdown()
+        raise
     print(f'使用参考点：{node.ref_desc}')
     if not node.use_tcp_link:
         print(f'⚠️ TF 里查不到 tcp_link（robot_state_publisher 起了吗？）。'
@@ -279,11 +322,25 @@ def collect(args, points):
               '顶端 z 必须等于板面，本工具据此校验）')
         while rclpy.ok():
             rclpy.spin_once(node, timeout_sec=0.1)
-            if os.path.exists(TRIGGER):
+            if os.path.exists(args.trigger):
                 try:
-                    os.remove(TRIGGER)
+                    request = Path(args.trigger).read_text(encoding='utf-8').strip()
+                    os.remove(args.trigger)
                 except OSError:
-                    pass
+                    continue
+                if request:
+                    try:
+                        requested_point = json.loads(request)['point']
+                    except (KeyError, TypeError, ValueError):
+                        print('   ⛔ 记录请求格式错误，本次不记录')
+                        continue
+                    if requested_point != index:
+                        print(f'   ⛔ 旧的第 {requested_point} 点请求，当前已到第 {index} 点，本次不记录')
+                        continue
+                reason = node.collection_error()
+                if reason:
+                    print(f'   ⛔ {reason}；本次不记录')
+                    continue
                 p = node.tcp_base()
                 if p is None:
                     print('   ⚠️ 读不到 TF，本次忽略，请重试')
@@ -342,6 +399,7 @@ def collect(args, points):
                     # 存完整关节角，便于事后复算/诊断
                     'joints': {k: float(node.joints[k])
                                for k in node.joint_names},
+                    'driver_mode': node.driver_status['mode'],
                     'at': time.strftime('%H:%M:%S')})
                 # 每点立即落盘：即使中途被打断，已记录的点也不丢，
                 # 之后可用 --solve-only 直接续算。
@@ -430,6 +488,8 @@ def main():
     ap.add_argument('--cell-cm', type=float, default=3.3)
     ap.add_argument('--tcp', default=TCP_CALIB)
     ap.add_argument('--json', default=OUT_JSON)
+    ap.add_argument('--trigger', default=TRIGGER,
+                    help='触标前端写入的记录请求文件')
     ap.add_argument('--out', default=OUT)
     ap.add_argument('--solve-only')
     ap.add_argument('--table-z', type=float, default=-0.06909,
@@ -480,7 +540,11 @@ def main():
             print(f'使用自定义 {len(pts)} 个格点: {pts}')
         else:
             pts = DEFAULT_POINTS_CM
-        marks = collect(args, pts)
+        try:
+            marks = collect(args, pts)
+        except RuntimeError as exc:
+            print(f'❌ 不能开始真机标定：{exc}')
+            return 1
 
     if len(marks) < 2:
         print(f'❌ 至少需要 2 个点（现在 {len(marks)}）')

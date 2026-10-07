@@ -6,7 +6,7 @@ source "$ROOT/scripts/setup/source_env.sh"
 python3 "$ROOT/scripts/tools/migration_check.py" --target --ros
 python3 "$ROOT/qianli_ws/src/qianli_vision/scripts/block_pipeline.py" --selftest
 python3 "$ROOT/qianli_ws/src/qianli_vision/scripts/color_block_detect.py" --selftest
-python3 -m pytest "$ROOT/tests/test_migration.py" "$ROOT/tests/test_arm_acceptance.py" -q
+python3 -m pytest "$ROOT/tests" -q
 cd "$ROOT/qianli_ws"
 python3 -c 'from colcon_core.command import main; raise SystemExit(main())' test --event-handlers console_direct+
 python3 -c 'from colcon_core.command import main; raise SystemExit(main())' test-result --verbose
