@@ -18,7 +18,7 @@ SSH 已配置独立别名：
 ssh qianli-humble
 ```
 
-本地桌面密码记录于 VM 目录的 `bootstrap/credentials.txt`，SSH 只接受现有密钥。无需使用该密码运行常规项目命令。
+按用户要求，`ros` 的本地账户密码已删除，手动本地登录密码为空，重启自动登录。账户说明记录于 VM 目录的 `bootstrap/credentials.txt`；SSH 仍只接受现有密钥，密码登录保持关闭。
 
 按用户要求，新 VM 已关闭自动黑屏、自动锁屏和交流/电池供电下的自动休眠，并屏蔽 guest 的 sleep/suspend/hibernate targets。重启仍自动登录 `ros`，常规 sudo 不要求密码；这些设置只作用于这台 VM。
 

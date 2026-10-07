@@ -53,16 +53,15 @@ def main():
     sys.path.insert(0, str(bootstrap/'pythonlib'))
     import pycdlib
     import yaml
-    password = secrets.token_urlsafe(18)
     config = dict(hostname='qianli-humble', manage_etc_hosts=True, timezone='Asia/Shanghai',
                   users=[dict(name='ros', gecos='QianLi', shell='/bin/bash',
                               groups='sudo,dialout,video,render',
                               sudo='ALL=(ALL) NOPASSWD:ALL', lock_passwd=False,
-                              plain_text_passwd=password, ssh_authorized_keys=[key])],
+                              ssh_authorized_keys=[key])],
                   ssh_pwauth=False, disable_root=True, growpart=dict(mode='auto',devices=['/']),
                   resize_rootfs=True, package_update=True,
                   packages=['openssh-server','open-vm-tools','python3-venv','git','curl'],
-                  runcmd=[['systemctl','enable','--now','ssh'],
+                  runcmd=[['passwd','-d','ros'], ['systemctl','enable','--now','ssh'],
                           ['touch','/var/lib/qianli-bootstrap-ready']])
     network = dict(version=2, ethernets=dict(primary=dict(
         match=dict(name='en*'), dhcp4=False, addresses=[args.address+'/24'],
@@ -85,7 +84,7 @@ def main():
     iso.write(str(target/'seed.iso'))
     iso.close()
     (bootstrap/'credentials.txt').write_text(
-        f'Local desktop user: ros\nLocal desktop password: {password}\n'
+        'Local desktop user: ros\nLocal desktop password: none (removed at user request)\n'
         f'SSH: key-only, ros@{args.address}\n',encoding='utf-8')
     # Restrict initial credentials and cloud-init material to this Windows user.
     subprocess.run(['icacls',str(bootstrap),'/inheritance:r','/grant:r',

@@ -17,6 +17,7 @@ WaylandEnable=false
 AutomaticLoginEnable=true
 AutomaticLogin=ros
 GDM
+sudo passwd -d ros
 mkdir -p "$HOME/.config" "$HOME/Desktop"
 touch "$HOME/.config/gnome-initial-setup-done"
 sudo systemctl set-default graphical.target
