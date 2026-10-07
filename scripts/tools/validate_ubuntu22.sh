@@ -6,7 +6,7 @@ source "$ROOT/scripts/setup/source_env.sh"
 python3 "$ROOT/scripts/tools/migration_check.py" --target --ros
 python3 "$ROOT/qianli_ws/src/qianli_vision/scripts/block_pipeline.py" --selftest
 python3 "$ROOT/qianli_ws/src/qianli_vision/scripts/color_block_detect.py" --selftest
-python3 -m pytest "$ROOT/tests/test_migration.py" -q
+python3 -m pytest "$ROOT/tests/test_migration.py" "$ROOT/tests/test_arm_acceptance.py" -q
 cd "$ROOT/qianli_ws"
 python3 -c 'from colcon_core.command import main; raise SystemExit(main())' test --event-handlers console_direct+
 python3 -c 'from colcon_core.command import main; raise SystemExit(main())' test-result --verbose
@@ -36,7 +36,7 @@ if ! "$ready"; then
   echo '[ERROR] Simulated driver was not discovered with allow_motion=false.' >&2
   exit 1
 fi
-timeout 20 ros2 topic echo /joint_states sensor_msgs/msg/JointState --once --no-daemon > "$ROOT/qianli_ws/log/migration-joints.yaml"
-timeout 20 ros2 topic echo /tf tf2_msgs/msg/TFMessage --once --no-daemon > "$ROOT/qianli_ws/log/migration-tf.yaml"
-timeout 20 ros2 topic echo /safety_gate_state std_msgs/msg/String --once --no-daemon > "$ROOT/qianli_ws/log/migration-gate.yaml"
+timeout 20 ros2 topic echo /joint_states sensor_msgs/msg/JointState --once --no-daemon --full-length > "$ROOT/qianli_ws/log/migration-joints.yaml"
+timeout 20 ros2 topic echo /tf tf2_msgs/msg/TFMessage --once --no-daemon --full-length > "$ROOT/qianli_ws/log/migration-tf.yaml"
+timeout 20 ros2 topic echo /safety_gate_state std_msgs/msg/String --once --no-daemon --full-length > "$ROOT/qianli_ws/log/migration-gate.yaml"
 echo '[OK] Humble build/test, vision and simulated joint/TF/gate checks passed.'

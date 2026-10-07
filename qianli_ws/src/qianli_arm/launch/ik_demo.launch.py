@@ -40,6 +40,7 @@ def generate_launch_description():
     calibrated = LaunchConfiguration('calibrated')
     preserve_torque = LaunchConfiguration('preserve_torque')
     use_rviz = LaunchConfiguration('use_rviz')
+    use_ik = LaunchConfiguration('use_ik')
     straight_pose = LaunchConfiguration('straight_pose')
     max_joint_speed = LaunchConfiguration('max_joint_speed')
     orientation_mode = LaunchConfiguration('orientation_mode')
@@ -69,6 +70,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'use_rviz', default_value='true', choices=['true', 'false'],
             description='Start RViz; set false for headless testing'),
+        DeclareLaunchArgument(
+            'use_ik', default_value='true', choices=['true', 'false'],
+            description='Start IK command publisher; set false for read-only hardware checks'),
         DeclareLaunchArgument(
             'straight_pose', default_value='false', choices=['true', 'false'],
             description='Use the all-zero straight pose as the IK start'),
@@ -119,6 +123,7 @@ def generate_launch_description():
             executable='ik_node',
             name='so101_ik_node',
             output='screen',
+            condition=IfCondition(use_ik),
             parameters=[{
                 'demo_circle': ParameterValue(demo_circle, value_type=bool),
                 'command_topic': '/joint_commands_raw',

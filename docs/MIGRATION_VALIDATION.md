@@ -9,18 +9,25 @@
 | 实际环境 | 验收结果 |
 |---|---|
 | 独立 Ubuntu 22.04.5 VM / Humble / Python 3.10 | 六包构建成功；colcon 23 项测试全部通过；ROS 安装模块、视觉离线自检、模拟关节/TF/闸门消息通过；`allow_motion=false`、`calibrated=false` |
-| 同一 VM 的隔离训练环境 | 17 项完整迁移回归通过；20mm/40mm 各两个 spawn 进程、1024 步 PPO、权重更新与模型保存/加载通过；EGL 128×128 渲染通过 |
+| 同一 VM 的隔离训练环境 | 原 17 项迁移回归加 6 项只读报告/外参接口回归，共 23 项通过；20mm/40mm 各两个 spawn 进程、1024 步 PPO、权重更新与模型保存/加载通过；EGL 128×128 渲染通过 |
 | Windows 生产 `.venv-train-win` / RTX 5070 Ti / 591.74 / Torch 2.8.0+cu128 | 20mm/40mm 均通过实际 CUDA 运算、1024 步更新、保存/加载；25 项迁移/协议测试通过，1 项 Linux sysfs 用例在 Windows 跳过、在 VM 通过 |
 | VM CPU 与 Windows CUDA，原有两个策略归档 | `bc_policy.zip` 和 `ppo_bc_final.zip` 均可加载和预测；另存后重新加载的动作输出、全部策略权重与加载前一致；原归档未覆盖 |
 | Windows 生产环境的完整 `train.py` | 40mm / 两环境 / 128 步 / BC 热启动成功，生成 64/128 步 checkpoint 与最终模型；短跑成功率 0%，不代表抓取能力提升 |
 | 新 VM 的外置 UVC 相机 | xHCI + MJPG，640×480 连续 60 帧通过，实际图片无损坏条带；已配置稳定 by-id 路径；未执行新的几何标定 |
-| 新 VM 的 CH343 适配器 | `/dev/qianli_arm` 与 by-id 路径、dialout 权限、实际 sysfs USB 接口发现通过；六个舵机只读查询无回应，用户确认独立电源尚未打开，状态读取等待上电 |
+| 新 VM 的 CH343 适配器 | `/dev/qianli_arm` 与 by-id 路径、dialout 权限、实际 sysfs USB 接口发现通过；上电后六个位置和扭矩均可读取，扭矩均为 0；部分手摆关节超出软限位，姿态检查未通过 |
+| 新 VM 的 direct 模式 | 实际 `/joint_states`、TF 和闸门状态已收到；`allow_motion=false`、`calibrated=false`，运动使能请求返回拒绝；无目标位置或 EEPROM 写入；完整证据见 `migration_assets/vm-acceptance/hardware/` |
 
 ROS 在线 GitHub 下载在 guest 内发生 TLS 断开，安装已通过宿主机下载的官方数据完成：`ros2-apt-source` 包匹配发布方 SHA256，rosdep YAML 绑定具体 rosdistro commit，官方 Humble 缓存来源由官方 index 解析，guest 内逐文件校验并执行了新的 `rosdep update`。此持久 VM 没有使用旧 VM 的 rosdep 缓存。`ament_python` 是 colcon build type，不是可解析的 ROS 包依赖；清除了三个 Python 包中的错误 buildtool 声明，保留 build type。
 
 验收脚本现在等待 DDS 发现并指定订阅消息类型，避免默认一秒发现窗口造成的误失败。相机最初 YUYV 超时、EHCI/MJPG 出现图像条带；最终换为 xHCI 并在机器配置中指定 MJPG，经过连续采集和图像检查后才记录通过。短桌面检查结束后保留输出窗口。
 
 持久 VM 的完整证据在 `migration_assets/vm-install/`、`migration_assets/vm-acceptance/`；Windows 生产日志在 `migration_assets/production-gpu-20mm.log`、`production-gpu-40mm.log`、`production-pretrain.log`。下文保留此前隔离验证记录，便于比较验证范围。
+
+补充的 6 项回归检查只读工具在超限、缺少舵机回应或扭矩开启时拒绝报告全部通过，以及合成外参写入实际拟合的 `grid_origin_z`，供严格外参加载器读取。VM 的训练环境完整 23 项通过，ROS 环境新增 6 项通过；Windows 完整回归为 22 项通过、1 项 Linux sysfs 用例跳过。
+
+旧触点 `touch_marks_20261006.json` 与 `board_cam.npz` 已在独立目录重新回算：触点 RMS 4.67 mm、留一平移抖动 17.51 mm / 旋转 3.347°，未通过原有质量门槛，输出 `quality_ok=0`，严格加载器拒绝使用。日志在 `migration_assets/calibration-audit/`；没有安装到实际 `calib/`。旧关节限位可复用，不代表这些几何外参已经合格。
+
+旧 VM 原配置的最终只读验收记录在 `migration_assets/vm-acceptance/hardware/final-readonly/result.json`：六个舵机通信正常，前后扭矩均为 0，六个动态及两个静态 TF 均收到（含 `tcp_link`），使能请求明确拒绝；关闭 IK 后未发布候选运动指令。肩升降 788 / 下限 806，肘关节 4076 / 上限 4064，当前手摆姿态仍超旧软限位，因此 `hardware_ready=false`，没有验收运动或抓取。
 
 ## 已交付
 
@@ -68,7 +75,7 @@ Humble 验证使用官方 Ubuntu Base 22.04.5 amd64 镜像，在旧 Ubuntu 24.04
 
 Humble 证据 ZIP 的 SHA256：`f7c9b253718abd8c837e1d828b692802a89e5b96beda4c132dc71f30dd63473f`。
 
-旧 VM 和本地原始限位均已保留。迁移默认参数采用两者交集，只将本地 `shoulder_pan` 上限进一步收紧至 3273；零位与方向不变，没有写入舵机 EEPROM。
+旧 VM 和本地原始限位均已保留。迁移默认参数采用两者交集，只将本地 `shoulder_pan` 上限进一步收紧至 3273；零位与方向不变，没有写入舵机 EEPROM。旧 VM 的实际运行参数另存为 `config/driver_params.previous_vm.yaml`，可通过 `QI_DRIVER_CONFIG` 选择；其窗口比交集更宽，不必因操作系统迁移重新标定限位。
 
 ## 尚待原生机器完成
 
@@ -76,6 +83,6 @@ Humble 证据 ZIP 的 SHA256：`f7c9b253718abd8c837e1d828b692802a89e5b96beda4c13
 - 原生安装后按迁移文档重建两个环境并完成 rosdep、构建/测试、两个尺寸训练短跑、Linux EGL 与 RViz/TF 检查；这些软件项已经在持久 VM 完成，原生硬件仍需验收。
 - 原生系统重新核对相机、串口和 USB 接口；这些设备路径/权限、相机采集和 USB 发现已在持久 VM 验证，没有执行 USB 自动复位。
 - 已恢复相机内参、`board_cam.npz` 和触点记录；**缺少合格 `extrinsic.txt`、`tcp_calib.txt` 等临时标定产物**，需要依据原生机器的实际几何重新验证或标定。
-- 支撑机械臂后按 `allow_motion=false` 检查 direct 状态、限位和闸门；注意 direct 初始化会关闭扭矩。之后才由操作者进行现有低速运动、停止及抓取验收。
+- 持久 VM 已在用户确认支撑后完成 direct 只读状态及使能拒绝检查；当前手摆姿态仍有超软限位关节。核对姿态与合格标定后，才继续现有低速运动、停止及抓取验收。原生系统仍需重复硬件验收。
 
 只有以上硬件与标定检查全部通过，才切换日常开发环境。旧 VM 应继续保留。

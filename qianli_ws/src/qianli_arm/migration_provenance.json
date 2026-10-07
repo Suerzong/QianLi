@@ -211,6 +211,13 @@
       3168
     ]
   },
+  "runtime_profiles": {
+    "config/driver_params.previous_vm.yaml": {
+      "source": "migration_assets/live-vm-20261007-full/runtime-config/driver_params.yaml",
+      "sha256": "bbd177f25c14ccf91d7cea8e4f4fe2ca98db0f7a390882e62534196a9c2d50ab",
+      "note": "Exact copy of the old VM effective parameters; optional QI_DRIVER_CONFIG override. Default intersection remains available."
+    }
+  },
   "ros_model": {
     "source": "qianli_ws/src/qianli_description/urdf/so101.urdf",
     "sha256": "c9db55fa04ceb36b548c3b2f3a0d909c5dee6416de22275d9dd638eebbc4805a",

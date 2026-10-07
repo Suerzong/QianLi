@@ -1,0 +1,60 @@
+so101_driver:
+  ros__parameters:
+    # Safe default: no serial port is opened and RViz follows commands only.
+    mode: sim
+    port: /dev/ttyACM0
+    baud: 1000000
+
+    # Both must be true before /arm/enable can energize real servos.
+    allow_motion: false
+    calibrated: true
+
+    control_rate: 15.0
+    state_rate: 2.0
+    command_write_rate: 4.0
+    # Normal Cartesian-following profile. Override from the launch command
+    # when a slower commissioning speed is required.
+    max_joint_speed: 0.8
+    tracking_compensation_gain: 0.5
+    tracking_integral_gain: 0.0
+    max_tracking_compensation: 0.08
+    command_timeout: 1.0
+    # false = a target outside the envelope is clamped AND reported (log +
+    # /arm/status clip_events/clip_last).  true = the whole command is dropped
+    # instead.  Either way it is never absorbed silently.
+    reject_out_of_range: false
+
+    # ================= 机械限位（2026-10-06 实测重标定） =================
+    #
+    # 这些值是"事实"，不是从 URDF 反推的：
+    #   方法  扭矩关闭，用手把每个关节推到两个机械死点，30 Hz 记录
+    #         Present_Position 极值（脚本 joint_range_calibrate.py）。
+    #         与 lerobot-calibrate 的手动校准流程一致。
+    #   工具  joint_range_calibrate.py -> derive_joint_limits.py
+    #
+    # 实测机械死点（舵机计数）：
+    #   shoulder_pan   [ 746, 3299]   224.4 deg
+    #   shoulder_lift  [ 784, 3192]   211.6 deg
+    #   elbow_flex     [1865, 4084]   195.0 deg
+    #   wrist_flex     [ 831, 3180]   206.5 deg
+    #   wrist_roll     [1144, 4993]   338.3 deg  <- 跨过 4095 单圈边界
+    #   gripper        [1921, 3329]   123.8 deg
+    #
+    # 软限位规则：下面的 raw 窗口 = min(URDF 设计意图, 机械死点 - 2.0 deg)
+    #   * URDF 更保守的方向 -> 保留 URDF 的余量（那是设计者的意图，不是 bug）
+    #   * URDF 比死点更宽的方向 -> 收到死点以内，否则软件会命令舵机顶死
+    #   旧限位在 shoulder_pan / elbow_flex / gripper 上越过死点，且 wrist_roll
+    #   正向被 12 位量程截掉 71.2 deg。
+    #
+    # wrist_roll 为什么零点变了：
+    #   实测行程 338.3 deg 跨过 4095，只要零点在 3053，URDF 窗口
+    #   [1264, 4905] 就有 810 计数落在 12 位量程外。修法不是截断行程，
+    #   而是把舵机 Homing_Offset 平移 -1020（-1215 -> -195），让整段行程
+    #   回到单圈内。原始 offset 与回滚方法见
+    #   qianli_ws/log/limit_fix_backup/ 与 scripts/servo_homing_shift.py --restore。
+    #
+    # 换机械臂 / 拆装过关节后必须重测，不要照抄。
+    zero_raw: [2078, 1980, 3076, 2035, 2033, 2030]
+    direction: [1, 1, 1, 1, 1, 1]
+    raw_min: [766, 806, 1911, 863, 142, 1929]
+    raw_max: [3273, 3155, 4064, 3165, 3947, 3253]

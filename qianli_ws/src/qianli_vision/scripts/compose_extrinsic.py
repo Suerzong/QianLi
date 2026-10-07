@@ -39,6 +39,7 @@ import argparse
 import json
 import math
 import os
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -230,7 +231,11 @@ def main():
     print('=' * 74)
 
     # ---------------------------------------------------- 写出
-    with open(args.out, 'w') as f:
+    output = Path(args.out).expanduser()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    legacy_output = Path(calibration_path('extrinsic.txt'))
+    legacy_output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open('w', encoding='utf-8') as f:
         f.write('# 相机外参：base_link <- camera\n')
         f.write('# 由 compose_extrinsic.py 生成（纯棋盘路线：solvePnP + 触点）\n')
         f.write(f'# 触点拟合 RMS {rms*1000:.2f} mm，桌面交叉验证 {dz:+.2f} mm，'
@@ -248,13 +253,15 @@ def main():
         th = math.degrees(math.atan2(R[1, 0], R[0, 0]))
         f.write(f'grid_theta_deg={th:.6f}\n')
         f.write(f'grid_origin_x={t[0]:.10f}\ngrid_origin_y={t[1]:.10f}\n')
-    print(f'\n📄 已写 {args.out}')
-    with open(calibration_path('extrinsic.txt'), 'w') as f:
+        f.write(f'grid_origin_z={t[2]:.10f}\n')
+    print(f'\n📄 已写 {output}')
+    with legacy_output.open('w', encoding='utf-8') as f:
         f.write('# 由 compose_extrinsic.py 生成（含 quality_ok）\n')
         f.write(f'quality_ok={1 if ok else 0}\n')
         f.write(f'grid_theta_deg={th:.6f}\n')
         f.write(f'grid_origin_x={t[0]:.10f}\ngrid_origin_y={t[1]:.10f}\n')
-    print('📄 同时写了 /tmp/extrinsic.txt（向后兼容老消费者）')
+        f.write(f'grid_origin_z={t[2]:.10f}\n')
+    print(f'📄 同时写了 {legacy_output}（向后兼容老消费者）')
     return 0 if ok else 2
 
 

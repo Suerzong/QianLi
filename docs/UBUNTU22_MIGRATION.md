@@ -123,10 +123,12 @@ python dual_twin/scripts/train.py --device cuda --obj-size 0.04 \
 ```bash
 source scripts/setup/source_env.sh
 ros2 launch so101_bringup ik_demo.launch.py driver_mode:=direct \
-  port:="$QI_ARM_PORT" allow_motion:=false calibrated:=false max_joint_speed:=0.2
+  port:="$QI_ARM_PORT" allow_motion:=false calibrated:=false max_joint_speed:=0.2 use_ik:=false
 ```
 
-检查 `/joint_states`、`/arm/status`、有效原始限位、TF 和安全闸门。**驱动的 direct 初始化会关闭扭矩**；只读表示拒绝运动使能，不能当作完全不写串口。机械臂须有支撑。通用验收脚本不会自动启动 direct，也不会运行舵机复位/重新定零工具。
+检查 `/joint_states`、`/arm/status`、有效原始限位、TF 和安全闸门。`use_ik:=false` 在只读验收时关闭 IK 的候选指令发布；正常交互默认开启。**驱动的 direct 初始化会关闭扭矩**；只读表示拒绝运动使能，不能当作完全不写串口。机械臂须有支撑。通用验收脚本不会自动启动 direct，也不会运行舵机复位/重新定零工具。
+
+旧 VM 的有效限位可直接复用，不需要因迁移操作系统重测。默认参数取旧 VM 与本地窗口的交集；要严格复现旧 VM，先设置 `QI_DRIVER_CONFIG="$PWD/qianli_ws/src/qianli_arm/config/driver_params.previous_vm.yaml"`。该配置来自已取回的旧 VM 实际运行参数，零位、方向和原有软限位均保留。只读查询成功而姿态超限时，应分别记录通信与姿态结果，不自动扩大软限位。
 
 在合格标定、限位和停止行为通过后，再由操作者启动 `allow_motion:=true calibrated:=true max_joint_speed:=0.2`，按现有流程使能，验收小幅低速运动、停止和抓取。坐标预览通过后再发真机目标；参数外参覆盖必须同时设置 `extrinsic_quality_ok:=true`。迁移不运行 homing/EEPROM 写入脚本。
 

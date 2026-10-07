@@ -60,7 +60,16 @@ GitHub 在 VM 中发生 TLS 断开时，安装使用宿主机下载的官方 `ro
 
 新 VM 已配置自动连接 CH343 机械臂适配器（`1a86:55d3`）和外置相机（`05a3:9230`）。串口别名为 `/dev/qianli_arm`；相机通过 `/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0` 访问。持久配置在 `~/.config/qianli/environment.sh`，其中 `QI_CAMERA_FOURCC=MJPG` 只配置这台机器；其他安装没有设置时保留 OpenCV 原有格式。相机使用 xHCI 控制器，已验证 640×480 连续 60 帧和实际画面；旧 EHCI 组合出现丢帧及 JPEG 损坏，已修复。
 
-`devices` 检查相机和串口权限，并只读取六个舵机的位置与扭矩状态。用户确认机械臂独立电源尚未打开，因此舵机读取暂未通过；上电后可通过此入口继续检查。该操作不会调用 direct 初始化、切换扭矩、发送目标位置或写 EEPROM。
+`devices` 检查相机和串口权限，并只读取六个舵机的位置与扭矩状态。上电后六个舵机均已回应，扭矩均为 0；手动支撑时部分关节仍在软限位外，因此尚未通过姿态验收。报告分别显示通信、软限位和扭矩检查，不能把通信正常当作全部通过。该工具不会调用 direct 初始化、切换扭矩、发送目标位置或写 EEPROM。
+
+当前默认限位是迁移前本地与旧 VM 的交集。旧 VM 的实际运行配置已保存在 `qianli_ws/src/qianli_arm/config/driver_params.previous_vm.yaml`，零位和方向相同。需要复现旧 VM 时，可显式选择该配置：
+
+```bash
+export QI_DRIVER_CONFIG="$HOME/QianLi/qianli_ws/src/qianli_arm/config/driver_params.previous_vm.yaml"
+bash "$HOME/QianLi/scripts/tools/qianli.sh" devices
+```
+
+旧配置仍保留其原有软限位；手摆到机械死点附近可能超过该窗口，不代表必须重测或放宽限位。运动前仍须核对姿态和现有标定。
 
 仿真和自检入口不会自动启动 direct 驱动、开启舵机运动或写 EEPROM。真机必须按 [迁移验收步骤](UBUNTU22_MIGRATION.md) 验证串口、相机、限位和合格标定后再操作。缺失的外参不能用仿真数据或旧错误拟合替代。
 
