@@ -18,12 +18,25 @@
 
 import math
 import sys
+import xml.etree.ElementTree as ET
 
 import numpy as np
 
 import mujoco
 
 import sim_grasp as S
+
+_frame_rpy = [float(v) for v in ET.parse(S.URDF).getroot().find("./joint[@name='gripper_frame_joint']/origin").get('rpy').split()]
+_rx,_ry,_rz = _frame_rpy
+_tool_z_local = np.array([math.cos(_rz)*math.sin(_ry)*math.cos(_rx)+math.sin(_rz)*math.sin(_rx),
+                          math.sin(_rz)*math.sin(_ry)*math.cos(_rx)-math.cos(_rz)*math.sin(_rx),
+                          math.cos(_ry)*math.cos(_rx)])
+
+
+def tool_angle_deg(model, data):
+    _,rotation,_ = tcp_of(model,data)
+    axis = rotation @ _tool_z_local
+    return math.degrees(math.acos(float(np.clip(-axis[2],-1.,1.))))
 
 
 def rot_x(a):
@@ -47,11 +60,13 @@ def solve_only(model, qadr, target, cur_qpos, yaw=-90.0):
     scratch = mujoco.MjData(model)
     scratch.qpos[:] = cur_qpos
     q, error = ik_dls(model, scratch, qadr, np.asarray(target), yaw_deg=yaw)
+    if tool_angle_deg(model,scratch) > 5.:
+        error = float('inf')
     return q.tolist(), error
 
 
 def ik_dls(model, data, qadr, target_pos, yaw_deg=-90.0, iters=400,
-           lam=2e-3, step=0.6, seed=None, rot_weight=0.0, verbose=False):
+           lam=2e-4, step=0.6, seed=None, rot_weight=0.08, verbose=False, multi_seed=True):
     """位置 DLS IK + 工具轴保持。
 
     返回 (关节字典, 位置误差米)。
@@ -62,6 +77,30 @@ def ik_dls(model, data, qadr, target_pos, yaw_deg=-90.0, iters=400,
                             np.zeros(len(ch.links)))
     else:
         sol = seed
+    if multi_seed:
+        current = np.zeros(len(ch.links))
+        middle = current.copy()
+        for j in S.ARM_JOINTS:
+            current[names.index(j)] = data.qpos[qadr[j]]
+            middle[names.index(j)] = np.mean(ch.links[names.index(j)].bounds)
+        bent = np.zeros(len(ch.links))
+        for j,value in zip(S.ARM_JOINTS,(0.,-1.,1.5,-.7,-2.2)):
+            bent[names.index(j)] = value
+        best = None
+        for candidate in (sol,current,np.zeros(len(ch.links)),middle,bent):
+            q,error = ik_dls(model,data,qadr,target_pos,yaw_deg,iters,lam,step,
+                            candidate,rot_weight,verbose,multi_seed=False)
+            angle = tool_angle_deg(model,data)
+            score = error/.002+angle/5.
+            if best is None or score < best[0]:
+                best = (score,q.copy(),error)
+            if error <= .002 and angle <= 5.:
+                best = (score,q.copy(),error)
+                break
+        for j,value in zip(S.ARM_JOINTS,best[1]):
+            data.qpos[qadr[j]] = value
+        mujoco.mj_forward(model,data)
+        return best[1],best[2]
     for j in S.ARM_JOINTS:
         data.qpos[qadr[j]] = sol[names.index(j)]
     mujoco.mj_forward(model, data)
@@ -80,20 +119,16 @@ def ik_dls(model, data, qadr, target_pos, yaw_deg=-90.0, iters=400,
         mujoco.mj_forward(model, data)
         p, R, gl = tcp_of(model, data)
         e_pos = target_pos - p
-        # 姿态误差：希望 R 接近 Rdes → 取旋转向量
-        Rerr = Rdes @ R.T
-        ang = math.acos(max(-1.0, min(1.0, (np.trace(Rerr) - 1) / 2)))
-        if ang > 1e-6:
-            axis = np.array([Rerr[2, 1] - Rerr[1, 2],
-                             Rerr[0, 2] - Rerr[2, 0],
-                             Rerr[1, 0] - Rerr[0, 1]]) / (2 * math.sin(ang))
-            e_rot = axis * ang
-        else:
-            e_rot = np.zeros(3)
-        if np.linalg.norm(e_pos) < 1e-4:
+        # The TCP fixed joint rotates the gripper frame by pi about Y.
+        # Constrain its actual Z axis, not the parent gripper body's Z axis.
+        axis = R @ _tool_z_local
+        e_rot = Rdes[:,2]-axis
+        if np.linalg.norm(e_pos) < 1e-4 and np.linalg.norm(e_rot) < 1e-3:
             break
         mujoco.mj_jac(model, data, jacp, jacr, p, gl)
-        J = np.vstack([jacp[:, dofs], jacr[:, dofs] * rot_weight])
+        skew = np.array([[0.,-axis[2],axis[1]],
+                         [axis[2],0.,-axis[0]],[-axis[1],axis[0],0.]])
+        J = np.vstack([jacp[:, dofs], -skew @ jacr[:, dofs] * rot_weight])
         e = np.concatenate([e_pos, e_rot * rot_weight])
         A = J @ J.T + lam * np.eye(6)
         dq = J.T @ np.linalg.solve(A, e)

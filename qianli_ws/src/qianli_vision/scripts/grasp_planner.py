@@ -291,8 +291,14 @@ def main():
     ap.add_argument('--approach-mm', type=float, default=70.0,
                     help='接近时 TCP 停在物块中心上方多高')
     ap.add_argument('--lift-mm', type=float, default=90.0)
-    ap.add_argument('--open-extra-mm', type=float, default=8.0,
-                    help='张爪余量：开度 = W + 这个值')
+    ap.add_argument('--open-extra-mm', type=float, default=20.0,
+                    help='张爪余量：开度 = W + 这个值。'
+                         '固定爪基准下只要开度 > W + 贴面余量就够，'
+                         '开大一点物块更容易进到两爪之间。')
+    ap.add_argument('--face-clearance-mm', type=float, default=3.0,
+                    help='下降时固定爪内侧面与物块那个面留的间隙。'
+                         '合爪时活动爪会把物块推过这段距离、顶死在固定爪上'
+                         '（自定心）。太小会刮到物块，太大会把物块推很远。')
     ap.add_argument('--squeeze-mm', type=float, default=1.5,
                     help='挤压量：合爪开度 = W - 这个值')
     ap.add_argument('--min-clearance-mm', type=float, default=5.0)
@@ -442,13 +448,43 @@ def main():
           f'四元数 = {np.round(quat_from_R(R_t), 4).tolist()}')
 
     # ---- 路点 ----
+    #
+    # 基准改成了**固定爪内侧面中心**（tcp_link 的 frame X = 0），所以
+    # 目标不再是"物块中心"，而是"把固定爪内侧面送到物块那个面的位置"：
+    #
+    #     目标 = 物块中心 + (W/2 + 贴面余量) * x_hat
+    #
+    # x_hat 是爪口轴（frame X）在世界下的方向 = 物块 yaw 方向。
+    # 下降时留 `face_clearance` 的间隙；合爪时活动爪把物块推过这段距离，
+    # **顶死在固定爪这个硬基准上** —— 自定心，不受摩擦和初始偏差影响。
+    # 这就是"固定爪贴一个垂直面、另一个爪再合上"的实现。
+    off = W / 2.0 + args.face_clearance_mm / 1000.0
+    yaw_r = math.radians(chosen_yaw)
+    tx = args.x + off * math.cos(yaw_r)
+    ty = args.y + off * math.sin(yaw_r)
+    print()
+    print(f'  固定爪基准：目标 = 物块中心 + ({W/2*1000:.1f} + '
+          f'{args.face_clearance_mm:.1f})mm · x̂')
+    print(f'    物块中心 ({args.x*1000:+.1f}, {args.y*1000:+.1f}) mm')
+    print(f'    TCP 目标 ({tx*1000:+.1f}, {ty*1000:+.1f}) mm '
+          f'（偏移 {off*1000:.1f}mm 沿 yaw {chosen_yaw:+.1f}°）')
+
     z_lift = z_block + args.lift_mm / 1000.0
+
+    # **必须先抬离桌面再张爪。**
+    # 实测踩到：当前姿态爪子正贴着板面（起点净空 -2.75mm），这时直接张爪，
+    # 活动爪会往下甩（大开度下活动爪比固定爪低约 6mm），直接扎进桌子。
+    # 所以插一个"0.抬离"路点：保持当前开度、把 TCP 竖直抬起来，再开爪。
+    q_now = list(P._clamp(q_seed))
+    p_now, _, _ = P.fk(q_now)
     wps = [
+        ('0.抬离',      (p_now[0], p_now[1], p_now[2]
+                         + args.lift_mm / 1000.0),                      None),
         ('1.张爪',      None,                                          a_open),
-        ('2.到上空',    (args.x, args.y, z_app),                        None),
-        ('3.垂直下降',  (args.x, args.y, z_block),                      None),
-        ('4.合爪',      (args.x, args.y, z_block),                      a_grip),
-        ('5.抬起',      (args.x, args.y, z_lift),                       None),
+        ('2.到上空',    (tx, ty, z_app),                                None),
+        ('3.垂直下降',  (tx, ty, z_block),                              None),
+        ('4.合爪',      (tx, ty, z_block),                              a_grip),
+        ('5.抬起',      (tx, ty, z_lift),                               None),
     ]
 
     print()

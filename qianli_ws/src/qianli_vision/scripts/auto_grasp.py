@@ -27,7 +27,7 @@ import math
 import sys
 import time
 import json
-from grasp_guard import down_quat_xyzw
+from grasp_guard import down_quat_xyzw, finite_position, tool_down_error_deg, FeedbackGuard
 
 import numpy as np
 import rclpy
@@ -35,6 +35,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PointStamped, PoseStamped
 from std_msgs.msg import Float64, String
 from std_srvs.srv import SetBool
+from sensor_msgs.msg import JointState
 from tf2_ros import Buffer, TransformListener
 
 TCP = 'gripper_frame_link'
@@ -114,6 +115,9 @@ class AutoGrasp(Node):
         self.cur = None
         self.enabled = False
         self.target = None
+        self.feedback = FeedbackGuard()
+        self.tool_angle = float('inf')
+        self.create_subscription(JointState, '/joint_states', self.feedback.on_joints, 10)
 
     # ---------- 回调 ----------
     def _on_obj(self, msg):
@@ -127,6 +131,7 @@ class AutoGrasp(Node):
             self.obj_hist.pop(0)
 
     def _on_status(self, msg):
+        self.feedback.on_status(msg)
         try:
             self.enabled = bool(json.loads(msg.data).get('enabled',False))
         except (ValueError,TypeError):
@@ -138,15 +143,21 @@ class AutoGrasp(Node):
         while time.time() - t0 < dur:
             rclpy.spin_once(self, timeout_sec=0.02)
             self._read_tcp()
+            if stream and self.target and not self.feedback.fresh(enabled=True):
+                self.target = None
+                raise RuntimeError('physical feedback stale, faulted or disabled')
             if stream and self.target:
                 self._publish_pose()
 
     def _read_tcp(self):
+        self.cur = None
+        self.tool_angle = float('inf')
+        if not self.feedback.fresh() or self.count_publishers('/joint_states') != 1:
+            return
         try:
-            tr = self.buf.lookup_transform('base_link', TCP,
-                                           rclpy.time.Time())
-            t = tr.transform.translation
-            self.cur = (t.x, t.y, t.z)
+            matrix = self.feedback.tcp_matrix()
+            self.cur = tuple(matrix[:3,3])
+            self.tool_angle = math.degrees(math.acos(float(np.clip(-matrix[2,2],-1.,1.))))
         except Exception:
             pass
 
@@ -174,6 +185,8 @@ class AutoGrasp(Node):
         return self.enabled
 
     def gripper(self, pos, wait=2.5):
+        if not self.feedback.fresh(enabled=True):
+            raise RuntimeError('gripper requires current enabled physical feedback')
         m = Float64()
         m.data = pos
         for _ in range(5):
@@ -185,6 +198,8 @@ class AutoGrasp(Node):
         """慢慢合上：避免撞击物块把它推飞（用户策略第 3 条）。"""
         print(f'   慢速闭合：{GRIP_OPEN} → {GRIP_CLOSE}，{steps} 步')
         for i in range(1, steps + 1):
+            if not self.feedback.fresh(enabled=True):
+                raise RuntimeError('gripper closure interrupted by stale/disabled feedback')
             v = GRIP_OPEN + (GRIP_CLOSE - GRIP_OPEN) * i / steps
             m = Float64()
             m.data = v
@@ -196,21 +211,21 @@ class AutoGrasp(Node):
     def goto(self, x, y, z, timeout=14.0, tol=0.006):
         """发位姿目标并等机械臂真正到位（姿态受控）。"""
         z = max(z, self.safe_z)
+        finite_position([x,y,z],self.a.reach_limit)
         self.target = (x, y, z)
         t0 = time.time()
         stable = 0
-        reenables = 0
         while time.time() - t0 < timeout:
             rclpy.spin_once(self, timeout_sec=0.02)
             self._read_tcp()
-            if not self.enabled:
+            if not self.enabled or not self.feedback.fresh(enabled=True):
                 self.target = None
                 print('      ❌ 运动失能/掉线，终止；禁止自动重新使能')
                 return False, float('nan')
             self._publish_pose()
             if self.cur:
                 d = math.dist(self.cur, (x, y, z))
-                stable = stable + 1 if d < tol else 0
+                stable = stable + 1 if d < tol and self.tool_angle <= 5. else 0
                 if stable >= 15:
                     return True, d
         d = math.dist(self.cur, (x, y, z)) if self.cur else float('nan')
@@ -219,6 +234,12 @@ class AutoGrasp(Node):
     # ---------- 主流程 ----------
     def run(self):
         a = self.a
+        if not a.dry_run and a.board_z is None:
+            raise ValueError('real execution requires measured --board-z; taught height alone is insufficient')
+        if a.board_z is not None:
+            if not math.isfinite(a.board_z) or self.grasp_z < a.board_z+.005:
+                raise ValueError('grasp height too close to or below measured board')
+            self.safe_z = max(self.safe_z,a.board_z+.005)
 
         if not a.dry_run:
             print('⓪ 使能 + 归位（让开相机视野）')
@@ -254,6 +275,7 @@ class AutoGrasp(Node):
         c, s = math.cos(th), math.sin(th)
         ox = c * gx - s * gy + self.ext['grid_origin_x'] + self.off_x
         oy = s * gx + c * gy + self.ext['grid_origin_y'] + self.off_y
+        finite_position([ox,oy,self.grasp_z],a.reach_limit)
         reach = math.hypot(ox, oy)
         print(f'   物块 grid=({gx*100:.1f},{gy*100:.1f})cm → '
               f'夹爪目标 base=({ox:.4f},{oy:.4f}) 距基座 {reach*100:.1f}cm')
@@ -311,6 +333,7 @@ def main():
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--park', nargs=3, type=float, metavar=('X', 'Y', 'Z'))
     ap.add_argument('--reach-limit', type=float, default=0.36)
+    ap.add_argument('--board-z',type=float,help='实测棋盘面 base_link Z（米），真机执行必填')
     ap.add_argument('--yaw', type=float, default=-90.0,
                     help='偏航角（度）—— 决定固定爪朝哪边；-90=固定爪在右')
     a = ap.parse_args()

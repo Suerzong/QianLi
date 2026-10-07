@@ -1,0 +1,43 @@
+{
+  "image": "qianli_ws\\log\\vm\\frontend_snap5.jpg",
+  "cell_cm": 3.3,
+  "frame": "grid",
+  "blocks": [
+    {
+      "color": "red",
+      "X_cm": 23.4,
+      "Y_cm": 27.2,
+      "yaw_deg": 18.13,
+      "conf": 0.937,
+      "cx_px": 244.9,
+      "cy_px": 97.6
+    },
+    {
+      "color": "purple",
+      "X_cm": 6.06,
+      "Y_cm": 24.11,
+      "yaw_deg": 7.7,
+      "conf": 0.922,
+      "cx_px": 424.7,
+      "cy_px": 125.7
+    },
+    {
+      "color": "blue",
+      "X_cm": 17.29,
+      "Y_cm": 25.49,
+      "yaw_deg": -8.48,
+      "conf": 0.913,
+      "cx_px": 308.4,
+      "cy_px": 114.0
+    },
+    {
+      "color": "green",
+      "X_cm": 28.5,
+      "Y_cm": 30.96,
+      "yaw_deg": -14.24,
+      "conf": 0.883,
+      "cx_px": 190.7,
+      "cy_px": 58.9
+    }
+  ]
+}

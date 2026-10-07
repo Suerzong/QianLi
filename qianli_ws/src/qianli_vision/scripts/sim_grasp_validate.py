@@ -15,6 +15,14 @@ import sim_grasp as S
 import sim_ik_dls as IK
 import sim_mesh_gripper as MG
 
+DEFAULT_OFFSET = [12.,-4.,2.]
+DEFAULT_GRID = [60.,-15.]
+DEFAULT_APPROACH = 1.
+
+
+class SimulationGuardError(RuntimeError):
+    pass
+
 
 def build(size, mass=.008, friction=1., timestep=.002):
     spec = MG.make_spec(size)
@@ -27,11 +35,13 @@ def build(size, mass=.008, friction=1., timestep=.002):
 
 
 class Trial:
-    def __init__(self, model, data=None, on_step=None, on_stage=None):
+    def __init__(self, model, data=None, on_step=None, on_stage=None, close_angle=-.08):
         self.m = model
         self.d = data if data is not None else mujoco.MjData(model)
         self.on_step = on_step
         self.on_stage = on_stage
+        self.close_angle = close_angle
+        self.stage_angles = []
         self.qadr, self.aadr, self.obj, self.oq = S.attach_handles(model)
         self.cube = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, 'cube')
         self.env = {mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, n)
@@ -65,10 +75,13 @@ class Trial:
             if ((g1 in self.env and self.m.geom_bodyid[g2] != 0 and g2 != self.cube)
                     or (g2 in self.env and self.m.geom_bodyid[g1] != 0 and g1 != self.cube)):
                 self.penetration = max(self.penetration, -float(con.dist))
+        if self.penetration >= .001 or self.max_limit_error >= .01:
+            raise SimulationGuardError('environment penetration or joint limit exceeded')
         if self.on_step is not None:
             self.on_step(self)
 
     def stage(self, label):
+        self.stage_angles.append(IK.tool_angle_deg(self.m,self.d))
         if self.on_stage is not None:
             self.on_stage(label, self)
 
@@ -86,21 +99,31 @@ class Trial:
         return len(sides) == 2
 
     def move(self, target, grip, speed=0.3, yaw=-90.):
-        q, residual = IK.solve_only(self.m, self.qadr, target, self.d.qpos.copy(), yaw)
-        if residual > .002:
-            return float(residual)
-        goals = np.asarray(q + [grip])
-        idx = np.array([self.aadr[j] for j in S.ALL_JOINTS])
-        initial = self.d.ctrl[idx].copy()
-        steps = max(1, int(np.ceil(np.max(np.abs(goals-initial)) / speed / self.m.opt.timestep)))
-        for i in range(steps):
-            self.d.ctrl[idx] = initial + (goals-initial) * ((i+1) / steps)
-            self.step()
-        for _ in range(600):
-            self.step()
+        commanded = np.asarray(target,dtype=float).copy()
+        for correction in range(3):
+            q, residual = IK.solve_only(self.m, self.qadr, commanded, self.d.qpos.copy(), yaw)
+            if residual > .002:
+                return float(residual)
+            goals = np.asarray(q + [grip])
+            idx = np.array([self.aadr[j] for j in S.ALL_JOINTS])
+            initial = self.d.ctrl[idx].copy()
+            steps = max(1, int(np.ceil(np.max(np.abs(goals-initial)) / speed / self.m.opt.timestep)))
+            for i in range(steps):
+                self.d.ctrl[idx] = initial + (goals-initial) * ((i+1) / steps)
+                self.step()
+            for _ in range(600):
+                self.step()
+            if IK.tool_angle_deg(self.m,self.d) > 5.:
+                return float('inf')
+            error = np.asarray(target)-self.tcp()
+            if np.linalg.norm(error) <= .001:
+                break
+            # Compensate measured static tracking error with bounded commands.
+            # The physical qpos is never overwritten; all corrections use ctrl.
+            commanded += np.clip(error,-.003,.003)
         return float(np.linalg.norm(self.tcp()-target))
 
-    def run(self, offset, approach=.6, hold=2., obj_offset=(0., 0.), yaw=0.,
+    def run(self, offset, approach=DEFAULT_APPROACH, hold=2., obj_offset=(0., 0.), yaw=0.,
             perception_error=(0., 0.), reset=True):
         if reset:
             mujoco.mj_resetData(self.m, self.d)
@@ -115,30 +138,42 @@ class Trial:
             op = self.d.xpos[self.obj].copy()
         target = op + np.asarray(offset) / 1000
         target[:2] += perception_error
-        e1 = self.move(target + [0, 0, .06], approach)
+        pre = target + [0,0,.06]
+        pre[:2] *= .80
+        e1 = self.move(pre, approach)
+        if e1 < .004:
+            e1 = max(e1,self.move(target+[0,0,.025],approach))
         # Initial setup only: baseline settled object position before descent.
         obj0 = self.d.xpos[self.obj].copy()
         self.stage('pregrasp')
         if e1 >= .004:
-            return dict(success=False, failed_stage='pregrasp', offset_mm=list(offset), tcp_error_mm=e1*1000)
+            return self.failure('pregrasp',offset,e1)
         e2 = self.move(target, approach)
         self.stage('descend')
         if e2 >= .004:
-            return dict(success=False, failed_stage='descend', offset_mm=list(offset), tcp_error_mm=e2*1000)
+            return self.failure('descend',offset,e2)
         grip_id = self.aadr['gripper']
         initial_grip = float(self.d.ctrl[grip_id])
-        nclose = max(1, math.ceil(abs(initial_grip)/(.3*self.m.opt.timestep)))
+        nclose = max(1, math.ceil(abs(initial_grip-self.close_angle)/(.3*self.m.opt.timestep)))
         for i in range(nclose):
-            self.d.ctrl[grip_id] = initial_grip*(1-(i+1)/nclose)
+            self.d.ctrl[grip_id] = initial_grip+(self.close_angle-initial_grip)*(i+1)/nclose
             self.step()
         for _ in range(1000):
             self.step()
         self.stage('closed')
-        e3 = self.move(target + [0, 0, .12], 0.)
+        if not self.contacts():
+            return dict(success=False,offset_mm=list(offset),reason='no_bilateral_contact_after_closure')
+        e3 = self.move(target+[0,0,.025],self.close_angle)
+        self.stage('clearance')
+        if e3 < .004:
+            lift = target+[0,0,.10]
+            lift[:2] *= .72
+            e3 = max(e3,self.move(lift,self.close_angle))
         if e3 >= .004:
-            return dict(success=False, failed_stage='lift', offset_mm=list(offset),
-                        tcp_error_mm=e3*1000, penetration_mm=self.penetration*1000,
-                        joint_limit_error_rad=self.max_limit_error)
+            failure = self.failure('lift',offset,e3)
+            failure.update(penetration_mm=self.penetration*1000,
+                           joint_limit_error_rad=self.max_limit_error)
+            return failure
         minimum_lift = float('inf')
         held = 0
         n = max(1, int(hold/self.m.opt.timestep))
@@ -150,14 +185,20 @@ class Trial:
         self.stage('held')
         ok = (minimum_lift >= .05 and held/n >= .95 and max(e1,e2,e3) < .004
               and self.penetration < .001 and self.max_limit_error < .01)
-        return dict(success=bool(ok), offset_mm=list(offset), approach=approach,
+        return dict(success=bool(ok), offset_mm=list(offset), approach=approach, close_angle=self.close_angle,
                     obj_offset_mm=(np.asarray(obj_offset)*1000).tolist(), yaw_deg=math.degrees(yaw),
                     perception_error_mm=(np.asarray(perception_error)*1000).tolist(),
                     lift_mm=up*1000, minimum_hold_lift_mm=minimum_lift*1000,
                     hold_contact_fraction=held/n, tcp_error_mm=(np.array([e1,e2,e3])*1000).tolist(),
                     penetration_mm=self.penetration*1000, peak_joint_speed=self.peak_speed,
                     peak_arm_speed=self.peak_arm_speed,
+                    maximum_stage_tool_angle_deg=max(self.stage_angles),
                     joint_limit_error_rad=self.max_limit_error)
+
+    def failure(self,stage,offset,error):
+        return dict(success=False,failed_stage=stage,offset_mm=list(offset),
+                    tcp_error_mm=error*1000 if math.isfinite(error) else None,
+                    reason='tracking_error' if math.isfinite(error) else 'IK_position_or_orientation_infeasible')
 
     def release(self, approach):
         """Open in place with a limited command ramp, then let the object settle."""
@@ -170,7 +211,7 @@ class Trial:
         for _ in range(math.ceil(1.5/self.m.opt.timestep)):
             self.step()
 
-    def execute(self, offset, approach=.6, retries=2, **settings):
+    def execute(self, offset, approach=DEFAULT_APPROACH, retries=2, **settings):
         """Bounded feedback retries using simulated object observations.
 
         Initial pose randomization happens once. Retry observations use the
@@ -178,12 +219,17 @@ class Trial:
         """
         attempts = []
         candidates = [np.asarray(offset, dtype=float),
-                      np.asarray(offset, dtype=float) + [0., 0., -2.],
-                      np.asarray(offset, dtype=float) + [2., -2., 0.]]
+                      np.asarray(offset, dtype=float) + [0., 0., 2.],
+                      np.asarray(offset, dtype=float) + [2., -2., 2.]]
         for i, candidate in enumerate(candidates[:retries+1]):
-            if i:
-                self.release(approach)
-            result = self.run(candidate.tolist(), approach, reset=(i == 0), **settings)
+            try:
+                if i:
+                    self.release(approach)
+                result = self.run(candidate.tolist(), approach, reset=(i == 0), **settings)
+            except SimulationGuardError as exc:
+                result = dict(success=False,failed_stage='physics_guard',reason=str(exc),
+                              penetration_mm=self.penetration*1000,
+                              joint_limit_error_rad=self.max_limit_error)
             attempts.append(result)
             if result['success'] or result.get('failed_stage'):
                 break
@@ -201,9 +247,9 @@ def main():
     ap.add_argument('--mass-g', type=float, default=8.)
     ap.add_argument('--friction', type=float, default=1.)
     ap.add_argument('--timestep', type=float, default=.002)
-    ap.add_argument('--offset', type=float, nargs=3, default=[8., -4., 8.])
-    ap.add_argument('--approach', type=float, default=.6)
-    ap.add_argument('--object-grid-mm', type=float, nargs=2, default=[111., 20.],
+    ap.add_argument('--offset', type=float, nargs=3, default=DEFAULT_OFFSET)
+    ap.add_argument('--approach', type=float, default=DEFAULT_APPROACH)
+    ap.add_argument('--object-grid-mm', type=float, nargs=2, default=DEFAULT_GRID,
                     help='Object center in board coordinates; keep the whole cube supported.')
     ap.add_argument('--repeat', type=int, default=1)
     ap.add_argument('--sweep', action='store_true')
@@ -261,6 +307,8 @@ def main():
                                                            torque_gripper_nm=1.5),
                                               seed=args.seed, retries=args.retries,
                                               object_grid_mm=args.object_grid_mm,
+                                              board_mm=[S.BOARD_W*1000,S.BOARD_H*1000],
+                                              tool_axis_tolerance_deg=5, close_angle_rad=-.08,
                                               trials=rows, successes=sum(r['success'] for r in rows)), indent=2))
     if renderer is not None:
         renderer.close()

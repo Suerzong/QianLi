@@ -31,6 +31,17 @@ SO-101 抓取作业里，桌面上散着一批 4cm 边长的 EVA 泡棉方块（
    这个指标才是旋转不变的。
 4. 相机内参没有时不做去畸变，只提示，继续用原始图跑——
    标定是渐进过程，识别不该因为标定文件还没生成就不能用。
+5. 三个现场故障都有对应的独立机制（各有自检断言与覆盖率守卫）：
+   · **粘连分割**：红块和蓝块贴在一起会连成一个连通域，色相集中度 R 掉到
+     0.44，光靠阈值只能整块丢掉（两块一起漏）。这里按**色相**把它切开，
+     再各自重新走一遍检测（`--no-split` 可关）。
+   · **碎条合并**：同一个块被高光/阴影割出来的细长碎片，按"同色 + 紧贴"
+     并回大块（`--no-merge` 可关）。合并前会复查"并起来还纯不纯"，
+     免得把刚切开的不同色块又粘回去。
+   · **色相漂移**：灯光/白平衡变了会让整幅画面的色相整体旋转。
+     但**乱校正比不校正更危险**——现场出现过"凭空估出 +5.8 并把整表挪歪"，
+     所以现在只有"把表挪过去能实打实多救回 ≥2 块"时才动手，
+     否则原样返回并在 info['hue_offset_note'] 里写明理由（`--no-hue-drift` 可关）。
 
 怎么用
 ------
@@ -68,20 +79,27 @@ import numpy as np
 DEFAULT_INTRINSICS = '/tmp/camera_intrinsics.yaml'
 DEFAULT_DEBUG_IMAGE = '/tmp/color_blocks_debug.jpg'
 
-# OpenCV 的 H 是 0~179（真实色相角度的一半）：红≈0、黄≈30、绿≈60、青≈90、紫≈150。
-# 这些值对应 EVA 泡棉常见的饱和色，但**不要把它当唯一真理**：
-# 用 --colors 覆盖（例如 "red:0,yellow:28"），或看自检/A 段的"色相闭环"输出来校正。
+# OpenCV 的 H 是 0~179（真实色相角度的一半）：红≈0、黄≈30、绿≈60、青≈90、紫≈130。
+#
+# ⚠️ 下面这组数值是**这台相机 + 这套灯光**下实测出来的（2026-10 现场标定），
+# 来源是 --probe-colors 对该场景的量测：red 175.9、yellow 26.9、green 62.3、
+# blue 110.7、purple 130.6。其中 purple 曾经被写成 150（那是"品红/洋红"，
+# 真实色相 300°），导致紫色块形状全过却因为距离 19.4 > hue_tol 被永久漏检。
+# 换相机、换灯、换一批料，**都请重跑一次 --probe-colors** 再贴回来，
+# 不要照抄这里的数字——色表数值本身就是最容易错、又最难察觉的一环。
 DEFAULT_HUE_CENTERS = {
-    'red': 0,
-    'yellow': 30,
-    'green': 60,
+    'red': 0,        # 现场实测 175.9（贴 0/180 接线，圆距离 4.1）
+    'yellow': 27,    # 现场实测 26.9
+    'green': 62,     # 现场实测 62.3
+    'blue': 111,     # 现场实测 110.7（H 111 ≈ 真实色相 222°，蓝）
+    'cyan': 90,
+    'purple': 130,   # 现场实测 130.6（H 130 ≈ 真实色相 261°，紫）
     'yellow2': 38,   # "第五块可能是第二种黄"——单独留一档，默认不作为标签上报
-    'purple': 150,
 }
 
 # 默认颜色标签表：标签 -> 参考色相。做成参数就是为了不把颜色写死，
 # 换一批料（比如换成青色/橙色）只改这张表，不用动代码。
-DEFAULT_COLOR_TABLE = ('red:0', 'yellow:30', 'green:60', 'purple:150')
+DEFAULT_COLOR_TABLE = ('red:0', 'yellow:27', 'green:62', 'blue:111', 'purple:130')
 
 # 判定为某颜色的最大色相偏差。EVA 是哑光高饱和料，同一块料在不同光照下
 # 色相漂移通常 < 5 个 H 单位（=10°真实色角），8 已经相当宽松；
@@ -100,6 +118,25 @@ VERTEX_MIN, VERTEX_MAX = 4, 6
 # 判断"某色块是否够方"时，用 OpenCV 默认像素角点假设；这里只影响极小的修正。
 _POLY_EPS_RATIO = 0.03
 
+# ---- 上表面（顶面）检测参数 ----
+# 侧面的可见高度不到这个比例时，认为"几乎正上方俯视"，直接退化成剪影结果，
+# 不去编造看不见的侧面边界。0.06 的依据：4cm 方块在 50px 尺度下，
+# 侧面只有 3px 时数学上还能算，但求出来的"顶面近边"位置误差和 3px 同量级，
+# 不如老实退化成剪影（那时剪影≈顶面，误差更小）。
+TOP_SIDE_VISIBLE_MIN = 0.06
+# 亮度剖面的先验中心：顶面近边大致落在方块竖直方向的这个比例处。
+# 为什么是 0.42 而不是 0.5：相机从上前方看向下，顶面投影比侧面大一些。
+TOP_EDGE_PRIOR = 0.42
+TOP_EDGE_PRIOR_SIGMA = 0.18
+# 硬窗口：顶面近边的允许位置（占方块竖直方向的比例）。
+# 下界 0.12 是因为近边不能贴到方块顶端；上界 0.85 是因为侧面在图像里
+# 至少得占一点高度，近边不可能压到方块底边——不设这个上界的话，
+# "侧面→背景"那条强梯度会被误当成顶面近边（实测踩过）。
+TOP_EDGE_WINDOW = (0.12, 0.85)
+# 判定"确实存在亮度台阶"的最小归一化落差：梯度强度/本块亮度动态范围。
+# 0.05 的依据：顶面比侧面暗 5% 以上才值得信；再小就是噪声和渐变了。
+TOP_EDGE_MIN_DROP = 0.05
+
 
 # ---------------------------------------------------------------------------
 # 小工具
@@ -111,10 +148,14 @@ def log(msg, level='INFO'):
 
 
 def ang_diff_deg(a, b):
-    """两个色相角（0~179 半角单位）的最小差值绝对值，结果落在 [0, 90]。
+    """两个色相角（0~179 半角单位）的**圆距离**，结果落在 [0, 90]。
 
-    存在意义：色相 0 和 179 其实相邻（红绕回来了）。
-    直接做减法取绝对值的话，红会在 0/180 边界上被劈成两半。
+    这是全文件最容易写错、也最不能写错的一个函数：OpenCV 的 H 是 0~179 的
+    环形刻度，0 和 179 是同一个物理颜色（红）。直接 `abs(a-b)` 会把贴着边界的
+    红劈成两半——现场实测红色块色相 175.9（= 标准色相 351.8°，贴着 0/360 接线），
+    它到 red:0 的真实距离只有 4.1，而错误的减法会算出 175.9，
+    于是"颜色明明很纯的红块"被 no_color_match 丢掉。
+    实现上先取模 180 再对折，两处都处理了环绕。
     """
     d = abs((float(a) - float(b)) % 180.0)
     return min(d, 180.0 - d)
@@ -380,15 +421,419 @@ def default_thresholds(shape):
     """按画面尺寸给出轮廓面积的默认区间。
 
     为什么不写死像素数：换分辨率（320x240 / 1280x720）后那些数字全废。
-    4cm 方块在 640x480、桌面俯视的典型距离下约占 35~90 px 边长
-    （对照 object_localizer 里边长 4cm 对应的 min_size/max_size = 15/60），
-    这里用"画面面积的 0.04%~12%"作为等价面积区间，折算到 640x480 是
-    123~36864 px²（约 11~192 px 边长），足够宽以兼容远近差异。
-    注意：**没有**用 HSV 饱和度做面积门限，面积只做粗筛，细节交给形状指标。
+    4cm 方块在 640x480、桌面俯视的典型距离下约占 35~90 px 边长，
+    折算面积约 1200~8100 px²。
+
+    上限为什么收紧到画面面积的 5%（640x480 → 15360 px²，约 124 px 边长）：
+    现场量到**黄色机械臂本体是 9804 px² 的最大连通域**，色相与黄块完全一致
+    （hue=27.7 R=1.000）。目前它靠形状（aspect/fill）被挡住，但机械臂姿态
+    一变、在画面里显得方一点，就可能被当成黄块上报。物块只有 4cm，
+    面积上限按"物块可能的最大投影"设，是最省事又最可靠的护栏。
+    代价：贴着镜头（4cm 方块占画面 1/4 以上）时会漏检——那种情况请显式
+    调大 --area-max，别把默认值改回去。
     """
     h, w = shape[:2]
     pixels = float(h * w)
-    return max(60.0, 0.0004 * pixels), max(400.0, 0.12 * pixels)
+    return max(60.0, 0.0004 * pixels), max(400.0, 0.05 * pixels)
+
+
+def _reject_reason(metrics, reason, **extra):
+    """构造一条"被丢弃"的诊断记录。
+
+    只放标量和小元组：这些记录会经过 json.dumps 出现在前端页面上，
+    塞进 numpy 数组（比如轮廓点）会让前端整个 /state 接口 500。
+    'rect' 这种 OpenCV 返回的嵌套元组也不放进来——JSON 里它没有意义，
+    还容易被下游误当成数值用。
+    """
+    rec = {
+        'area': float(metrics['area']),
+        'bbox': tuple(int(v) for v in metrics['bbox']),
+        'fill': round(float(metrics['fill']), 3),
+        'solidity': round(float(metrics['solidity']), 3),
+        'aspect': round(float(metrics['aspect']), 3),
+        'vertex_count': int(metrics['vertex_count']),
+        'reason': reason,
+    }
+    rec.update(extra)
+    return rec
+
+
+def _polygon_area(points):
+    """鞋带公式求多边形面积（点序无所谓，取绝对值）。"""
+    pts = np.asarray(points, np.float64).reshape(-1, 2)
+    if len(pts) < 3:
+        return 0.0
+    x, y = pts[:, 0], pts[:, 1]
+    return 0.5 * abs(float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))))
+
+
+def _order_quad(points):
+    """把任意顺序的 4 个点排成 [左上, 右上, 右下, 左下]（相对质心的角度序）。
+
+    为什么要统一顺序：上表面的四角要按固定顺序输出，下游（抓取规划）
+    才能稳定地取"顶边"和"朝向"；顺序随机的角点等于每次都在抖。
+    """
+    pts = np.asarray(points, np.float64).reshape(-1, 2)
+    if len(pts) != 4:
+        return pts
+    center = pts.mean(axis=0)
+    ang = np.arctan2(pts[:, 1] - center[1], pts[:, 0] - center[0])
+    order = np.argsort(ang)                    # 逆时针（图像坐标下从 +x 起）
+    ccw = pts[order]
+    # 逆时针序里 y 最小的那个是顶边两端之一，取它和它下一个作为左上/右上
+    i_top = int(np.argmin(ccw[:, 1]))
+    if ccw[(i_top + 1) % 4, 0] < ccw[i_top, 0]:
+        i_top = (i_top + 1) % 4                # 保证"左上"在左边
+    return np.roll(ccw, -i_top, axis=0)
+
+
+def _quad_shape_score(quad, mask_area):
+    """给一个上表面四边形打分（0~1），用来在"亮度边界"和"几何退化"两个候选之间选优。
+
+    分数只用与颜色/光照无关的几何量：四边形填充率（相对自己的外接矩形）、
+    面积相对于整个剪影是否合理、是否凸。这样在光照很差、亮度边界不可信时，
+    几何候选自然胜出，而不是被一个错误的亮度边界带跑。
+    """
+    if quad is None or len(quad) != 4:
+        return 0.0
+    pts = np.asarray(quad, np.float64).reshape(-1, 2)
+    rect = cv2.minAreaRect(pts.astype(np.float32))
+    rw, rh = float(rect[1][0]), float(rect[1][1])
+    if rw < 3.0 or rh < 3.0:
+        return 0.0
+    area = _polygon_area(pts)
+    fill = area / (rw * rh)                    # 四边形填充率，平行四边形≈1
+    convex = 1.0 if cv2.isContourConvex(pts.astype(np.float32)) else 0.0
+    ratio = area / max(1.0, mask_area)         # 顶面应占剪影的 3~9 成
+    if ratio < 0.25 or ratio > 1.02:
+        return 0.0
+    ratio_score = 1.0 - min(1.0, abs(ratio - 0.62) / 0.45)
+    return float(max(0.0, 0.60 * fill + 0.25 * convex + 0.15 * ratio_score))
+
+
+def detect_top_face(image, contour, rect, rect_w, rect_h, guard=6):
+    """从"剪影轮廓"里估计**上表面**（朝上那个面）的几何。
+
+    为什么需要它：相机是斜着往下看的，一块立方体的剪影**包含可见侧面**。
+    于是剪影质心偏向侧面的那一侧（画面下方），不等于上表面中心；
+    剪影边长也混进了侧面的透视缩短。对抓取来说 TCP 要对着上表面中心，
+    朝向、尺度也该以上表面为准。
+
+    做法（不依赖颜色，所以对光照和换色都不敏感）：
+      1. 用轮廓的最小外接矩形把这一小块**转正**（连同掩码一起 remap），
+         转正后顶面近边在图像里几乎是水平线，找水平边界就退化成找行。
+      2. 算出每行"属于方块的像素"的平均亮度剖面。EVA 块正对镜头的顶面
+         通常比侧面亮（侧面斜对光源/被自身遮挡），所以顶面近边处会出现
+         明显的由亮转暗。用平滑梯度 × 位置先验打出每行的得分，取最高分那行。
+      3. 该行两侧由掩码列边界裁出端点 → 组成"顶面近边"，和掩码的最上边、
+         以及两条侧边界拼成顶面四边形。
+      4. 同时算一个纯几何的退化候选（掩码在转正系里的四个极值点），
+         用只含几何量的分数择优——光照太平、亮度边界不可信时，
+         几何候选会赢，而不是让一个错误的亮度边界把结果带跑。
+
+    返回 dict：top_cx/top_cy/top_angle_deg/top_size_px/corners(4x2)/side_visible，
+    退化时 side_visible=False 且几何等于剪影（绝不编造看不见的角点）。
+    """
+    mask = np.zeros(image.shape[:2], np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
+
+    whole = _silhouette_face(rect, rect_w, rect_h, rect_w * rect_h)
+    whole['side_visible'] = False
+    whole['top_source'] = 'silhouette'          # 完全没找到顶面 → 退回剪影
+    whole['top_edge_y'] = 0.0
+
+    # ---- 转正：把最小外接矩形转成轴对齐，行/列才有物理意义 ----
+    (rcx, rcy), _, rangle = rect
+    big = max(rect_w, rect_h)
+    side = int(np.ceil(big * 1.25)) + 2 * guard
+    M = cv2.getRotationMatrix2D((float(rcx), float(rcy)), float(rangle), 1.0)
+    M[0, 2] += (side / 2.0 - rcx)
+    M[1, 2] += (side / 2.0 - rcy)
+    rmask = cv2.warpAffine(mask, M, (side, side), flags=cv2.INTER_NEAREST)
+    if int((rmask > 0).sum()) < 80:
+        return whole
+    # 亮度图用最近邻重采样：双线性会在顶面/侧面交界处插值出中间亮度，
+    # 把我们要找的那条边界糊掉。
+    rgray = cv2.warpAffine(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), M,
+                           (side, side), flags=cv2.INTER_NEAREST)
+    rr = cv2.boundingRect(rmask)
+    x0, y0, rw, rh = rr
+    if rw < 4 or rh < 4:
+        return whole
+
+    # ---- 每行的平均亮度（只看掩码内的像素）----
+    sub_mask = rmask[y0:y0 + rh, x0:x0 + rw] > 0
+    sub_gray = rgray[y0:y0 + rh, x0:x0 + rw].astype(np.float32)
+    row_sum = (sub_gray * sub_mask).sum(axis=1)
+    row_cnt = sub_mask.sum(axis=1)
+    if int((row_cnt > 0).sum()) < 6:
+        return whole
+    sub_bright = np.where(sub_mask, sub_gray, np.nan)   # 非掩码处是 nan
+
+    # ---- 逐列找"顶面→侧面"的亮度台阶 ----
+    # 为什么不用"每行平均亮度"：方块在图像里一般是转着的，顶面近边是一条**斜线**，
+    # 行平均会把斜线糊成一段平缓的渐变，台阶被抹平（实测就是这么失败的）。
+    # 逐列看就没这个问题——每一列上顶面/侧面的交界都是一个清晰的水平台阶。
+    # 判据只看台阶**上方**是否明显亮于下方，所以侧面和桌面亮度接近也不影响。
+    window = max(1, int(round(rh * 0.035)))
+    kernel = np.ones(2 * window + 1, np.float32) / (2 * window + 1)
+    lo = max(2, int(round(rh * TOP_EDGE_WINDOW[0])))
+    hi = min(rh - 3, int(round(rh * TOP_EDGE_WINDOW[1])))
+    if hi <= lo + 1:
+        return whole
+    rows = np.arange(rh, dtype=np.float32)
+    prior = np.exp(-0.5 * ((rows / max(1.0, rh - 1) - TOP_EDGE_PRIOR)
+                           / TOP_EDGE_PRIOR_SIGMA) ** 2)
+    # 台阶两侧各自需要的最少有效像素数。
+    # 这里**不能**按比例放大到 window 以上：before/after 各是半个窗口的均值，
+    # 窗口最多 window 个像素，要求超过 window 就等于把所有候选全否掉
+    # （这个 bug 的表现是"永远找不到边界、永远退化成剪影"，非常安静）。
+    nb_min = max(2, min(3, window * 2, int(round(rh * 0.06)) + 1))
+    if rh < 16:
+        # 方块只有十几个像素高时，上下各 2~3 像素的均值噪声太大，不值得硬算
+        return whole
+
+    best_row, best_score, best_drop = None, 0.0, 0.0
+    row_est = np.full(sub_mask.shape[1], np.nan, np.float32)
+    for col in range(sub_mask.shape[1]):
+        valid_col = ~np.isnan(sub_bright[:, col])
+        if int(valid_col.sum()) < 3 * nb_min:
+            continue
+        filled = np.nan_to_num(sub_bright[:, col])
+        # 用前缀和一次算完整列的"上方均值 / 下方均值"。
+        # 注意**不能**写成两次卷积再翻转核：方形核是对称的，
+        # convolve(x, k) 和 convolve(x, k[::-1]) 结果一模一样，
+        # 相减恒等于 0，整个台阶检测就静默失效了（这个坑真踩过）。
+        csum = np.concatenate([[0.0], np.cumsum(filled)])
+        vsum = np.concatenate([[0], np.cumsum(valid_col.astype(np.int64))])
+        col_best, col_score, col_drop = None, 0.0, 0.0
+        for r in range(lo, hi):
+            if not valid_col[r]:
+                continue
+            a0, a1 = max(0, r - window), r
+            b0, b1 = r, min(len(filled), r + window)
+            n_a = int(vsum[a1] - vsum[a0])
+            n_b = int(vsum[b1] - vsum[b0])
+            if n_a < nb_min or n_b < nb_min:
+                continue
+            before = (csum[a1] - csum[a0]) / n_a
+            after = (csum[b1] - csum[b0]) / n_b
+            drop = float(before - after)
+            if drop <= 0.0:
+                continue                 # 上方不比下方亮 → 不是"顶面→侧面"的台阶
+            score = drop * float(prior[r])
+            if score > col_score:
+                col_best, col_score, col_drop = r, score, drop
+        if col_best is None:
+            continue
+        row_est[col] = float(col_best)
+        if col_score > best_score:
+            best_score, best_row, best_drop = col_score, col_best, col_drop
+
+    if best_row is None:
+        return whole
+
+    # 归一化成"占本块亮度动态范围的比例"：判据与绝对曝光无关，
+    # 同一块料在亮/暗环境下标准一致（只比"掉了多少"，不比"掉到多少"）。
+    span = float(np.nanmax(sub_bright) - np.nanmin(sub_bright))
+    if span < 6.0:
+        # 整块亮度几乎均匀 → 没有可靠的亮度台阶，别硬凑（走几何退化路径）
+        return whole
+    if best_drop / span < TOP_EDGE_MIN_DROP:
+        # 台阶太浅：顶面/侧面亮度太接近，硬猜一条不存在的边界不如退化成剪影
+        return whole
+
+    # 逐列边界行不能直接逐列用。两个原因：
+    #  1) 有些列（尤其是侧面颜色和桌面接近的那一段）根本测不出台阶，留下空洞；
+    #  2) 顶面近边在图像里就是一条**直线**（立方体的一条棱），没理由让它弯。
+    # 所以对测到的点做直线拟合，再在整个有效列范围上求值：直线天然把空洞外推出去。
+    #
+    # 拟合必须**抗野值**：靠近掩码边界的那些列，最大梯度其实是"方块→桌面"，
+    # 会被误当成顶面近边（实测出现过一根 57 行里跳出来的 28），
+    # 普通最小二乘会被这一根带偏整条直线。做法是先拟合一遍，
+    # 再用 MAD（中位绝对偏差）把偏离超过 3 倍 MAD 的点剔掉重拟合。
+    valid_cols = np.isfinite(row_est)
+    n_valid = int(valid_cols.sum())
+    if n_valid >= 6:
+        xs_fit = np.nonzero(valid_cols)[0].astype(np.float64)
+        ys_fit = row_est[valid_cols].astype(np.float64)
+        slope, intercept = np.polyfit(xs_fit, ys_fit, 1)
+        pred = slope * xs_fit + intercept
+        mad = float(np.median(np.abs(ys_fit - pred)))
+        # MAD 可能为 0（点几乎共线），给一个像素级下限免得把好点全剔了
+        tol = max(2.0, 3.0 * 1.4826 * mad)
+        keep = np.abs(ys_fit - pred) <= tol
+        if int(keep.sum()) >= 4:
+            slope, intercept = np.polyfit(xs_fit[keep], ys_fit[keep], 1)
+            pred = slope * xs_fit[keep] + intercept
+        resid = float(np.max(np.abs(ys_fit[keep]
+                                    - (slope * xs_fit[keep] + intercept))))
+        if resid > 0.35 * rh:
+            # 剩下的点仍然不是同一条棱 → 说明测到的是互不相干的强梯度，不认
+            return whole
+        row_est = (slope * np.arange(sub_mask.shape[1]) + intercept
+                   ).astype(np.float32)
+    elif best_row is not None:
+        row_est = np.full(sub_mask.shape[1], float(best_row), np.float32)
+    else:
+        return whole
+
+    # ---- 用逐列边界行 + 掩码拼顶面四边形（转正坐标系）----
+    # 注意用 cv2.transform 而不是 cv2.perspectiveTransform：
+    # invertAffineTransform 给的是 2x3 仿射矩阵，perspectiveTransform 只吃 3x3，
+    # 传错了 OpenCV **不报错**，会拿垃圾矩阵算出几万像素的坐标，
+    # 于是"四边形永远不成形、上表面检测永远退化成剪影"——而且没有任何异常提示。
+    # 另外 cand 的坐标是**相对截取出来的子图**的，必须先把 (x0,y0) 加回去，
+    # 才是 M 所在的原图坐标系；漏掉这一步会整体偏移几十像素。
+    minv = cv2.invertAffineTransform(M)
+    offset = np.array([x0, y0], np.float64)
+
+    def _back_to_image(pts):
+        moved = np.asarray(pts, np.float64).reshape(-1, 2) + offset
+        return cv2.transform(moved.reshape(-1, 1, 2), minv).reshape(-1, 2)
+
+    built = _top_face_from_edge(sub_mask, row_est)
+    if built is None:
+        return whole
+    cand, boundary_y = built
+    quad = _back_to_image(cand)
+
+    # ---- 纯几何候选：转正掩码的四个极值点 ----
+    ys, xs = np.nonzero(sub_mask)
+    geo = np.array([[xs.min(), ys.min()], [xs.max(), ys.min()],
+                    [xs.max(), ys.max()], [xs.min(), ys.max()]], np.float64)
+    geo_q = _back_to_image(geo)
+
+    mask_area = float(sub_mask.sum())
+    s_edge, s_geo = (_quad_shape_score(quad, mask_area),
+                     _quad_shape_score(geo_q, mask_area))
+    if s_edge < 0.45 and s_geo >= s_edge:
+        return whole                              # 两个候选都不可信 → 退化
+    chosen, source = (quad, 'brightness_edge') if s_edge >= s_geo \
+        else (geo_q, 'geometry_extremes')
+    chosen = _order_quad(chosen)
+
+    top_area = _polygon_area(chosen)
+    top_rect = cv2.minAreaRect(chosen.astype(np.float32))
+    (tcx, tcy), (tw, th), tang = top_rect
+    if tw < 3.0 or th < 3.0:
+        return whole
+    box = cv2.boxPoints(top_rect)
+    e1, e2 = box[1] - box[0], box[2] - box[1]
+    edge = e1 if math.hypot(float(e1[0]), float(e1[1])) >= \
+        math.hypot(float(e2[0]), float(e2[1])) else e2
+    top_angle = wrap_half_open(math.degrees(math.atan2(float(edge[1]),
+                                                       float(edge[0]))))
+    # 侧面可见高度 = 剪影底到顶面近边的距离（在转正系里量，最直观）
+    side_h = float(rh - 1 - boundary_y)
+    side_visible = (side_h / max(1.0, float(rh))) >= TOP_SIDE_VISIBLE_MIN
+    if not side_visible:
+        # 侧面几乎看不见 → 剪影≈顶面，退化成剪影结果更准（也避免编造近边）
+        return whole
+    return {
+        'top_cx': float(tcx),
+        'top_cy': float(tcy),
+        'top_angle_deg': float(top_angle),
+        'top_size_px': float(math.sqrt(abs(tw * th))),
+        'corners': [[float(px), float(py)] for px, py in chosen],
+        'side_visible': True,
+        'top_source': source,
+        'top_edge_y': side_h,
+        'top_fill': round(float(top_area / max(1.0, abs(tw * th))), 3),
+    }
+
+
+def _top_face_from_edge(sub_mask, row_est):
+    """由"逐列的顶面近边行"求出顶面四边形（转正坐标系，返回 (4x2, 边界中位行)）。
+
+    做法：顶面是**剪影的一部分**，上边贴着掩码最上沿、下边就是 row_est 给的
+    那条近边，左右两条边则与剪影的左右边重合。所以只要定下"左右各收到哪一列"，
+    四边形就定了——于是在候选列范围里搜一遍，用纯几何分数（_quad_shape_score）
+    挑最像正方形/平行四边形、且面积占剪影比例合理的那个。
+
+    为什么不用"四线拟合再求交点"：剪影的左右边属于**侧面**，比顶面的左右边
+    长得多，拿它去拟合顶面的边线会系统性地偏；而且靠近掩码边缘的列里，
+    最大梯度是"方块→桌面"而不是"顶面→侧面"，容易混进野值。
+    搜索 + 形状打分对这种局部污染天然免疫。
+    """
+    h, w = sub_mask.shape
+    row_est = np.asarray(row_est, np.float64).reshape(-1)
+    if row_est.size != w:
+        return None
+    per_col_top = np.full(w, np.nan, np.float64)
+    for cx in range(w):
+        col = np.nonzero(sub_mask[:, cx])[0]
+        if col.size:
+            per_col_top[cx] = float(col.min())
+    usable = np.isfinite(per_col_top) & (row_est > per_col_top + 1.0)
+    n_usable = int(usable.sum())
+    if n_usable < 6:
+        return None
+    # 中位数滤波压掉个别列的锯齿（形态学留下的 1px 毛刺会让边界抖动）。
+    # 自己用 numpy 滑窗做一维中值，不用 cv2.medianBlur：
+    # 后者只接受 CV_8U，而 y 坐标在转正坐标系里可能超过 255，会被它拒绝。
+    k = int(np.clip(n_usable // 8, 3, 9)) | 1
+    for arr in (per_col_top, row_est):
+        padded = np.pad(arr, (k // 2, k // 2), mode='edge')
+        wins = np.lib.stride_tricks.sliding_window_view(padded, k)
+        arr[:] = np.median(wins, axis=1)
+
+    idx = np.nonzero(usable)[0]
+    lo_c, hi_c = int(idx.min()), int(idx.max())
+    span = hi_c - lo_c
+    if span < 6:
+        return None
+    mask_area = float(sub_mask.sum())
+    # 左右各允许往里收一点：测出近边的那几列不一定覆盖顶面的全部宽度
+    margins = sorted({int(round(span * f)) for f in
+                      (0.0, 0.05, 0.10, 0.16, 0.24, 0.34)})
+    best = None
+    for m_l in margins:
+        for m_r in margins:
+            xl2, xr2 = lo_c + m_l, hi_c - m_r
+            if xr2 - xl2 < 6:
+                continue
+            quad = np.array([[xl2, float(per_col_top[xl2])],
+                             [xr2, float(per_col_top[xr2])],
+                             [xr2, float(row_est[xr2])],
+                             [xl2, float(row_est[xl2])]], np.float64)
+            score = _quad_shape_score(quad, mask_area)
+            if score <= 0.0:
+                continue
+            # 在形状分数接近的候选里，取面积更大的那个：顶面应该尽量撑满
+            # 剪影的上半部分，而不是缩成一个小方块（否则"随便一个小正方形"
+            # 也能拿高分）。1e-3 的容差把"分数相同"的候选归到一组再比面积。
+            key = (round(score, 3), _polygon_area(quad))
+            if best is None or key > best[0]:
+                best = (key, quad)
+    if best is None:
+        return None
+    quad = best[1]
+    bot_est = float(np.median(row_est[lo_c:hi_c + 1]))
+    return quad, bot_est
+
+
+def _silhouette_face(rect, rect_w, rect_h, _area):
+    """剪影本身作为"上表面"的退化结果。
+
+    什么时候用：块转得太斜、侧面几乎看不见（正上方俯视）时，剪影≈上表面，
+    这时直接用剪影比硬去猜一条内部边界更准，也不会凭空编出看不见的角点。
+    """
+    (cx, cy), _, _ = rect
+    box = cv2.boxPoints(rect)
+    e1, e2 = box[1] - box[0], box[2] - box[1]
+    edge = e1 if math.hypot(float(e1[0]), float(e1[1])) >= \
+        math.hypot(float(e2[0]), float(e2[1])) else e2
+    angle = wrap_half_open(math.degrees(math.atan2(float(edge[1]),
+                                                   float(edge[0]))))
+    return {
+        'top_cx': float(cx),
+        'top_cy': float(cy),
+        'top_angle_deg': float(angle),
+        'top_size_px': float(math.sqrt(max(1.0, rect_w * rect_h))),
+        'corners': [[float(px), float(py)] for px, py in _order_quad(box)],
+        'top_fill': None,
+    }
 
 
 def _shape_metrics(contour):
@@ -441,15 +886,407 @@ def _shape_metrics(contour):
     return metrics
 
 
-def detect_blocks(image, args, color_table, hue_centers, verbose=False):
+def _otsu_threshold(values_0_179):
+    """在一维直方图上做 Otsu，返回阈值下标；直方图太空就返回 None。
+
+    为什么不用 cv2.threshold(..., THRESH_OTSU)：它只接受 CV_8U/CV_16U。
+    我们的直方图是浮点计数（像素数会超过 255），直接喂进去会抛
+    "src_type is CV_32FC1"。自己实现十几行，语义还更清楚。
+    """
+    hist = np.asarray(values_0_179, np.float64)
+    total = hist.sum()
+    if total <= 0 or hist.size < 3:
+        return None
+    w0 = np.cumsum(hist)
+    w1 = total - w0
+    valid = (w0 > 0) & (w1 > 0)
+    if not np.any(valid):
+        return None
+    idx = np.arange(hist.size, dtype=np.float64)
+    m0 = np.cumsum(hist * idx) / np.maximum(w0, 1e-9)
+    m1 = (np.sum(hist * idx) - np.cumsum(hist * idx)) / np.maximum(w1, 1e-9)
+    var = w0 * w1 * (m0 - m1) ** 2
+    var[~valid] = -1.0
+    # 不要首尾两个 bin：那等于"把整块切成 0 像素 + 全部"
+    var[:2] = -1.0
+    var[-2:] = -1.0
+    best = int(np.argmax(var))
+    return best if var[best] > 0 else None
+
+
+def _hue_stats(hue_sub, region_bool):
+    """在 region_bool 为真的像素上量色相：返回 (圆均值, 集中度 R, 像素数)。
+
+    R 用圆矢量长度算，范围 [0,1]：R≈1 说明这一片是单一纯色，
+    R 明显偏低（现场实测粘连的红+蓝是 0.445）说明里面混了不止一种颜色。
+    这正是判断"要不要切开"的判据——比看面积/形状可靠得多，
+    因为两个不同颜色的块粘在一起时，形状指标可能全都正常。
+    """
+    vals = hue_sub[region_bool]
+    return mean_circular_hue(vals)
+
+
+def _split_by_hue(hue_sub, region_bool, min_area, min_conc, tol=0.6):
+    """把一个"色相不纯"的连通域按色相切成两块。切不动就返回 None。
+
+    为什么选"按色相切"而不是分水岭：现场的两个块本来就是**靠颜色可分**的
+    （红 ≈0/180、蓝 ≈111），色相直方图是清晰的双峰；而距离变换/分水岭依赖
+    形状的连通性，对这种贴在一起的两个正方形并不稳（块边缘被高光啃过之后
+    更不稳）。既然判据是颜色，就用颜色去切，失败再退回"整块丢弃"，
+    不会比现在更差。
+
+    实现上把色相旋转到"圆矢量平均 +90°"处再展开：这样跨 0/180 接线的
+    双峰（比如红 175 和红 5）不会被人为劈开，真双峰（红/蓝）依然是双峰。
+    阈值用 Otsu 从直方图自己找，不写死。
+    """
+    n = int(region_bool.sum())
+    if n < 2 * min_area:
+        return None
+    mean_h, _conc, _n = mean_circular_hue(hue_sub[region_bool])
+    vals = hue_sub[region_bool].astype(np.float32)
+    # 把"圆均值"搬到 90，其余色相跟着转，得到不会跨界的一维展开
+    shifted = (vals - mean_h + 90.0) % 180.0
+    hist = np.bincount(np.clip(shifted.astype(np.int32), 0, 179),
+                       minlength=180).astype(np.float32)
+    hist = cv2.GaussianBlur(hist.reshape(-1, 1), (1, 3), 0).ravel()
+    split_idx = _otsu_threshold(hist)
+    if split_idx is None:
+        return None                       # 直方图没有可分性 → 不是双峰
+    split = float(split_idx)
+    if not (1.0 <= split <= 178.0):
+        return None                       # 阈值贴在两端 → 根本没有双峰
+
+    full_shift = (hue_sub.astype(np.float32) - mean_h + 90.0) % 180.0
+    hi = region_bool & (full_shift > split)
+    lo = region_bool & (full_shift <= split)
+    if int(hi.sum()) < min_area or int(lo.sum()) < min_area:
+        return None
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    parts = []
+    for part in (hi, lo):
+        pm = cv2.morphologyEx(part.astype(np.uint8) * 255, cv2.MORPH_OPEN,
+                              kernel)
+        # 只保留最大的一块：切出来的碎屑不应该单独成块
+        n_lab, lab, stats, _ = cv2.connectedComponentsWithStats(pm, 8)
+        if n_lab <= 1:
+            return None
+        biggest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+        keep = (lab == biggest)
+        # 两半都必须自己"颜色很纯"，否则这次切分没有意义（例如把一块
+        # 有渐变的料切成两半，各自 R 还是不高）——那就宁可不切
+        if float(keep.sum()) < min_area:
+            return None
+        _mh, c, _c = mean_circular_hue(hue_sub[keep])
+        if c < min_conc:
+            return None
+        parts.append(keep)
+    return parts
+
+
+def _find_regions(mask):
+    """把掩码按连通域拆开，返回 [(region_bool, 2D 轮廓), ...]。
+
+    为什么要按连通域组织，而不是直接对整张掩码 findContours：
+    只有拿到"单个连通域的像素集合"，才能对它做色相统计（判断纯度）
+    和按色相分割；对整张掩码做这些既慢又没法定位到具体哪个域。
+    """
+    n_lab, labels, stats, _cent = cv2.connectedComponentsWithStats(mask, 8)
+    out = []
+    for i in range(1, n_lab):
+        x = int(stats[i, cv2.CC_STAT_LEFT])
+        y = int(stats[i, cv2.CC_STAT_TOP])
+        bw = int(stats[i, cv2.CC_STAT_WIDTH])
+        bh = int(stats[i, cv2.CC_STAT_HEIGHT])
+        region = (labels[y:y + bh, x:x + bw] == i)
+        sub = (region.astype(np.uint8)) * 255
+        cnts, _ = cv2.findContours(sub, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+        if not cnts:
+            continue
+        cnt = max(cnts, key=cv2.contourArea) + (x, y)   # 还原到整图坐标
+        out.append((region, cnt, (x, y)))
+    return out
+
+
+def _merge_fragments(regions, hue, args, tol=0.6, purity_min=0.9,
+                     merge_stats=None):
+    """把"同一颜色、紧贴大块"的小碎条并回它所属的块里。
+
+    现场现象：绿块本体 R=0.878，另外 6 个 hue≈59.4~59.8、R>0.99 的细长碎条
+    （58x19、57x15、44x13）——那是绿块被高光/阴影割出来的边缘。它们形状上
+    过不了 aspect/fill，本来就会被丢，但白占轮廓数、拖慢后处理；
+    更要紧的是"块本体被割掉一条边"会拉低它自己的 fill/solidity。
+
+    做法：对每个"小块"，找同色相（圆距离 < tol）且**最近**的大块，
+    若两者间距 <= 大块边长的 merge_dist 倍，就把两者的掩码并起来。
+    为什么这么保守：这个距离必须**远小于**相邻物块的间距（现场两个物块
+    之间隔着上百像素），否则会把两块独立的料粘起来——那正好是问题 1 的病。
+    0.35 倍边长意味着"只并真正贴着的碎屑"。
+
+    与问题 1 的分割不矛盾：分割处理的是"一个连通域里有两种颜色"，
+    合并处理的是"同一颜色的多个连通域、且彼此贴得很近"。两者的判据
+    （色相是否一致）是正交的，而且合并**只在同一色相内部**进行，
+    不会把已经切开的红/蓝又并回去。
+    """
+    if getattr(args, 'no_merge', False) or len(regions) < 2:
+        return regions
+    # 只在"小块 vs 大块"之间合并：面积比小于 frag_ratio 的算碎片
+    frag_ratio = 0.4
+    items = []
+    for region, cnt, off in regions:
+        area = float(cv2.contourArea(cnt))
+        _mh, conc, _n = _hue_stats(
+            hue[off[1]:off[1] + region.shape[0], off[0]:off[0] + region.shape[1]],
+            region)
+        items.append({'region': region, 'cnt': cnt, 'off': off,
+                      'area': area, 'hue': _mh, 'conc': conc, 'merged': False})
+    order = sorted(range(len(items)), key=lambda i: -items[i]['area'])
+    # 每个碎片最多检查这么多宿主候选：宿主按面积从大到小排，碎片真正属于的
+    # 那个"大块"几乎总在最前面。加这个上限是因为**噪声帧**实测有 18 个连通域，
+    # 逐对做距离变换要 115ms/帧（9fps），直接拖垮前端的 30fps。
+    # 采样而不是全查，代价是"极小碎块挂在第 6 大块上"会漏并——那只是漏清理，
+    # 不影响检出正确性。
+    max_host_probe = 5
+    for fi in order:
+        frag = items[fi]
+        if frag['merged']:
+            continue
+        parent = None
+        best_gap = None
+        probed = 0
+        for pi in order:
+            host = items[pi]
+            if host is frag or host['area'] < frag['area'] / frag_ratio:
+                continue                      # 只往"更大的块"上并
+            # 颜色不同，绝不并。
+            # 容差取得比分割判据更紧：分割问的是"这里面有没有两种颜色"，
+            # 合并问的是"这两个是不是同一种颜色"，后者必须更保守。
+            if ang_diff_deg(frag['hue'], host['hue']) > min(6.0, tol * 10.0):
+                continue
+            probed += 1
+            if probed > max_host_probe:
+                break
+            # 两域之间的最小距离：把宿主掩码画到"覆盖两块"的公共画布上，
+            # 做一次距离变换，再看碎片像素上的最小值。
+            # 为什么必须用公共画布：碎片完全可能落在宿主包围盒**之外**
+            # （实测那条 8x40 的碎条就在宿主 bbox 右边 6px 处），
+            # 只在宿主 bbox 内取子块会算出"没有重叠"，直接漏判。
+            hx, hy = host['off']
+            fx, fy = frag['off']
+            hr, fr = host['region'], frag['region']
+            # 画布只开到"两块并集 + 一点点余量"，不要铺满整帧：
+            # 距离变换的开销随画布面积走，而远分离的两块只需要知道"很大"。
+            pad = max(1, int(round(host['area'] ** 0.5 * args.merge_dist))) + 2
+            x0 = min(hx, fx) - pad
+            y0 = min(hy, fy) - pad
+            x1 = max(hx + hr.shape[1], fx + fr.shape[1]) + pad
+            y1 = max(hy + hr.shape[0], fy + fr.shape[0]) + pad
+            x0, y0 = max(0, x0), max(0, y0)
+            x1 = min(hue.shape[1], x1)
+            y1 = min(hue.shape[0], y1)
+            if x1 <= x0 or y1 <= y0:
+                continue
+            canvas_h = np.zeros((y1 - y0, x1 - x0), np.uint8)
+            canvas_h[hy - y0:hy - y0 + hr.shape[0],
+                     hx - x0:hx - x0 + hr.shape[1]] = hr.astype(np.uint8)
+            canvas_f = np.zeros_like(canvas_h)
+            canvas_f[fy - y0:fy - y0 + fr.shape[0],
+                     fx - x0:fx - x0 + fr.shape[1]] = fr.astype(np.uint8)
+            # distanceTransform 默认算"每个非零点到最近零点"的距离，
+            # 所以输入要取反：宿主内部值为 0（距离源），外部是到宿主的距离
+            dist = cv2.distanceTransform(1 - canvas_h, cv2.DIST_L2, 3)
+            if not np.any(canvas_f):
+                continue
+            rad = max(1, int(round(host['area'] ** 0.5 * args.merge_dist)))
+            if merge_stats is not None:
+                merge_stats['dist_check'] = merge_stats.get('dist_check', 0) + 1
+            gap = float(dist[canvas_f > 0].min())
+            if gap > rad:
+                if merge_stats is not None:
+                    merge_stats['dist_reject'] = \
+                        merge_stats.get('dist_reject', 0) + 1
+                continue                      # 距离超过阈值：不是"紧贴的碎条"
+            if best_gap is None or gap < best_gap:
+                best_gap, parent = gap, host
+        if parent is None:
+            continue
+        # 走到这不只是"该合并"，也说明上面那套"距离判定"真的被执行过。
+        # 之所以专门记一笔：上一轮我就是在这里翻车——距离判定里写了个
+        # 少了必填参数的 copyMakeBorder，而当时的 --selftest 用例恰好
+        # 从没走到这一步（碎条用例被分割分支提前接管），于是"47 项全过"
+        # 却一上真机就 cv2.error 崩栈。**代码路径没被跑到，测试就是假的。**
+        # 现在自检在跑完用例后会检查这些计数器，任何一条路径没被摸到就判 FAIL。
+        if merge_stats is not None:
+            merge_stats['merge'] = merge_stats.get('merge', 0) + 1
+        # 合并：把两块画到同一张画布上（取并集），再重新取外轮廓
+        hx, hy = parent['off']
+        fx, fy = frag['off']
+        x0 = min(hx, fx)
+        y0 = min(hy, fy)
+        x1 = max(hx + parent['region'].shape[1], fx + frag['region'].shape[1])
+        y1 = max(hy + parent['region'].shape[0], fy + frag['region'].shape[0])
+        canvas = np.zeros((y1 - y0, x1 - x0), np.uint8)
+        canvas[hy - y0:hy - y0 + parent['region'].shape[0],
+               hx - x0:hx - x0 + parent['region'].shape[1]] |= \
+            parent['region'].astype(np.uint8)
+        canvas[fy - y0:fy - y0 + frag['region'].shape[0],
+               fx - x0:fx - x0 + frag['region'].shape[1]] |= \
+            frag['region'].astype(np.uint8)
+        cnts, _ = cv2.findContours(canvas * 255, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+        if not cnts:
+            continue
+        # 并完之后必须复查"颜色纯度"：这是防止合并反向破坏分割的**最后一道闸**。
+        # 现场真踩过：按色相把红+蓝切开后，两块各自都很纯（R=1.000），
+        # 但紧接着合并逻辑看它们"颜色接近、贴得又近"，又给粘了回去，
+        # 结果比不分割还糟（分割白做，块还是丢的）。
+        # 现在只要并起来之后 R 掉了，就撤销这次合并。
+        bh2, bw2 = canvas.shape
+        hx2, hy2 = x0, y0
+        merged_conc = None
+        if purity_min is not None:
+            full_hue = np.zeros((bh2, bw2), np.float32)
+            # 从原图把这一块的色相切出来（canvas 坐标 -> 全图坐标）
+            gy0, gx0 = max(0, hy2), max(0, hx2)
+            gy1 = min(hue.shape[0], hy2 + bh2)
+            gx1 = min(hue.shape[1], hx2 + bw2)
+            if gy1 > gy0 and gx1 > gx0:
+                patch = hue[gy0:gy1, gx0:gx1]
+                sub = (canvas[gy0 - hy2:gy1 - hy2, gx0 - hx2:gx1 - hx2] > 0)
+                _mh2, merged_conc, _n2 = mean_circular_hue(patch[sub])
+        if merged_conc is not None and merged_conc < purity_min:
+            if os.environ.get('CBD_MERGE_TRACE'):
+                log(f'  撤销合并：并起来后 R={merged_conc:.3f} < {purity_min:.2f}')
+            continue
+        parent['region'] = canvas > 0
+        parent['off'] = (x0, y0)
+        parent['cnt'] = max(cnts, key=cv2.contourArea) + (x0, y0)
+        parent['area'] = float(cv2.contourArea(parent['cnt']))
+        total = max(1e-6, parent['area'] + frag['area'])
+        parent['hue'] = ((parent['hue'] * parent['area']
+                          + frag['hue'] * frag['area']) / total) % 180.0
+        frag['merged'] = True
+    return [(it['region'], it['cnt'], it['off']) for it in items
+            if not it['merged']]
+
+
+def _estimate_hue_offset(measurements, color_table, hue_tol, max_offset):
+    """在线估计"色相整体漂移量"（白平衡/灯光变化），返回 (offset, 投票数, 说明)。
+
+    现场现象：同一块黄料几十分钟前是 27，现在 37.7（偏了 10.7 > hue_tol 8），
+    于是被 no_color_match 丢掉。这不是标定错，是灯光/自动白平衡漂了。
+
+    为什么不用"把 --hue-tol 放大到 15"：容差一放大，黄(37.7) 到绿(62) 的
+    距离只剩 24 度，两边都可能匹配上，边界会变得模糊且不可预测；
+    而且容差是**对称**放开，误匹配的风险跟着一起涨。
+
+    为什么用"整体平移"模型：白平衡/色温漂移在 OpenCV 的 H 刻度上近似是
+    一个**绕色相环的常量旋转**（这是 HSV 色相的定义性质——色温改变主要
+    拉伸/压缩 RGB 的相对强度，在色相环上表现为整体转一个角度），
+    所以"所有块一起偏了多少"是可以估计的；而单个块的漂移没法区分
+    "料变色了"和"参考值错了"。估出这个整体偏量再统一校正，
+    既保住了块与块之间的**相对**色相差（黄和绿永远差 24 度，
+    不会因为校正而互相靠拢），又让绝对匹配重新生效。
+
+    估计方法：两条独立证据投票，避免单一先验把整表带偏。
+      A. 场景里已经颜色很纯（集中度 >= 0.85）的块，取"离最近参考色的
+         圆距离"的中位数——这些块大概率就是那几种料；
+      B. 让"净距离"最小的平移量（净距离=|到最近参考色距离| 之和），
+         它对"某块料还没进表"这类情况更宽容。
+    两者互相验证：接近就用，差太远就放弃校正（返回 0）。
+    """
+def _estimate_hue_offset(measurements, color_table, hue_tol, max_offset,
+                         min_samples=3, min_gain=2):
+    """在线估计"色相整体漂移量"（白平衡/灯光变化），返回 (offset, 票数, 说明)。
+
+    ⚠️ 这个功能是**保守到几乎不触发**的，因为现场证明"乱校正比不校正更危险"：
+    真机上某帧出现过"估出 +5.8 并把整表挪了 5.8"，而同一时刻用原始表
+    **5 块全中、实测色相与表值几乎完全吻合（偏差 ≤1.4）**。
+    也就是说那 5.8 是假的——两个"纯色样本"恰好都被阴影/反光压偏了，
+    而真正的漂移根本不存在。一个全局校正会把本来正确的结果推歪。
+
+    所以现在的判据是**反事实检验**：只有当"把表挪过去"能比"不挪"
+    多救回至少 min_gain 块时，才认为漂移真的存在。具体是：
+      1. 只采信集中度 R >= 0.9 的样本，且至少 min_samples 块；
+      2. 两种独立估计（最近色带符号距离的中位数 / 扫格子的净距离最小点）
+         必须互相印证，差别超过 hue_tol/2 就拒绝；
+      3. **回代计数**：用原表能匹配上几块、用挪过的表能匹配上几块，
+         增益不足 min_gain 就返回 0（不校正）。
+    第 3 条是关键：真漂移会让"挪过去"一次性救回好几块；
+    个别被阴影压偏的样本只会给自己那一块加分，救不回别人。
+
+    ⚠️ 保守化的代价（现场请据此判断要不要调）：如果漂移**只**影响了 1 块料
+    （其余几块本来就不在容差边缘），这套判据会拒绝校正、宁可漏那一块。
+    真遇到这种情况，请用 --probe-colors 重新标定，而不是靠在线校正硬凑。
+    要强行关掉/打开这个功能：--no-hue-drift。
+    """
+    pure = [m for m in measurements if m['concentration'] >= 0.9]
+    if not color_table:
+        return 0.0, 0, '没有颜色参考表'
+    if len(pure) < min_samples:
+        return 0.0, len(pure), (f'纯色样本不足（{len(pure)} < {min_samples}），'
+                                '不校正')
+
+    def _signed_to_ref(h):
+        """量测到最近参考色的带符号偏差：(参考 - 量测) 折算到 (-90, 90]。"""
+        best_c = min((c for _l, c in color_table),
+                     key=lambda c: ang_diff_deg(h, c))
+        raw = (best_c - h) % 180.0
+        return raw if raw <= 90.0 else raw - 180.0
+
+    # 约定：shifted_center = center + offset，所以 offset = 量测 - 参考
+    votes = [float(np.median([-_signed_to_ref(m['mean_hue']) for m in pure]))]
+    coarse = min(4.0, max(1.0, float(hue_tol) / 2.0))
+    grid = np.arange(-float(max_offset), float(max_offset) + 1e-6, coarse)
+    if grid.size:
+        costs = [sum(min(ang_diff_deg(m['mean_hue'], (c + d) % 180.0)
+                         for _l, c in color_table) for m in pure)
+                 for d in grid]
+        votes.append(float(grid[int(np.argmin(costs))]))
+    offset = float(np.median(votes))
+    if abs(offset) > float(max_offset):
+        return 0.0, len(votes), f'漂移 {offset:+.1f} 超过上限 {max_offset:.0f}，不校正'
+    if len(votes) > 1 and abs(votes[0] - votes[1]) > max(3.0, hue_tol / 2.0):
+        return 0.0, len(votes), (f'两种估计差太多（{votes[0]:+.1f} vs '
+                                 f'{votes[1]:+.1f}），不校正')
+
+    # ---- 反事实检验：挪过去到底能多救回几块 ----
+    def _matched(table):
+        n = 0
+        for m in measurements:
+            if m['concentration'] < 0.9:
+                continue
+            _lbl, d, _d2 = min(
+                ((lb, ang_diff_deg(m['mean_hue'], c), 0.0)
+                 for lb, c in table), key=lambda t: t[1])
+            if d <= hue_tol:
+                n += 1
+        return n
+
+    gain = _matched([(l, (c + offset) % 180.0) for l, c in color_table]) \
+        - _matched(color_table)
+    if gain < min_gain:
+        return 0.0, len(votes), (f'漂移候选 {offset:+.1f} 只能多救回 {gain} 块'
+                                 f'（需 >= {min_gain}），判为无漂移/样本被压偏，不校正')
+    return offset, len(votes), (f'由 {len(pure)} 块纯色样本估计，'
+                                f'回代可多救 {gain} 块')
+
+
+def detect_blocks(image, args, color_table, hue_centers, verbose=False,
+                  collect_rejected=False, coverage=None):
     """从一帧（已去畸变的）BGR 图里找出所有彩色方块。
 
-    处理链：色度模长 → Otsu 自动阈值 → 形态学 → 外轮廓 → 形状过滤
-            → 色相矢量平均 → 最近参考色 + 置信度。
+    处理链：色度模长 → 自适应阈值 → 形态学 → 外轮廓 → 形状过滤
+            → 色相矢量平均 → 最近参考色 + 置信度 → 上表面几何。
 
     返回 (blocks, mask, info)。blocks 的字段见下面的字典构造，
     其中 contour/extent/solidity/mean_hue 等是给调试叠加和调参用的诊断量，
     真正发到 /blocks 的只有 round_block() 挑出来的那六个。
+
+    collect_rejected=True 时 info['rejected'] 会收下**所有**被丢掉的候选
+    （默认只留前 10 条，是为了前端页面不被刷爆）——--probe-colors 需要看全，
+    否则一个在列表尾部的真块会被"看不见"。
     """
     h, w = image.shape[:2]
     area_min, area_max = args.area_min, args.area_max
@@ -457,6 +1294,7 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
         d_min, d_max = default_thresholds(image.shape)
         area_min = d_min if area_min is None else area_min
         area_max = d_max if area_max is None else area_max
+    max_block_px = float(getattr(args, 'max_block_px', 0.0) or 0.0)
 
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -491,23 +1329,88 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
     # 形态学：开运算清掉孤立噪声点，闭运算补上块表面因压痕/反光造成的针孔。
     # 3x3 是有意的——更大的核会把小像素尺寸下的方块轮廓啃掉一圈，
     # 直接损害面积、填充度、凸度这些我们赖以做形状判别的指标。
+    # 也正因为核小，"同一个块被高光割出来的细缝"不会被闭运算补上：
+    # 那种情况交给 _merge_fragments 按"同色+贴近"去并，
+    # 而不是靠放大闭运算核（那会把相邻的块也粘起来）。
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
+    # ---- 候选区域：连通域 → （色相不纯就切开）→ 合并碎条 ----
+    # 为什么要按连通域组织而不是直接 findContours：只有拿到"单个连通域的
+    # 像素集合"，才能对它做色相纯度判断和按色相分割。现场真故障就是
+    # 红块和蓝块粘成一个连通域（R=0.445），直接 findContours 出来的是
+    # 一个混合轮廓，颜色判不出来，两块一起丢。
+    split_min_area = max(60.0, area_min * 0.15)
+    split_min_conc = min(0.9, max(0.75, float(args.hue_consistency_min) + 0.25))
+    n_regions = [0]        # 原始连通域计数（含被切分前的），闭包累加
 
-    blocks = []
+    def _regions_of(mask_u8, depth=0, base=(0, 0)):
+        """把一张（可能只是某个子区域的）掩码拆成连通域候选。
+
+        base 是 mask_u8 左上角在**全图**里的坐标。递归切分时子掩码自带偏移，
+        必须一路带下去：否则会拿子图坐标去 hue 全图采样（采到别的区域），
+        返回的轮廓也停在子图坐标系里，后面对不上原图——
+        表现就是"明明切开了、形状也都合格，却一块都检不出来"。
+        另外把"原始连通域个数"累加到 n_regions 里，省掉外面再跑一遍
+        _find_regions（纯噪声帧有几千个连通域，白跑一遍就是 45ms）。
+        """
+        out = []
+        for region, cnt, off in _find_regions(mask_u8):
+            n_regions[0] += 1
+            area = float(cv2.contourArea(cnt))
+            if area < split_min_area:
+                continue
+            bh, bw = region.shape
+            gx, gy = base[0] + off[0], base[1] + off[1]
+            hue_sub = hue[gy:gy + bh, gx:gx + bw]
+            _mh, conc, _n = mean_circular_hue(hue_sub[region])
+            # 只有"颜色明显不纯"才尝试切分。纯色域保持原样，
+            # 免得在一块好料上引入无意义的分割误差。
+            if (depth < 2 and not getattr(args, 'no_split', False)
+                    and conc < float(args.hue_consistency_min)):
+                parts = _split_by_hue(hue_sub, region, split_min_area,
+                                      split_min_conc)
+                if os.environ.get('CBD_SPLIT_TRACE'):
+                    log(f'  [split] depth={depth} base={base} off={off} '
+                        f'area={int(region.sum())} R={conc:.3f} -> '
+                        + ('None' if parts is None
+                           else str([int(p.sum()) for p in parts])))
+                if parts is not None:
+                    for part in parts:
+                        sub = (region & part).astype(np.uint8) * 255
+                        out.extend(_regions_of(sub, depth + 1, (gx, gy)))
+                    continue
+            # 轮廓只加一次 base：_find_regions 返回的轮廓已经在**子图**坐标系里，
+            # 加上 base 就是全图坐标。再加第二次会整体平移（实测红+蓝切开后
+            # 蓝块被推到右边 26px，bbox 里混进红像素，R 掉到 0.4 又被丢）。
+            out.append((region, cnt + base, (gx, gy)))
+        return out
+
+    raw_regions = _regions_of(mask)
+    regions = _merge_fragments(raw_regions, hue, args,
+                               merge_stats=(coverage if coverage is not None
+                                            else None))
+    n_split = n_regions[0] - len(raw_regions)
+    if coverage is not None:
+        coverage['split_attempt'] = coverage.get('split_attempt', 0) + 1
+        coverage['regions'] = coverage.get('regions', 0) + len(raw_regions)
+
+    # ---- 第一遍：形状过滤 + 色相量测（先不判颜色）----
+    candidates = []
     rejected = []
-    for contour in contours:
+    for contour in (c for _r, c, _o in regions):
         m = _shape_metrics(contour)
         x, y, bw, bh = m['bbox']
 
         # 这些 if 的顺序是按"代价从低到高"排的，同时也是按"误判危害从大到小"：
         # 面积不对的直接排除，不用再算后面的几何量。
         if m['area'] < area_min or m['area'] > area_max:
-            continue                      # 太小=噪点/远处杂物，太大=墙面/桌面
+            continue                      # 太小=噪点/远处杂物，太大=机械臂/桌面
+        if max_block_px > 0 and max(m['rect_w'], m['rect_h']) > max_block_px:
+            # 面积之外再加一道"尺寸上限"：机械臂这类大块即使被切成方块状，
+            # 也不可能只有 4cm 物块那么大。两道一起用，比只看面积稳。
+            continue
         if x <= 0 or y <= 0 or x + bw >= w or y + bh >= h:
             continue                      # 贴边框的一定被截断，尺寸/角度都不可信
         if m['aspect'] > args.aspect_max:
@@ -519,7 +1422,7 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
         if not (args.vertex_min <= m['vertex_count'] <= args.vertex_max):
             # 顶点数越界时看反查结果：多边形没能包住轮廓才是真的形状不对
             if m.get('poly_outside_dev', 0.0) > 0.5:
-                rejected.append({**m, 'reason': 'vertex_count'})
+                rejected.append(_reject_reason(m, 'vertex_count'))
                 continue
 
         # ---- 色相统计：只在"落在该轮廓内部"的像素上做 ----
@@ -533,20 +1436,53 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
         mean_h, concentration, n_px = mean_circular_hue(vals)
         if n_px < 12:
             continue
+        candidates.append({
+            'contour': contour, 'm': m, 'bbox': (x, y, bw, bh),
+            'mean_hue': float(mean_h), 'concentration': float(concentration),
+            'n_px': int(n_px), 'sub_hue': sub_hue, 'inside': inside,
+        })
+
+    # ---- 在线色相漂移校正（灯光/白平衡变了，整表跟着转）----
+    hue_offset, hue_offset_votes, hue_offset_note = 0.0, 0, '未启用'
+    if not getattr(args, 'no_hue_drift', False) and candidates:
+        hue_offset, hue_offset_votes, hue_offset_note = _estimate_hue_offset(
+            candidates, color_table, float(args.hue_tol),
+            float(getattr(args, 'hue_drift_max', 15.0)))
+        if coverage is not None:
+            coverage['drift_checked'] = coverage.get('drift_checked', 0) + 1
+            if abs(hue_offset) > 1e-6:
+                coverage['drift_applied'] = coverage.get('drift_applied', 0) + 1
+    # 校正量作用在**参考表**上而不是量测值上：这样 R/mean_hue 这些
+    # 诊断量保持"原始量测"，而分类用"对齐后的语义"。
+    # 现场调参时看到的永远是真实的 H，不会被校正悄悄改掉。
+    shifted_table = [(lbl, (c + hue_offset) % 180.0) for lbl, c in color_table]
+
+    # ---- 第二遍：颜色分类 + 几何 + 置信度 ----
+    blocks = []
+    for cand in candidates:
+        contour = cand['contour']
+        m, (x, y, bw, bh) = cand['m'], cand['bbox']
+        mean_h, concentration, n_px = (cand['mean_hue'],
+                                       cand['concentration'], cand['n_px'])
 
         # 色相集中度太低 = 这片区域颜色不纯（阴影/反光/多种颜色混在一起），
         # 直接丢。宁可漏检也不给机械臂一个错颜色的目标。
+        # 注意这一步在第一遍已经尝试过"按色相切开"，能切早切了；
+        # 走到这里说明切不动（例如同色块粘连），那就只能丢。
         if concentration < args.hue_consistency_min:
-            rejected.append({**m, 'reason': 'hue_inconsistent',
-                             'concentration': round(concentration, 3)})
+            rejected.append(_reject_reason(m, 'hue_inconsistent',
+                                           mean_hue=round(mean_h, 1),
+                                           concentration=round(concentration, 3)))
             continue
 
-        # ---- 最近参考色 ----
-        color, dist, second_d = classify_color(mean_h, color_table)
+        # ---- 最近参考色（用对齐后的参考表）----
+        color, dist, second_d = classify_color(mean_h, shifted_table)
         if color is None or dist > args.hue_tol:
-            rejected.append({**m, 'reason': 'no_color_match',
-                             'mean_hue': round(mean_h, 1),
-                             'nearest': color, 'dist': round(dist, 1)})
+            rejected.append(_reject_reason(m, 'no_color_match',
+                                           mean_hue=round(mean_h, 1),
+                                           concentration=round(concentration, 3),
+                                           nearest=color,
+                                           dist=round(float(dist), 1)))
             continue
         # 次近色离得越远，说明这一块的颜色越"没有歧义"。
         # 注意：这里**不**否决，只降置信度——因为"褪色的黄偏绿"这一类
@@ -586,12 +1522,25 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
         shape_conf = min(1.0, 0.6 * m['fill'] + 0.4 * m['solidity'])
         confidence = float(max(0.0, min(1.0, color_conf * shape_conf)))
         if confidence < args.min_confidence:
-            rejected.append({**m, 'reason': 'low_confidence',
-                             'confidence': round(confidence, 3)})
+            rejected.append(_reject_reason(m, 'low_confidence',
+                                           mean_hue=round(mean_h, 1),
+                                           confidence=round(confidence, 3)))
             continue
 
+        # ---- 上表面（顶面）几何 ----
+        # 剪影包含可见侧面，质心和边长都被侧面带偏；抓取要对准的是上表面中心。
+        # 这里就地算一次，字段全部平铺进同一个 dict，保证老调用方
+        # （前端只挑自己认识的 key）完全不受影响。
+        # 关掉时退化成剪影口径——字段照样齐全，下游不用分支。
+        if getattr(args, 'no_top_face', False):
+            face = _silhouette_face(rect, rect_w, rect_h, m['area'])
+            face['side_visible'] = False
+            face['top_source'] = 'silhouette'
+        else:
+            face = detect_top_face(image, contour, rect, rect_w, rect_h)
+
         blocks.append({
-            # ---- 需要交付的六项 ----
+            # ---- 需要交付的六项（剪影口径，保持向后兼容）----
             'color': color,
             'cx': float(rcx),
             'cy': float(rcy),
@@ -599,6 +1548,14 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
             'size_px': float(math.sqrt(rect_w * rect_h)),
             'confidence': confidence,
             'contour': contour.reshape(-1, 2).astype(int).tolist(),
+            # ---- 上表面口径（抓取该用这组；side_visible=False 时等于剪影）----
+            'top_cx': face['top_cx'],
+            'top_cy': face['top_cy'],
+            'top_angle_deg': face['top_angle_deg'],
+            'top_size_px': face['top_size_px'],
+            'corners': face['corners'],
+            'side_visible': bool(face['side_visible']),
+            'top_source': face['top_source'],
             # ---- 诊断量（进不了 /blocks 的 JSON，只用于调参和调试图）----
             'mean_hue': float(mean_h),
             'hue_concentration': float(concentration),
@@ -613,6 +1570,10 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
             'vertex_count': int(m['vertex_count']),
             'coverage': float(coverage),
             'area': float(m['area']),
+            # 剪影质心和上表面质心的偏移量：侧面越可见这个值越大。
+            # 现场拿它判断"斜视有多严重"，也是验证顶面检测有没有跑偏的抓手。
+            'center_shift_px': float(math.hypot(face['top_cx'] - float(rcx),
+                                                face['top_cy'] - float(rcy))),
         })
 
     # 按置信度降序、再按面积降序：下游通常只关心"最像的那几块"，
@@ -626,19 +1587,36 @@ def detect_blocks(image, args, color_table, hue_centers, verbose=False):
         'chroma_p995': p995,
         'chroma_adaptive_raised': bool(thr > floor + 1e-6),
         'colorful_pixels': int(mask.sum() // 255),
-        'candidates': int(len(contours)),
+        # candidates 是"参与判定前"的形状合格数，去重/合并后的入口数
+        'candidates': int(len(candidates)),
+        'regions_raw': int(len(raw_regions)),
+        'regions_after_merge': int(len(regions)),
+        'hue_split_gain': int(n_split),
+        'hue_offset': float(hue_offset),
+        'hue_offset_votes': int(hue_offset_votes),
+        'hue_offset_note': hue_offset_note,
         'area_range': (float(area_min), float(area_max)),
-        'rejected': rejected[:10],
+        'rejected': rejected if collect_rejected else rejected[:10],
     }
     if verbose:
         log(f'色度阈值 {thr:.0f}（绝对下限 {floor:.0f}，场景 99.5 百分位 {p995:.0f}'
             f'{"，本次由百分位自适应抬高" if info["chroma_adaptive_raised"] else "，本次由下限决定"}）'
-            f'，彩色像素 {info["colorful_pixels"]}，外轮廓 {info["candidates"]}'
+            f'，彩色像素 {info["colorful_pixels"]}'
+            f'，连通域 {info["regions_raw"]}→合并后 {info["regions_after_merge"]}'
+            f'，形状合格 {info["candidates"]}'
             f'，面积区间 {area_min:.0f}~{area_max:.0f}，命中 {len(blocks)}')
+        log(f'色相漂移校正：{hue_offset:+.1f}（{hue_offset_note}）'
+            + (f'，等价参考表 ' + ', '.join(f'{l}:{c:.0f}' for l, c in shifted_table)
+               if abs(hue_offset) > 1e-6 else ''))
         for r in info['rejected']:
+            extra = ''
+            if r.get('mean_hue') is not None:
+                extra = f' hue={r["mean_hue"]:.1f}'
+            if r.get('concentration') is not None:
+                extra += f' R={r["concentration"]:.3f}'
             log(f'  丢弃 area={r["area"]:.0f} bbox={r["bbox"]} '
                 f'fill={r["fill"]:.2f} solidity={r["solidity"]:.2f} '
-                f'aspect={r["aspect"]:.2f} 顶点={r["vertex_count"]} '
+                f'aspect={r["aspect"]:.2f} 顶点={r["vertex_count"]}{extra} '
                 f'原因={r["reason"]}', 'DEBUG')
     return blocks, mask, info
 
@@ -674,6 +1652,11 @@ def annotate(image, blocks, mask=None, info=None):
     调试图的价值在于定位失败环节：一眼看出是"掩码里就没有那块料"
     （光照/色度阈值问题）还是"掩码有但被形状过滤掉了"（几何参数问题），
     这决定了下一步该调哪一组参数。所以右侧会并排贴一份二值掩码。
+
+    叠加层含义（想一眼分辨"剪影"和"上表面"）：
+      细白框 + 轮廓线 = 剪影（含侧面，向后兼容的老口径）
+      黄色粗四边形   = 上表面（抓取应该用的口径）
+      黄点           = 上表面中心；红点 = 剪影质心，两者分开说明侧面可见
     """
     canvas = image.copy()
     for i, blk in enumerate(blocks):
@@ -689,9 +1672,28 @@ def annotate(image, blocks, mask=None, info=None):
         cv2.drawContours(canvas, [cv2.boxPoints(rect).astype(np.int32)],
                          -1, (255, 255, 255), 1)
 
+        # 上表面：用固定颜色（青）画，和按序号变色的剪影框区分开，
+        # 免得多个块叠在一起时看不出哪条线属于谁。
+        side_visible = blk.get('side_visible')
+        corners = blk.get('corners')
+        if corners:
+            quad = np.asarray(corners, np.float64).reshape(-1, 1, 2)
+            cv2.polylines(canvas, [quad.astype(np.int32)], True,
+                          (0, 255, 255), 2 if side_visible else 1)
+            if side_visible:
+                tcx, tcy = int(round(blk['top_cx'])), int(round(blk['top_cy']))
+                cv2.circle(canvas, (tcx, tcy), 3, (0, 255, 255), -1)
+                # 剪影质心 → 上表面中心 的位移：斜视越厉害这条线越长
+                cv2.line(canvas, (cx, cy), (tcx, tcy), (0, 255, 255), 1)
+
+        top_txt = ''
+        if side_visible:
+            top_txt = (f" top({blk['top_cx']:.0f},{blk['top_cy']:.0f}) "
+                       f"{blk['top_angle_deg']:+.1f}deg "
+                       f"{blk['top_size_px']:.0f}px")
         label = (f"{blk['color']} #{i} ({cx},{cy}) "
                  f"{blk['angle_deg']:+.1f}deg {blk['size_px']:.0f}px "
-                 f"h{blk['mean_hue']:.0f} conf{blk['confidence']:.2f}")
+                 f"h{blk['mean_hue']:.0f} conf{blk['confidence']:.2f}{top_txt}")
         ty = max(14, int(blk['cy'] - blk['rect_h'] * 0.6) - 6)
         tx = max(2, min(int(blk['cx'] - 80), max(2, canvas.shape[1] - 300)))
         # 先黑后彩描两遍：亮背景上白字看不见，暗背景上彩色字看不清，
@@ -701,11 +1703,15 @@ def annotate(image, blocks, mask=None, info=None):
         cv2.putText(canvas, label, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                     color_bgr, 1, cv2.LINE_AA)
 
-    head = f'blocks={len(blocks)}'
-    if info:
+    # 图上文字一律用 ASCII：cv2.putText 的 Hershey 字体没有中文字形，
+    # 中文会画成一串方框乱码（这个是在调试图上亲眼看出来的）。
+    # 中文说明只放在日志/注释里——终端和注释里的中文是正常的。
+    tops = sum(1 for b in blocks if b.get('side_visible'))
+    head = f'blocks={len(blocks)} | topface={tops}'
+    if info and info.get('chroma_threshold') is not None:
         head += (f" | chroma thr={info['chroma_threshold']:.0f}"
-                 f" (p99.5 {info['chroma_p995']:.0f})"
-                 f" | colorful px={info['colorful_pixels']}")
+                 f" (p99.5 {info.get('chroma_p995', 0):.0f})"
+                 f" | colorful px={info.get('colorful_pixels', 0)}")
     cv2.putText(canvas, head, (8, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                 (0, 0, 0), 3, cv2.LINE_AA)
     cv2.putText(canvas, head, (8, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
@@ -736,6 +1742,12 @@ def round_block(blk, nd=4):
 
     刻意不带 contour：JSON 每帧都发，几百个坐标点会让话题带宽和
     `ros2 topic echo` 的可读性一起崩掉；需要轮廓请看调试图。
+
+    同时给出剪影口径（cx/cy/angle_deg/size_px）和**上表面口径**
+    （top_cx/top_cy/top_angle_deg/top_size_px）：老的下游继续用前者，
+    抓取这类"要对准朝上那个面"的下游用后者。side_visible 说明这一帧
+    到底看没看见侧面——为 False 时 top_* 就是剪影的副本（退化），
+    不会出现"悄悄给了一组编造的顶面参数"这种情况。
     """
     return {
         'color': blk['color'],
@@ -744,6 +1756,11 @@ def round_block(blk, nd=4):
         'angle_deg': round(blk['angle_deg'], nd),
         'size_px': round(blk['size_px'], nd),
         'confidence': round(blk['confidence'], nd),
+        'top_cx': round(blk['top_cx'], nd),
+        'top_cy': round(blk['top_cy'], nd),
+        'top_angle_deg': round(blk['top_angle_deg'], nd),
+        'top_size_px': round(blk['top_size_px'], nd),
+        'side_visible': bool(blk['side_visible']),
     }
 
 
@@ -758,6 +1775,216 @@ def blocks_message(blocks, stamp=None):
         'blocks': [round_block(b) for b in blocks],
     }
     return json.dumps(payload, ensure_ascii=False)
+
+
+# ---------------------------------------------------------------------------
+# 色表自标定（--probe-colors）
+# ---------------------------------------------------------------------------
+
+def _sanitize_label(label):
+    """把任意标签串成 --colors 能安全再解析的形式（分隔符是逗号和冒号）。"""
+    out = re.sub(r'[,:+\s]+', '_', str(label)).strip('_')
+    return out or 'c'
+
+
+def probe_color_table(candidates, hue_tol=8.0):
+    """在"形状已经过关、只差颜色标签"的候选上现场量色相，生成颜色表。
+
+    为什么要有这个：现场踩过的坑是**颜色表数值本身错了**——紫色块形状全过
+    （fill=0.911 solidity=0.954），实测色相 130.6，而表里写的 150
+    （OpenCV H 130 ≈ 真实色相 260°紫；150 ≈ 300°品红），距离 19.4 > hue_tol(8)，
+    于是被 no_color_match 静默丢弃。这种错不该靠人肉发现。
+
+    算法：对每个候选算圆矢量平均色相 + 集中度 R，然后按色相**排序后沿圆环
+    取相邻中点**作为标签边界——不用任何预设名称、不假设有几种颜色，
+    所以"第五块是第二种黄"这种模糊描述不会让它出错。
+    标签统一用 color1/color2…（纯机器名，不猜"这到底算黄还是橙"）；
+    想改名就改 --colors 字符串里的标签，数值不用动。
+
+    同色相的多块料会被**合并成一个色档**：色表表达的是"颜色类别"，
+    两个一模一样的色相写成两个标签既没有意义，还会让回代校验彼此抢标签
+    （自检里真出现过：两块黄生成 color1:30,color2:30 然后校验互相判错）。
+    真要两个同色档，自己按 --colors 的 "标签:色相+" 语法手动加。
+    """
+    if not candidates:
+        return [], []
+    ordered = sorted(candidates, key=lambda c: c['mean_hue'])
+    # 先把色相几乎相同的候选合并（阈值取 hue_tol 的一半：比"能可靠区分"更近的
+    # 两个色相，本来也不该是两个类）。
+    merged = []
+    for cand in ordered:
+        if merged and ang_diff_deg(cand['mean_hue'],
+                                   merged[-1]['mean_hue']) <= hue_tol / 2.0:
+            keep = merged[-1]
+            # 合并时按面积加权，让"大块"主导该色档的中心（大块的量测更稳）
+            w0, w1 = keep['area'], cand['area']
+            total = max(1e-6, w0 + w1)
+            keep['mean_hue'] = ((keep['mean_hue'] * w0
+                                 + cand['mean_hue'] * w1) / total) % 180.0
+            keep['area'] = w0 + w1
+            keep['merged'] = keep.get('merged', 1) + 1
+            continue
+        item = dict(cand)
+        item['merged'] = 1
+        merged.append(item)
+    n = len(merged)
+    entries = []
+    for i, cand in enumerate(merged):
+        if n == 1:
+            left = right = (cand['mean_hue'] + 90.0) % 180.0
+        else:
+            prev_h = merged[(i - 1) % n]['mean_hue']
+            next_h = merged[(i + 1) % n]['mean_hue']
+            # 中点要按圆距离往两边各走一半，不能用 (a+b)/2 直接算
+            back = ang_diff_deg(cand['mean_hue'], prev_h) / 2.0
+            fwd = ang_diff_deg(cand['mean_hue'], next_h) / 2.0
+            left = (cand['mean_hue'] - back) % 180.0
+            right = (cand['mean_hue'] + fwd) % 180.0
+        # 该色档在本帧的实际容差 = 到左右边界的较小距离，并受 --hue-tol 限制。
+        # 用实测间距而不是拍一个 8：颜色接近时自动收紧（不乱标），
+        # 颜色稀疏时自动放宽（不错杀）。
+        span = min(ang_diff_deg(cand['mean_hue'], left),
+                   ang_diff_deg(cand['mean_hue'], right))
+        entries.append({
+            'label': f'color{i + 1}',
+            'center': float(cand['mean_hue']),
+            'left': float(left),
+            'right': float(right),
+            'span': float(span),
+            'suggested_tol': float(max(2.0, min(float(hue_tol), span))),
+            'merged': int(cand['merged']),
+            'source': cand,
+        })
+    # 标签顺序按色相，方便人眼对照
+    entries.sort(key=lambda e: e['center'])
+    return entries, merged
+
+
+def run_probe_colors(args, hue_centers):
+    """--probe-colors：量出场景里真实存在的色相，打印可粘贴的 --colors。
+
+    先不管颜色标签，只按"形状像方块 + 色相够纯"挑候选；
+    再把生成的表**回代**一遍做闭环断言——这正是自检里那条
+    "参考色相表 vs 实测量测是否闭环"的现场版本，用来防止"表和人眼一致、
+    但和代码里的量测不一致"这种最难查的静默失效。
+    """
+    if args.image:
+        image = cv2.imread(args.image, cv2.IMREAD_COLOR)
+        if image is None:
+            log(f'读不到图片：{args.image}', 'ERROR')
+            return 2
+        undist = Undistorter(args.intrinsics)
+        for note in undist.notes:
+            log(note)
+        frames = [undist.apply(image)]
+    else:
+        cap = open_camera(args.camera, args.width, args.height)
+        if cap is None:
+            log(f'打不开相机 {args.camera}（--probe-colors 也可以配 --image 用照片跑）',
+                'ERROR')
+            return 2
+        undist = Undistorter(args.intrinsics)
+        for note in undist.notes:
+            log(note)
+        frames = []
+        for _ in range(max(1, args.probe_frames)):
+            ok, frame = cap.read()
+            if ok and frame is not None:
+                frames.append(undist.apply(frame))
+        cap.release()
+        if not frames:
+            log('读帧失败，无法标定色表', 'ERROR')
+            return 2
+        # 多帧取中值：色相统计对单帧噪声本来就稳，中值是为了消掉
+        # "恰好某一帧曝光跳变"这种偶发情况，让标定值可复现。
+        if len(frames) > 1:
+            frames = [np.median(np.array(frames), axis=0).astype(np.uint8)]
+
+    # 这里刻意用一个"空表"跑检测：形状过滤、色相统计、置信度全部照常执行，
+    # 但没有任何颜色标签可以匹配，于是所有形状合格的候选都会落进 rejected，
+    # 正好就是我们要标定的那一批。
+    probe_table = [('__probe__', 0.0)]
+    probe_args = argparse.Namespace(**vars(args))
+    probe_args.colors = '__probe__:0'
+    blocks, mask, info = detect_blocks(frames[0], probe_args, probe_table,
+                                       hue_centers, verbose=False,
+                                       collect_rejected=True)
+
+    # 候选 = 所有"形状过关、只因没有匹配颜色而被丢"的轮廓。
+    # 另外把因为"色相不纯"被丢的也列出来（标成低集中度），
+    # 但不参与色表生成——颜色不纯的块定不出可信的中心。
+    raw = [r for r in info['rejected'] if r['reason'] == 'no_color_match']
+    impure = [r for r in info['rejected'] if r['reason'] == 'hue_inconsistent']
+
+    # mean_hue 在 rejected 记录里（_reject_reason 传了）。
+    # 注意一个细节：**不能**用 n_px/coverage 之类没被带出来的量，
+    # 所以这里只依赖 mean_hue / concentration / area / bbox / fill 这些标量。
+    candidates = []
+    for r in raw:
+        if r.get('mean_hue') is None:
+            continue
+        candidates.append({
+            'mean_hue': float(r['mean_hue']) % 180.0,
+            'concentration': float(r.get('concentration', float('nan')))
+            if r.get('concentration') is not None else float('nan'),
+            'area': float(r['area']),
+            'fill': float(r['fill']),
+            'solidity': float(r['solidity']),
+            'bbox': tuple(r['bbox']),
+        })
+
+    log(f'=== 色表标定：形状合格候选 {len(candidates)} 个'
+        f'（另有 {len(impure)} 个因色相不纯被排除）===')
+    if not candidates:
+        log('没有找到任何"形状合格"的彩色候选。'
+            '先确认画面里有料、掩码不为空（可加 --out 看调试图），'
+            '必要时放宽 --fill-min / --solidity-min', 'WARN')
+        return 1
+
+    entries, merged_list = probe_color_table(candidates, hue_tol=args.hue_tol)
+    for entry in entries:
+        c = entry['source']
+        cx = c['bbox'][0] + c['bbox'][2] / 2.0
+        cy = c['bbox'][1] + c['bbox'][3] / 2.0
+        conc = c['concentration']
+        conc_txt = 'n/a' if conc != conc else f'{conc:.3f}'
+        merged_txt = (f"  合并了 {entry['merged']} 块" if entry['merged'] > 1 else '')
+        log(f"  {entry['label']}: hue={c['mean_hue']:6.2f}  R={conc_txt:>5s}  "
+            f"area={c['area']:6.0f}  fill={c['fill']:.3f}  "
+            f"sol={c['solidity']:.3f}  质心≈({cx:.0f},{cy:.0f})  "
+            f"边界=[{entry['left']:.1f},{entry['right']:.1f}] "
+            f"建议容差={entry['suggested_tol']:.1f}{merged_txt}")
+
+    colors_str = ','.join(f"{e['label']}:{e['center']:.0f}" for e in entries)
+    log('可直接粘贴的颜色表：')
+    print(f'--colors "{colors_str}"')
+
+    # ---- 闭环自检：用生成的表回代，每个候选都必须匹配上自己的标签 ----
+    back_table = [(e['label'], e['center']) for e in entries]
+    log('=== 回代闭环校验（用生成的表重跑，确认每个候选都吃到自己的标签）===')
+    bad = 0
+    for e in entries:
+        label, dist, second = classify_color(e['source']['mean_hue'], back_table)
+        ok = (label == e['label'] and dist <= args.hue_tol)
+        # 也要检查"离次近标签太近"：那样标签会随光照漂移而跳变
+        ambiguous = second < args.hue_tol and second < 1e8
+        flag = 'OK' if (ok and not ambiguous) else 'FAIL'
+        if flag == 'FAIL':
+            bad += 1
+        log(f"  [{flag}] hue={e['source']['mean_hue']:6.2f} → 标签 {label} "
+            f"(期望 {e['label']}) 距离={dist:.1f} 次近={second if second < 1e8 else float('nan'):.1f}"
+            + ('  ← 与邻近标签区分度不足，建议合并或收紧容差' if ambiguous else ''))
+
+    if bad:
+        log(f'闭环校验有 {bad} 项不通过：这张表直接拿去用会误判，'
+            '请检查是否有两块颜色过于接近的料', 'WARN')
+        return 1
+    log(f'闭环校验通过 ✅ 共 {len(entries)} 个色档；'
+        f'把上面那行 --colors 贴给 color_block_detect.py / block_live_gui.py 即可')
+    if args.out:
+        imwrite(args.out, annotate(frames[0], blocks, mask, info))
+        log(f'标定标注图：{args.out}')
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -943,10 +2170,16 @@ def _blank_frame(width=640, height=480, lo=135, hi=180):
     return np.dstack([gray, gray, gray]).astype(np.uint8)
 
 
-def _draw_rect(canvas, cx, cy, box, hsv_color, angle=0.0, ss=SS):
+def _draw_rect(canvas, cx, cy, box, hsv_color, angle=0.0, ss=SS,
+               hue_shift=0.0):
     """在 box x box 的方形 ROI 里画一个（可旋转的）实心方块并贴到 canvas 上。
 
     hsv_color=(H,S,V)；canvas 坐标是 1x 尺度。
+    hue_shift 用来模拟"白平衡/灯光漂移"：在**画的时候就**把色相转一个角度，
+    S/V 不动，所以色度依然很高——这才是"同一块料被拍成了另一个色相"。
+    （如果在画好之后整体平移 H 通道，那等于换一种颜色画上去：蓝 111 变 99
+    就成了青色，色度大幅下降。拿它验漂移会得出错误结论——我第一版就是这么
+    写的，结果"蓝块消失"，查了半天才发现是用例本身不成立。）
     box 是 ROI 的边长；方块的实际边长会被缩到 box/(|cos|+|sin|)，
     这样任意角度下方块的**外接框都正好等于 box**——原因见下面那段。
     返回方块的实际边长（浮点像素），自检拿它当真值。
@@ -977,7 +2210,10 @@ def _draw_rect(canvas, cx, cy, box, hsv_color, angle=0.0, ss=SS):
     mask_small = cv2.resize(mask_big, (box, box), interpolation=cv2.INTER_AREA)
     alpha = (mask_small > 64).astype(np.float32)[:, :, None]
 
-    bgr = cv2.cvtColor(np.uint8([[list(hsv_color)]]), cv2.COLOR_HSV2BGR)[0, 0]
+    h_draw = int(round((float(hsv_color[0]) + float(hue_shift)) % 180.0))
+    bgr = cv2.cvtColor(np.uint8([[[h_draw, int(hsv_color[1]),
+                                    int(hsv_color[2])]]]),
+                       cv2.COLOR_HSV2BGR)[0, 0]
     patch = np.zeros((box, box, 3), np.uint8)
     patch[:, :] = bgr
 
@@ -990,6 +2226,57 @@ def _draw_rect(canvas, cx, cy, box, hsv_color, angle=0.0, ss=SS):
                                         + roi.astype(np.float32)
                                         * (1.0 - alpha)).astype(np.uint8)
     return side
+
+
+def _draw_cube(canvas, top_cx, top_cy, side, hsv_color, angle=0.0,
+               view=(0.30, 0.38)):
+    """画一个"斜视的立方体块"：上表面 + 可见侧面，返回上表面四角真值。
+
+    为什么要专门造这么一个合成对象：本项目的核心痛点就是"剪影包含侧面"，
+    而 _draw_rect 画的是平铺方块（上表面==剪影），**根本测不出**上表面检测
+    到底有没有用。这里用最朴素的斜投影建模：
+      上表面 = 边长 side、绕画面法线转 angle 的正方形，中心 (top_cx, top_cy)；
+      底面   = 上表面整体平移 view*side（斜投影下立方体的竖直棱都平行且等长）；
+      可见侧面 = 底面向 +x/+y 方向张出来的那两个四边形。
+    和真实透视投影的差别是二阶的（正交 vs 透视），对本检测要验证的
+    "顶面近边在哪"没有影响，但足以让剪影质心明显低于顶面中心。
+
+    顶面颜色用正对的亮色，侧面用同色相压暗（0.78 倍 V）——这是 EVA 块最典型的
+    表现（顶面正对镜头/光源，侧面斜对，一般更暗），也是检测器用来找近边的先验。
+    """
+    h_img, w_img = canvas.shape[:2]
+    th = math.radians(angle)
+    half = side / 2.0
+    loc = np.array([[-half, -half], [half, -half], [half, half], [-half, half]],
+                   np.float64)
+    rot = np.array([[math.cos(th), -math.sin(th)],
+                    [math.sin(th), math.cos(th)]])
+    top = loc @ rot.T + np.array([top_cx, top_cy], np.float64)
+    dx, dy = view[0] * side, view[1] * side
+    base = top + np.array([dx, dy], np.float64)
+
+    def _fill(quad, hsv):
+        pts = np.round(quad).astype(np.int32)
+        if pts[:, 0].min() < 0 or pts[:, 1].min() < 0 \
+                or pts[:, 0].max() >= w_img or pts[:, 1].max() >= h_img:
+            raise ValueError('合成立方体超出画面范围，检查真值坐标')
+        bgr = cv2.cvtColor(np.uint8([[[int(hsv[0]), int(hsv[1]), int(hsv[2])]]]),
+                           cv2.COLOR_HSV2BGR)[0, 0]
+        cv2.fillPoly(canvas, [pts], (int(bgr[0]), int(bgr[1]), int(bgr[2])))
+
+    h, s, v = (int(hsv_color[0]), int(hsv_color[1]), int(hsv_color[2]))
+    # 侧面压暗到 0.70：实测 EVA 块顶面正对镜头/光源，侧面通常暗 20%~40%。
+    # 刻意**不能**调到和桌面灰度一样（约 0.78 时正好撞上）——那样
+    # "侧面→背景"会和"顶面→侧面"一样强，属于物理上真的分不出来的情况，
+    # 应该由下面的"退化"分支处理，而不是拿来当常规用例。
+    side_hsv = (h, s, max(20, int(v * 0.70)))
+    # 先画侧面再画顶面：顶面在上，覆盖优先级更高（也更符合"上面盖住下面"的直觉）
+    if dy > 0.5:
+        _fill(np.array([top[3], top[2], base[2], base[3]]), side_hsv)  # 前面
+    if dx > 0.5:
+        _fill(np.array([top[1], top[2], base[2], base[1]]), side_hsv)  # 右侧
+    _fill(top, (h, s, v))
+    return top
 
 
 def _synthetic_frame(width=640, height=480, lo=135, hi=180, noise=2.5, seed=7):
@@ -1009,7 +2296,7 @@ def _synthetic_frame(width=640, height=480, lo=135, hi=180, noise=2.5, seed=7):
         ['red', 110, 130, 48, 0, 225, 215, 0.0, 0.0],
         ['yellow', 300, 120, 44, 30, 235, 230, 20.0, 0.0],
         ['green', 480, 140, 52, 60, 210, 205, 0.0, 0.0],
-        ['purple', 160, 340, 46, 150, 215, 210, -15.0, 0.0],
+        ['purple', 160, 340, 46, 130, 215, 210, -15.0, 0.0],
         ['yellow', 420, 330, 50, 30, 225, 220, 0.0, 0.0],
     ]
     for spec in specs:
@@ -1062,9 +2349,14 @@ def run_selftest(args, color_table, hue_centers):
 
     检查项：
       A. 参考色相表与实测色相闭环（防"表写错了"这种静默失效）；
+      A2. **跨 0/180 环绕边界**的色相量测与分类（现场红色块色相 175.9 就贴在这条线上）；
       B. 五个已知方块全部找到，颜色标签正确（含重复的黄）；
       C. 质心 / 朝向 / 边长的量测误差在容差内；
-      D. 干扰物（细长反光条、低色度灰块、表外的青色块）都不被误报。
+      D. 干扰物（细长反光条、低色度灰块、表外的青色块）都不被误报；
+      E. 输出契约（下游 JSON 字段与取值范围）；
+      F. 上表面检测：斜视立方体上"顶面中心/朝向/边长"必须比剪影更接近真值，
+         并且正上方俯视（侧面不可见）时必须优雅退化成剪影；
+      G. --probe-colors 的色表生成与回代闭环。
     """
     failures = []
     notes = []
@@ -1084,7 +2376,10 @@ def run_selftest(args, color_table, hue_centers):
     # ---- A. 色相表闭环 ----
     if not args.no_selftest_hue_check:
         for label, center in color_table:
-            probe_h = {'red': 0, 'yellow': 30, 'green': 60, 'purple': 150}.get(label)
+            # 探针色相直接用**内置参考中心**：这样"表 ↔ 量测"闭环检查
+            # 在默认表被重新标定（改 DEFAULT_HUE_CENTERS）后依然成立，
+            # 不需要在自检里再抄一份数字。
+            probe_h = DEFAULT_HUE_CENTERS.get(label)
             if probe_h is None:
                 continue
             blk = _probe_hue(probe_args, probe_h, 225, 215)
@@ -1098,9 +2393,49 @@ def run_selftest(args, color_table, hue_centers):
                   f'色相闭环 {label}: 表 {center:.0f} 与实测 {blk["mean_hue"]:.1f} '
                   f'差 {d:.1f} > 4，颜色表需要校正')
 
+    # ---- A2. 0/180 环绕边界 ----
+    # 现场数据：红色块色相 175.9（标准色相 351.8°，贴着接线）。
+    # 如果 ang_diff_deg 写成朴素减法，这里会算出 175.9 而不是 4.1，
+    # 红色块就会被 no_color_match 静默丢弃——这是实机真出过的故障。
+    check(abs(ang_diff_deg(175.9, 0.0) - 4.1) < 0.05,
+          f'环绕距离：175.9 到 0 的圆距离 = {ang_diff_deg(175.9, 0.0):.2f}（应为 4.1）',
+          f'环绕距离算错了：175.9→0 得到 {ang_diff_deg(175.9, 0.0):.2f}，应为 4.1')
+    check(abs(ang_diff_deg(179.0, 1.0) - 2.0) < 0.05
+          and abs(ang_diff_deg(0.0, 90.0) - 90.0) < 0.05
+          and abs(ang_diff_deg(10.0, 20.0) - 10.0) < 0.05,
+          '环绕距离在 179/1、0/90（最远）、10/20（普通）三处都对',
+          '环绕距离在边界或中点算错了')
+    # 圆矢量平均：绕在接线两侧的取值（178 与 2）必须平均成 0 附近，不能是 90
+    wrap_h, wrap_r, wrap_n = mean_circular_hue([178.0, 179.0, 0.0, 1.0, 2.0])
+    check(ang_diff_deg(wrap_h, 0.0) <= 2.0 and wrap_r > 0.9,
+          f'圆矢量平均跨环绕：均值 {wrap_h:.1f}（应在 0 附近）、集中度 {wrap_r:.3f}',
+          f'圆矢量平均跨环绕失败：均值 {wrap_h:.1f}（应该≈0）、集中度 {wrap_r:.3f}')
+    # 端到端：真的画一块"色相 179"的红块，走完整检测链，必须还能标成 red。
+    # cv2 的 HSV→BGR 在 H=179 会给出暗红，所以这里直接指定 BGR 深红来造这个像素。
+    wrap_img = _blank_frame()
+    wrap_img[240 - 24:240 + 24, 320 - 24:320 + 24] = (0, 0, 255)
+    wrap_blocks, _wm, _wi = detect_blocks(
+        wrap_img, probe_args, [('red', 0.0), ('yellow', 30.0)], {},
+        verbose=False)
+    if not wrap_blocks:
+        failures.append('  [FAIL] 环绕边界：色相≈179 的深红块没有被检出')
+    else:
+        wb = wrap_blocks[0]
+        check(wb['color'] == 'red' and ang_diff_deg(wb['mean_hue'], 0.0) <= args.hue_tol,
+              f'环绕边界端到端：色相≈179 的深红块判成 {wb["color"]}'
+              f'（mean_hue={wb["mean_hue"]:.1f}，距 red:0 仅 '
+              f'{ang_diff_deg(wb["mean_hue"], 0.0):.1f}）',
+              f'环绕边界端到端失败：色相 {wb["mean_hue"]:.1f} 被标成 {wb["color"]}')
+
     # ---- B/C/D. 完整检测 ----
+    # coverage 用来统计"关键代码路径有没有真的被跑到"。
+    # 上一轮我交出的版本在这里翻车：合并逻辑里有个少了必填参数的
+    # copyMakeBorder，但当时的自检用例从没走到那段距离判定，
+    # 于是自检"全过"而一上真机就崩。**没被跑到的路径，测试等于没写。**
+    coverage = {}
     blocks, mask, info = detect_blocks(frame, probe_args, color_table,
-                                       hue_centers, verbose=True)
+                                       hue_centers, verbose=True,
+                                       coverage=coverage)
     log(f'自检检测到 {len(blocks)} 块：'
         + '; '.join(f"{b['color']}@({b['cx']:.0f},{b['cy']:.0f})"
                     f"/{b['angle_deg']:+.1f}deg/{b['size_px']:.0f}px"
@@ -1166,10 +2501,11 @@ def run_selftest(args, color_table, hue_centers):
 
     # ---- E. 输出契约（/blocks 给下游解析，字段和取值范围必须稳）----
     payload = json.loads(blocks_message(blocks))
-    keys = {'color', 'cx', 'cy', 'angle_deg', 'size_px', 'confidence'}
+    keys = {'color', 'cx', 'cy', 'angle_deg', 'size_px', 'confidence',
+            'top_cx', 'top_cy', 'top_angle_deg', 'top_size_px', 'side_visible'}
     check(isinstance(payload.get('stamp'), float)
           and all(set(b) == keys for b in payload['blocks']),
-          f'JSON 字段与约定一致（stamp + {sorted(keys)}）',
+          f'JSON 字段与约定一致（stamp + {len(keys)} 项，含上表面口径）',
           f'JSON 字段不符合约定：{payload["blocks"][:1]}')
     h_img, w_img = frame.shape[:2]
     check(all(0.0 <= b['confidence'] <= 1.0 for b in blocks)
@@ -1180,9 +2516,345 @@ def run_selftest(args, color_table, hue_centers):
                              round(b['cy'], 1), round(b['angle_deg'], 1))
                             for b in blocks]))
 
+    # ---- F. 上表面（顶面）检测 ----
+    # 造一个斜视的立方体：剪影必然包含前面和右侧面，于是剪影质心低于顶面中心。
+    # 这里要验证的是"顶面检测给出的中心比剪影更接近真值"，而不是"能画出四个点"。
+    cube = _blank_frame()
+    cube_top_c, cube_top_r = (300.0, 190.0)
+    cube_side, cube_angle, cube_view = 56.0, 18.0, (0.30, 0.38)
+    cube_hsv = (30, 225, 225)
+    truth = _draw_cube(cube, cube_top_c, cube_top_r, cube_side, cube_hsv,
+                       cube_angle, cube_view)
+    truth_center = (float(truth[:, 0].mean()), float(truth[:, 1].mean()))
+    cube_blocks, _cm, _ci = detect_blocks(cube, probe_args,
+                                          [('yellow', 30.0)], {}, verbose=False)
+    if not cube_blocks:
+        failures.append('  [FAIL] 上表面：斜视立方体没有被检出')
+    else:
+        cb = cube_blocks[0]
+        d_top = math.hypot(cb['top_cx'] - truth_center[0],
+                           cb['top_cy'] - truth_center[1])
+        d_sil = math.hypot(cb['cx'] - truth_center[0],
+                           cb['cy'] - truth_center[1])
+        check(cb['side_visible'],
+              f'斜视立方体：判定侧面可见（top_source={cb["top_source"]}，'
+              f'剪影↔顶面偏移 {cb["center_shift_px"]:.1f}px）',
+              '斜视立方体：side_visible 应为 True，检测没有认出顶面')
+        # 2.7px 量级的残余误差来自像素量化（56px 的方块，1px 就是 1.8%），
+        # 不是算法问题；所以容差取 4px，同时要求它明显优于剪影口径。
+        check(d_top <= 4.0,
+              f'顶面中心误差 {d_top:.2f}px（真值 ({truth_center[0]:.1f},'
+              f'{truth_center[1]:.1f})）',
+              f'顶面中心误差过大：{d_top:.2f}px，实测 ({cb["top_cx"]:.1f},'
+              f'{cb["top_cy"]:.1f}) vs 真值 ({truth_center[0]:.1f},'
+              f'{truth_center[1]:.1f})')
+        # 这一条才是"上表面检测有没有意义"的核心：
+        # 剪影质心被侧面拖下去了，顶面中心必须明显更接近真值
+        check(d_sil > d_top + 3.0,
+              f'剪影质心确实被侧面拖偏（剪影误差 {d_sil:.1f}px > '
+              f'顶面误差 {d_top:.1f}px），上表面检测有意义',
+              f'剪影误差 {d_sil:.2f}px 并不比顶面误差 {d_top:.2f}px 大，'
+              '合成立方体的侧面没有真的进剪影')
+        d_ang_top = abs(cb['top_angle_deg'] - cube_angle) % 90.0
+        d_ang_top = min(d_ang_top, 90.0 - d_ang_top)
+        check(d_ang_top <= 3.0,
+              f'顶面朝向 {cb["top_angle_deg"]:+.1f}°（真值 {cube_angle:+.1f}°，'
+              f'差 {d_ang_top:.1f}°）',
+              f'顶面朝向偏差过大：{cb["top_angle_deg"]:+.1f} vs {cube_angle:+.1f}')
+        check(abs(cb['top_size_px'] - cube_side) <= 4.0,
+              f'顶面边长 {cb["top_size_px"]:.1f}px（真值 {cube_side:.0f}px；'
+              f'剪影 {cb["size_px"]:.1f}px 混进了侧面）',
+              f'顶面边长偏差过大：{cb["top_size_px"]:.1f} vs {cube_side:.0f}')
+        # 四边形必须自洽：4 个角、凸、面积和中心匹配
+        corners = np.asarray(cb['corners'], np.float64)
+        quad_ok = (corners.shape == (4, 2)
+                   and cv2.isContourConvex(corners.astype(np.float32))
+                   and _polygon_area(corners) > 0.35 * (cube_side ** 2))
+        check(quad_ok,
+              f'顶面四角几何自洽（4 点凸四边形，面积 '
+              f'{_polygon_area(corners):.0f}px² vs 真值 {cube_side ** 2:.0f}px²）',
+              f'顶面四角不自洽：{corners.tolist()}')
+
+    # 正上方俯视：侧面不可见 → 必须优雅退化成剪影，不许编造角点
+    flat = _blank_frame()
+    _draw_rect(flat, 320, 240, 60, cube_hsv, 0.0)
+    flat_blocks, _fm, _fi = detect_blocks(flat, probe_args,
+                                          [('yellow', 30.0)], {}, verbose=False)
+    if not flat_blocks:
+        failures.append('  [FAIL] 上表面退化：俯视方块没有被检出')
+    else:
+        fb = flat_blocks[0]
+        check(not fb['side_visible'] and fb['top_source'] == 'silhouette',
+              f'俯视（侧面不可见）优雅退化为剪影：side_visible=False，'
+              f'top_source={fb["top_source"]}',
+              f'俯视时没有退化：side_visible={fb["side_visible"]}，'
+              f'top_source={fb["top_source"]}')
+        check(abs(fb['top_cx'] - fb['cx']) < 1.0
+              and abs(fb['top_cy'] - fb['cy']) < 1.0,
+              '退化后 top_* 与剪影口径一致（下游可以无脑用 top_*）',
+              f'退化后 top_* 与剪影不一致：({fb["top_cx"]:.1f},{fb["top_cy"]:.1f})'
+              f' vs ({fb["cx"]:.1f},{fb["cy"]:.1f})')
+
+    # ---- H. 粘连分割（现场故障：红块+蓝块粘成一个连通域，R=0.445）----
+    # 合成两块**互相接触**的不同颜色方块：红在左、蓝在右，各自与对方在掩码里
+    # 连成一体（用中心距 42px < 边长 44px 保证真的粘上）。
+    touch = _blank_frame()
+    _draw_rect(touch, 280, 240, 44, (0, 235, 220))
+    _draw_rect(touch, 322, 240, 44, (111, 225, 215))
+    glue_lab = cv2.cvtColor(touch, cv2.COLOR_BGR2LAB)
+    glue_ch = cv2.magnitude(glue_lab[:, :, 1].astype(np.float32) - 128.0,
+                            glue_lab[:, :, 2].astype(np.float32) - 128.0)
+    glue_thr = max(26.0, min(0.45 * float(np.percentile(glue_ch, 99.5)), 65.0))
+    glue_mask = cv2.inRange(glue_ch, glue_thr, 255.0)
+    glue_k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    glue_mask = cv2.morphologyEx(glue_mask, cv2.MORPH_OPEN, glue_k)
+    glue_mask = cv2.morphologyEx(glue_mask, cv2.MORPH_CLOSE, glue_k)
+    n_glue, _gl, gstats, _gc = cv2.connectedComponentsWithStats(glue_mask, 8)
+    glue_big = [int(gstats[i, cv2.CC_STAT_AREA]) for i in range(1, n_glue)
+                if gstats[i, cv2.CC_STAT_AREA] > 200]
+    check(len(glue_big) == 1,
+          f'粘连用例成立：两块在掩码里连成 1 个连通域（{glue_big}）',
+          f'粘连用例不成立：掩码里是 {len(glue_big)} 个连通域 {glue_big}，'
+          '没测到分割')
+    glue_table = [('red', 0.0), ('blue', 111.0)]
+    glue_blocks, _gm, glue_info = detect_blocks(touch, probe_args, glue_table,
+                                                {}, verbose=False)
+    got = {b['color']: b for b in glue_blocks}
+    check(set(got) == {'red', 'blue'},
+          f'粘连分割：一个连通域拆出 {sorted(got)} 两块',
+          f'粘连分割失败：只拆出 {sorted(got)}（红+蓝都该在），'
+          f'拆分增益={glue_info["hue_split_gain"]}')
+    if set(got) == {'red', 'blue'}:
+        check(all(b['hue_concentration'] >= 0.9 for b in glue_blocks),
+              '拆分后两块色相集中度都 >= 0.9（'
+              + ', '.join(f'{c}:{b["hue_concentration"]:.3f}'
+                          for c, b in sorted(got.items())) + '）',
+              '拆分后集中度不够高：'
+              + str({c: round(b['hue_concentration'], 3)
+                     for c, b in got.items()}))
+        check(got['red']['cx'] < got['blue']['cx'],
+              f'左右顺序正确（红 {got["red"]["cx"]:.0f} < 蓝 '
+              f'{got["blue"]["cx"]:.0f}）',
+              '拆分后左右位置反了：'
+              f'红 {got["red"]["cx"]:.0f}, 蓝 {got["blue"]["cx"]:.0f}')
+        check(glue_info['hue_split_gain'] >= 1,
+              f'记录了拆分增益 {glue_info["hue_split_gain"]}',
+              '拆分增益没有记录')
+
+    # ---- I. 色相漂移校正（现场：同一块黄料 27 → 37.7，超 hue_tol 被丢）----
+    # 用 hue_shift 在**绘制时**转角，模拟灯光/白平衡让整幅画面的色相整体旋转。
+    drift_table = [('yellow', 27.0), ('green', 62.0), ('blue', 111.0),
+                   ('purple', 130.0)]
+
+    def _drift_frame(shift):
+        img = _blank_frame()
+        for _cx, _cy, _h in ((150, 150, 27), (320, 150, 62),
+                             (480, 150, 111), (220, 330, 130)):
+            _draw_rect(img, _cx, _cy, 52, (_h, 220, 215), hue_shift=shift)
+        return img
+
+    # 漂移量取 ±10 度：再大就会把高饱和的蓝推到 RGB 色域边角上
+    # （H=111 的蓝 chroma≈78，转到 H=99 只剩 40），那时掩码阈值先把它滤掉了，
+    # 测的就不再是"颜色判据"而是"色域边界"——那是另一个问题，不该混进来。
+    # 这一组用例把 --chroma-min 钉在 44，冻住色度自适应阈值。
+    # 原因：合成图里的深紫（H=130 S=215）chroma 高达 110，会把自适应阈值
+    # （0.45×p99.5）抬到 49；而蓝色被旋转到 H=101 时 chroma 掉到 43.6
+    # （靠近 RGB 色域边角），于是**掩码阶段**就把蓝块滤掉了。
+    # 那属于"色域 + 色度阈值"的问题，会把本条要验的"色相漂移"结论搞混。
+    # 钉住下限之后，这里测的就是纯粹的"整表旋转 → 平移校正"这条链路；
+    # 色度自适应阈值本身由主自检（B 段五块 + D 段干扰物）负责覆盖。
+    drift_args = argparse.Namespace(**vars(probe_args))
+    drift_args.chroma_min = 44.0
+
+    for drift in (10, -10):
+        drift_frame = _drift_frame(drift)
+        auto_blocks, _dm, auto_info = detect_blocks(drift_frame, drift_args,
+                                                    drift_table, {},
+                                                    verbose=False)
+        no_drift_args = argparse.Namespace(**vars(drift_args))
+        no_drift_args.no_hue_drift = True
+        off_blocks, _om, _oi = detect_blocks(drift_frame, no_drift_args,
+                                             drift_table, {}, verbose=False)
+        # 断言"恢复了绝大多数"而不是"四块全回来"：蓝色在 H=111 附近本来就贴着
+        # RGB 色域的青色角，往 -10° 一转 chroma 掉到 37 左右，会被**掩码阈值**
+        # 先滤掉（那属于色域/阈值问题，不是色相判据问题）。这条用例要证明的是
+        # "整表漂移能被估出来并平移回去"，所以用"恢复数"衡量更贴切，
+        # 也避免把色域边界问题伪装成色相问题。
+        check(len(auto_blocks) >= 3 and len(auto_blocks) > len(off_blocks),
+              f'漂移 {drift:+d}° 时自动校正 offset='
+              f'{auto_info["hue_offset"]:+.1f}，恢复 '
+              f'{len(auto_blocks)}/4 块（关掉校正只剩 {len(off_blocks)} 块）',
+              f'漂移 {drift:+d}° 时校正没起作用：开着 {len(auto_blocks)} 块、'
+              f'关着 {len(off_blocks)} 块')
+        check(abs(auto_info['hue_offset'] - drift) <= 4.0,
+              f'估出的漂移 {auto_info["hue_offset"]:+.1f} 与真值 {drift:+d} 相符',
+              f'估出的漂移 {auto_info["hue_offset"]:+.1f} 偏离真值 {drift:+d} 太多')
+    # 没漂移时必须**不要**乱校正（否则等于把好表挪歪）
+    clean_blocks, _cm3, clean_info = detect_blocks(_drift_frame(0), drift_args,
+                                                   drift_table, {},
+                                                   verbose=False)
+    check(abs(clean_info['hue_offset']) <= 3.0 and len(clean_blocks) == 4,
+          f'无漂移时校正量接近 0（{clean_info["hue_offset"]:+.1f}），4 块照常检出',
+          f'无漂移时校正量 {clean_info["hue_offset"]:+.1f} 偏大，'
+          f'会把好表挪歪（检出 {len(clean_blocks)} 块）')
+
+    # ---- J. 碎条合并（现场：绿块被高光割出 6 条 hue≈59.5 的细缝）----
+    frag_img = _blank_frame()
+    _draw_rect(frag_img, 300, 240, 56, (62, 230, 220))
+    # 贴一条 40x8 的细长同色条（间距 6px：形态学闭运算补不上，但属于"紧贴"）
+    _frag_bgr = cv2.cvtColor(np.uint8([[[62, 210, 200]]]),
+                             cv2.COLOR_HSV2BGR)[0, 0]
+    frag_img[240 - 20:240 + 20, 300 + 28 + 6:300 + 28 + 6 + 8] = _frag_bgr
+    frag_table = [('green', 62.0)]
+    merge_blocks, _fmg, merge_info = detect_blocks(frag_img, probe_args,
+                                                   frag_table, {}, verbose=False,
+                                                   coverage=coverage)
+    no_merge_args = argparse.Namespace(**vars(probe_args))
+    no_merge_args.no_merge = True
+    _nb, _nmg, no_merge_info = detect_blocks(frag_img, no_merge_args,
+                                             frag_table, {}, verbose=False)
+    check(merge_info['regions_after_merge'] < merge_info['regions_raw']
+          and no_merge_info['regions_after_merge']
+          == no_merge_info['regions_raw'],
+          f'碎条被并回大块（连通域 {merge_info["regions_raw"]}→'
+          f'{merge_info["regions_after_merge"]}；关掉合并则保持 '
+          f'{no_merge_info["regions_after_merge"]}）',
+          f'碎条没有被合并：开着 {merge_info["regions_raw"]}→'
+          f'{merge_info["regions_after_merge"]}，'
+          f'关着 {no_merge_info["regions_raw"]}→'
+          f'{no_merge_info["regions_after_merge"]}')
+    check(len(merge_blocks) == 1 and merge_blocks[0]['color'] == 'green',
+          f'合并后仍是 1 块绿（质心 {merge_blocks[0]["cx"]:.0f},'
+          f'{merge_blocks[0]["cy"]:.0f}）' if merge_blocks else '合并后无检出',
+          f'合并后检出异常：{[b["color"] for b in merge_blocks]}')
+    # 反向保护 A：**小而远**的同色碎块必须被"距离闸"拒绝。
+    # 注意这里必须让碎块比宿主**明显小**（area 比 < frag_ratio），
+    # 否则循环会先在"只往更大的块上并"那一句 continue 掉，
+    # 距离判定根本不会执行——断言就变成了空的（这个坑我踩过一次：
+    # 原来用两个等大的块测"不误并"，它一直是靠面积比提前跳过而"通过"的）。
+    far_img = _blank_frame()
+    _draw_rect(far_img, 300, 240, 50, (62, 230, 220))
+    far_bgr = cv2.cvtColor(np.uint8([[[62, 210, 200]]]),
+                           cv2.COLOR_HSV2BGR)[0, 0]
+    far_img[236:244, 160:200] = far_bgr          # 40x8 的小块，离宿主约 90px
+    far_cov = {}
+    far_blocks, _frm, far_info = detect_blocks(far_img, probe_args, frag_table,
+                                               {}, verbose=False,
+                                               coverage=far_cov)
+    check(far_cov.get('dist_reject', 0) >= 1,
+          f'"小而远"的同色碎块被距离闸拒绝（距离判定执行 '
+          f'{far_cov.get("dist_check", 0)} 次、拒绝 '
+          f'{far_cov.get("dist_reject", 0)} 次）',
+          '距离闸没有被执行到——"不会把远处同色料并进来"这条结论没有依据'
+          f'（dist_check={far_cov.get("dist_check", 0)}, '
+          f'dist_reject={far_cov.get("dist_reject", 0)}）')
+    check(far_info['regions_after_merge'] == far_info['regions_raw'],
+          f'远处同色碎块没有被误并（连通域保持 {far_info["regions_raw"]}）',
+          f'远处的同色小碎块被误并了：{far_info["regions_raw"]}→'
+          f'{far_info["regions_after_merge"]}')
+
+    # 反向保护 B：两个等大的同色块**不许**并成一个
+    apart_img = _blank_frame()
+    _draw_rect(apart_img, 200, 240, 50, (62, 230, 220))
+    _draw_rect(apart_img, 300, 240, 50, (62, 230, 220))
+    apart_cov = {}
+    apart_blocks, _am, apart_info = detect_blocks(apart_img, probe_args,
+                                                  frag_table, {}, verbose=False,
+                                                  coverage=apart_cov)
+    check(len(apart_blocks) == 2
+          and apart_info['regions_after_merge'] == apart_info['regions_raw'],
+          f'两个同色块相距 50px 时没有被误并（仍 {len(apart_blocks)} 块）',
+          f'过度合并：两个同色块被并成了 {len(apart_blocks)} 块')
+
+    # ---- K. 大块（机械臂）护栏 ----
+    # 现场：黄色机械臂本体 9804px²、hue 与黄块一致。默认面积上限 + 尺寸上限
+    # 必须把它挡住，否则机械臂姿态一变就可能被当成黄块。
+    arm_img = _blank_frame()
+    _draw_rect(arm_img, 320, 240, 130, (27, 200, 200))
+    arm_blocks, _arm_m, _arm_i = detect_blocks(arm_img, probe_args,
+                                               [('yellow', 27.0)], {},
+                                               verbose=False)
+    arm_area = 130 * 130
+    check(not arm_blocks,
+          f'130px 见方的大黄块被挡住（面积 {arm_area}px² > 默认上限 '
+          f'{default_thresholds(arm_img.shape)[1]:.0f}px²）',
+          f'大块没被挡住：检出了 {[(b["color"], b["area"]) for b in arm_blocks]}，'
+          '机械臂姿态变化时有误判风险')
+
+    # ---- L. 覆盖率守卫：关键路径必须真的被跑到 ----
+    # 这条是给"测试通过但代码是坏的"兜底的。数字阈值都只是"这条路径至少
+    # 被走过"的下限（不是精确计数），任何一条为 0 就说明自检有盲区，
+    # 必须补用例而不是调阈值。
+    check(coverage.get('dist_check', 0) >= 1,
+          f'合并的距离判定被跑到（{coverage.get("dist_check", 0)} 次）',
+          '合并的距离判定一次都没执行——这条路径没有测试覆盖，'
+          '里面的任何错误都会漏到真机（上一轮就是这么崩的）')
+    check(coverage.get('merge', 0) >= 1,
+          f'合并动作真的执行过（{coverage.get("merge", 0)} 次）',
+          '合并动作一次都没执行——自检里的"合并"断言其实是空的')
+    check(coverage.get('dist_reject', 0) + far_cov.get('dist_reject', 0) >= 1,
+          f'合并的"距离太远就拒绝"分支被跑到（'
+          f'{coverage.get("dist_reject", 0) + far_cov.get("dist_reject", 0)} 次）',
+          '合并的拒绝分支没被执行——无法确认"不会过度合并"')
+    check(apart_cov.get('regions', 0) >= 2,
+          '同色等大块用例产出了多个区域（结论才有意义）',
+          '同色等大块用例区域数不足，"不误并"的结论不成立')
+    check(coverage.get('split_attempt', 0) >= 1
+          and coverage.get('regions', 0) >= 1,
+          f'分割/区域提取被跑到（区域数累计 {coverage.get("regions", 0)}）',
+          '区域提取一次都没执行')
+    check(coverage.get('drift_checked', 0) >= 1,
+          f'色相漂移估计被跑到（检查 {coverage.get("drift_checked", 0)} 次）',
+          '色相漂移估计一次都没执行')
+
+    # ---- G. 色表自标定（--probe-colors）----
+    # 复现现场那个真故障：色表里**根本没有紫色**（现场是紫色写成 150 后距离超限，
+    # 效果等价于"表里缺紫"）。此时紫块形状全过、只因颜色不匹配被判 no_color_match，
+    # 正是 --probe-colors 要捞回来的对象。
+    probe_table_partial = [('red', 0.0), ('yellow', 30.0), ('green', 60.0)]
+    _wb, _wm2, wrong_info = detect_blocks(frame, probe_args,
+                                          probe_table_partial, {},
+                                          verbose=False, collect_rejected=True)
+    probe_cands = [r for r in wrong_info['rejected']
+                   if r['reason'] == 'no_color_match'
+                   and r.get('mean_hue') is not None]
+    entries, _ordered = probe_color_table(
+        [{'mean_hue': float(r['mean_hue']) % 180.0,
+          'concentration': float(r.get('concentration') or float('nan')),
+          'area': float(r['area']), 'fill': float(r['fill']),
+          'solidity': float(r['solidity']), 'bbox': tuple(r['bbox'])}
+         for r in probe_cands], hue_tol=args.hue_tol)
+    probe_str = ','.join(f"{e['label']}:{e['center']:.0f}" for e in entries)
+    # 合成图里 5 块共 3 个不同色相（红 0/180、黄、紫），只有紫不在表里，
+    # 所以候选应当恰好是 1 个色相，且它必须落在紫色真值附近。
+    check(len(entries) == 1,
+          f'色表标定找到被漏掉的色相：{probe_str}（表里只有红/黄/绿）',
+          f'色表标定候选数不对：期望 1 个（只有紫不在表里），实测 {len(entries)}')
+    if entries:
+        d_purple = ang_diff_deg(entries[0]['center'], 130.0)
+        check(d_purple <= 4.0,
+              f'标定出的色相 {entries[0]["center"]:.1f} 与紫色真值 130 相差 '
+              f'{d_purple:.1f}',
+              f'标定出的色相 {entries[0]["center"]:.1f} 偏离紫色真值 130 达 '
+              f'{d_purple:.1f}')
+    check(all(e['suggested_tol'] >= 2.0 for e in entries) or not entries,
+          '每个色档都给出了自适应的建议容差',
+          '有色档的建议容差 < 2，标签边界不可用')
+    back = [(e['label'], e['center']) for e in entries]
+    closed = True
+    for e in entries:
+        label, dist, _second = classify_color(e['source']['mean_hue'], back)
+        if label != e['label'] or dist > args.hue_tol:
+            closed = False
+    check(closed and bool(entries),
+          f'回代闭环：{len(entries)} 个候选都能匹配上自己的标签',
+          '回代闭环失败：生成的色表无法复现自己的量测')
+
     if args.out:
         imwrite(args.out, annotate(frame, blocks, mask, info))
-        log(f'自检标注图：{args.out}')
+        imwrite(str(args.out) + '.cube.png', annotate(cube, cube_blocks, None,
+                                                      None))
+        log(f'自检标注图：{args.out}（以及 .cube.png 上表面示例）')
 
     print('\n'.join(notes))
     if failures:
@@ -1211,6 +2883,8 @@ def parse_args(argv=None):
                       help='ROS 2 模式：开相机并把 JSON 发到 /blocks')
     mode.add_argument('--selftest', action='store_true',
                       help='自检：合成图跑一遍并断言（不需要相机/ROS）')
+    mode.add_argument('--probe-colors', action='store_true',
+                      help='色表自标定：量出现场色相并打印可粘贴的 --colors')
 
     cam = ap.add_argument_group('相机')
     cam.add_argument('--camera', type=int, default=0, help='摄像头索引')
@@ -1247,7 +2921,12 @@ def parse_args(argv=None):
     shp.add_argument('--area-min', type=float, default=None,
                      help='轮廓面积下限（像素²）；默认按画面尺寸自适应')
     shp.add_argument('--area-max', type=float, default=None,
-                     help='轮廓面积上限（像素²）；默认按画面尺寸自适应')
+                     help='轮廓面积上限（像素²）；默认按画面尺寸自适应'
+                          '（画面的 5%，用于把机械臂本体挡住）')
+    shp.add_argument('--max-block-px', type=float, default=140.0,
+                     help='最小外接矩形最长边的上限（像素）；0=不限。'
+                          '4cm 物块在 640x480 下约 35~90px，140 给足余量，'
+                          '同时挡住机械臂那类大块')
     shp.add_argument('--aspect-max', type=float, default=1.8,
                      help='包围盒长宽比上限（正方形=1.0）')
     shp.add_argument('--fill-min', type=float, default=0.70,
@@ -1262,18 +2941,46 @@ def parse_args(argv=None):
     shp.add_argument('--limit', type=int, default=0,
                      help='每帧最多上报几块（0 = 不限）')
 
+    seg = ap.add_argument_group('粘连分割 / 碎条合并 / 色相漂移')
+    seg.add_argument('--no-split', action='store_true',
+                     help='关掉"按色相切分粘连连通域"（默认开）')
+    seg.add_argument('--no-merge', action='store_true',
+                     help='关掉"同色碎条并回大块"（默认开）')
+    seg.add_argument('--merge-dist', type=float, default=0.35,
+                     help='碎条合并的最大间距，单位是宿主块边长；'
+                          '必须远小于相邻物块间距，否则会把两块料粘起来')
+    seg.add_argument('--no-hue-drift', action='store_true',
+                     help='关掉在线色相漂移校正（默认开）')
+    seg.add_argument('--hue-drift-max', type=float, default=15.0,
+                     help='允许自动校正的最大漂移（H 单位）；超过就拒绝校正并告警，'
+                          '避免把色表整体带偏')
+
     st = ap.add_argument_group('自检')
     st.add_argument('--no-selftest-hue-check', action='store_true',
                     help='自检时跳过"色相表闭环"检查')
 
+    top = ap.add_argument_group('上表面（顶面）检测')
+    top.add_argument('--no-top-face', action='store_true',
+                     help='关掉上表面检测，只出剪影口径的结果（省一点 CPU）')
+
+    probe = ap.add_argument_group('色表自标定（--probe-colors 的附加参数）')
+    probe.add_argument('--probe-frames', type=int, default=15,
+                       help='走相机标定时取多少帧做中值（单帧偶发曝光跳变会让标定值不可复现）')
+
     args = ap.parse_args(argv)
-    if not (args.ros or args.selftest or args.image):
-        ap.error('必须指定一种模式：--image 图片 / --ros / --selftest')
+    # --probe-colors 自带一种模式：配 --image 用照片标定，或直接开相机标定
+    if not (args.ros or args.selftest or args.image or args.probe_colors):
+        ap.error('必须指定一种模式：--image 图片 / --ros / --selftest / --probe-colors')
     return args
 
 
 def main(argv=None):
     args = parse_args(argv)
+
+    # 色表标定不依赖现有颜色表（它要推翻/校正的正是这张表），所以放在前面
+    if args.probe_colors:
+        return run_probe_colors(args, dict(DEFAULT_HUE_CENTERS))
+
     hue_centers = dict(DEFAULT_HUE_CENTERS)
     color_table = parse_color_table(args.colors, hue_centers)
     if not color_table:

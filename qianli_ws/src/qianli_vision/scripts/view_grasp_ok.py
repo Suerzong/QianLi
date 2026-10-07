@@ -11,16 +11,16 @@ import mujoco
 import mujoco.viewer
 import numpy as np
 import sim_grasp as S
-from sim_grasp_validate import Trial, build
+from sim_grasp_validate import Trial, build, DEFAULT_OFFSET, DEFAULT_GRID, DEFAULT_APPROACH
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--obj-size', type=float, default=.020)
-    ap.add_argument('--offset', type=float, nargs=3, default=[8., -4., 8.])
-    ap.add_argument('--approach', type=float, default=.6)
+    ap.add_argument('--offset', type=float, nargs=3, default=DEFAULT_OFFSET)
+    ap.add_argument('--approach', type=float, default=DEFAULT_APPROACH)
     ap.add_argument('--retries', type=int, choices=(0,1,2), default=2)
-    ap.add_argument('--object-grid-mm', type=float, nargs=2, default=[111., 20.])
+    ap.add_argument('--object-grid-mm', type=float, nargs=2, default=DEFAULT_GRID)
     ap.add_argument('--loops', type=int, default=0, help='0 loops until window closes.')
     args = ap.parse_args()
     S.OBJ_GRID = tuple(np.asarray(args.object_grid_mm)/1000.)

@@ -463,7 +463,10 @@ class ObjectLocalizer(Node):
         if len(candidates) > 1:
             self._detection_reason = 'ambiguous_candidates'
             return None
-        return candidates[0] if candidates else None
+        if candidates:
+            self._detection_reason = 'detected'
+            return candidates[0]
+        return None
 
     # ---------- GUI ----------
     def _draw(self, frame, obj):

@@ -5,6 +5,7 @@ See sim_grasp_validate.py --help. Failures return a nonzero exit code.
 """
 import numpy as np
 from sim_ik_dls import solve_only
+from sim_grasp_validate import DEFAULT_APPROACH
 
 
 def goto(model, data, qadr, aadr, target, steps=500, grip=0.0,
@@ -18,7 +19,7 @@ def goto(model, data, qadr, aadr, target, steps=500, grip=0.0,
     return Trial(model, data).move(np.asarray(target), grip, yaw=yaw)
 
 
-def grasp(model, data, qadr, aadr, off_mm, obj_size, approach=0.6,
+def grasp(model, data, qadr, aadr, off_mm, obj_size, approach=DEFAULT_APPROACH,
           verbose=False):
     """Return acceptance result and measured physical metrics."""
     from sim_grasp_validate import Trial

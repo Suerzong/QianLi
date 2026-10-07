@@ -63,7 +63,74 @@ def _init_ros():
     ROS['Image'] = Image
     ROS['pub_img'] = node.create_publisher(Image, '/blocks_annotated', 2)
     ROS['pub_json'] = node.create_publisher(String, '/blocks', 10)
+    # 订阅关节角：把爪口开度叠在画面上。
+    # 为什么需要：触标要求"爪口开到 40mm 再对准"，但用户看不到实时角度，
+    # 而触标脚本会因为这个直接拒绝记录（实测被拦过一次：5.4° vs 期望 19.5°）。
+    # 用户本来就盯着这个相机画面在把爪子对到格点上，读数放这儿最顺手。
+    from sensor_msgs.msg import JointState
+    ROS['js'] = {}
+
+    def _on_js(m):
+        if len(m.name) == len(m.position):
+            ROS['js'].update(dict(zip(m.name, m.position)))
+
+    node.create_subscription(JointState, '/joint_states', _on_js, 10)
+    # **必须 spin**，否则订阅回调永远不触发 —— 只发布不 spin 时，
+    # /joint_states 会一直是空的，叠加读数静默消失（实测踩到）。
+    import threading as _th
+    ROS['spin_stop'] = False
+
+    def _spin():
+        while rclpy.ok() and not ROS.get('spin_stop'):
+            rclpy.spin_once(node, timeout_sec=0.1)
+
+    _th.Thread(target=_spin, daemon=True).start()
     print('  ROS 发布已启用：/blocks_annotated (Image) + /blocks (String JSON)')
+    print('  已订阅 /joint_states：会在画面上叠加爪口开度')
+
+
+def _overlay_gripper(img):
+    """在画面左上角画爪口开度，并标出触标目标（40mm / 19.5°）。"""
+    js = ROS.get('js') or {}
+    if 'gripper' not in js:
+        return img
+    ang = float(js['gripper'])
+    import math
+    deg = math.degrees(ang)
+    open_mm = None
+    try:
+        gm = ROS.get('gmodel')
+        if gm is None:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from gripper_model import GripperModel
+            gm = GripperModel(stride=24)
+            ROS['gmodel'] = gm
+        open_mm = gm.jaw_opening(ang)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 触标目标：TCP 已改成**固定爪内侧面中心**，不再要求开到 40mm。
+    # 开大到 ~60mm(33°) 时固定爪才是最低点，爪尖几乎正好在固定爪内侧面的
+    # 正下方（水平只偏 1mm）。若开到 40mm(19.5°)，最低的是活动爪、偏 44.5mm，
+    # 会在棋盘外面碰板。所以这里的目标是 33° 而不是 19.5°。
+    tgt_deg = CONFIG.get('target_gripper_deg', 33.0)
+    tol_deg = CONFIG.get('target_gripper_tol_deg', 10.0)
+    ok = abs(deg - tgt_deg) <= tol_deg
+    col = (0, 220, 0) if ok else (0, 165, 255)   # BGR
+    lines = [f'gripper {deg:+6.1f} deg']
+    if open_mm is not None:
+        lines.append(f'opening {open_mm*1000:5.1f} mm')
+    lines.append(f'touch target {tgt_deg:.0f} deg / ~60 mm')
+    lines.append('OK  (fixed jaw is lowest)' if ok else 'OPEN WIDER')
+    y = 22
+    for i, t in enumerate(lines):
+        scale = 0.62 if i < 2 else 0.5
+        th = 2 if i < 2 else 1
+        cv2.putText(img, t, (8, y), cv2.FONT_HERSHEY_SIMPLEX, scale,
+                    (0, 0, 0), th + 2)
+        cv2.putText(img, t, (8, y), cv2.FONT_HERSHEY_SIMPLEX, scale, col, th)
+        y += 22
+    return img
 
 
 def _publish(img_bgr, blocks):
@@ -147,6 +214,8 @@ def reader_thread():
         blocks, mask, info = cd.detect_blocks(frame, args, color_table,
                                               hue_centers)
         vis = cd.annotate(frame, blocks, mask, info)
+        if CONFIG.get('ros_publish'):
+            vis = _overlay_gripper(vis)
         n += 1
         now = time.time()
         if now - t_last >= 1.0:
@@ -307,7 +376,11 @@ def main():
     ap.add_argument('--height', type=int, default=480)
     ap.add_argument('--rate', type=float, default=10.0)
     ap.add_argument('--intrinsics', default='/tmp/camera_intrinsics.yaml')
-    ap.add_argument('--colors', default='red:0,yellow:30,green:60,purple:150')
+    ap.add_argument('--colors', default=None,
+                    help='颜色表。**不给就用 color_block_detect 的默认表** —— '
+                         '刻意做成单一来源：之前这里和检测器各写一份，'
+                         '重启前端时用回旧值把已经修好的 purple 又覆盖回 150，'
+                         '导致紫块静默消失。')
     ap.add_argument('--chroma-min', type=float, default=26)
     ap.add_argument('--hue-tol', type=float, default=8)
     ap.add_argument('--hue-consistency-min', type=float, default=0.55)
@@ -321,6 +394,13 @@ def main():
     ap.add_argument('--no-ros-publish', dest='ros_publish',
                     action='store_false')
     args = ap.parse_args()
+
+    # 颜色表单一来源：没显式给就照搬检测器的默认表（它带着"这台相机这套
+    # 灯光下实测"的注释）。避免前端和检测器各存一份、其中一份过期。
+    if not args.colors:
+        args.colors = ','.join(getattr(cd, 'DEFAULT_COLOR_TABLE', ()))
+        print(f'  颜色表取自 color_block_detect.DEFAULT_COLOR_TABLE: '
+              f'{args.colors}')
 
     CONFIG.update(vars(args))
     CONFIG['width'] = args.width
