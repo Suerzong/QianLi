@@ -9,6 +9,21 @@ export ROS_DOMAIN_ID=42
 export QI_ARM_PORT=/dev/qianli_arm
 ENV
 fi
+set_desktop_preference() {
+  if [[ -S "/run/user/$(id -u)/bus" ]]; then
+    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus" gsettings set "$@"
+  else
+    dbus-run-session -- gsettings set "$@"
+  fi
+}
+# Keep this dedicated VM visible during long ROS/ML runs, including on battery.
+set_desktop_preference org.gnome.desktop.session idle-delay 0
+set_desktop_preference org.gnome.desktop.screensaver lock-enabled false
+set_desktop_preference org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
+set_desktop_preference org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type nothing
+set_desktop_preference org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
+set_desktop_preference org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type nothing
+unset -f set_desktop_preference
 # Bind the verified external camera profile when it is already attached. Preserve
 # user overrides and leave unrelated camera hardware on its own default format.
 for camera in /dev/v4l/by-id/*-video-index0; do
@@ -58,9 +73,9 @@ if [[ -f "$HOME/QianLi/scripts/setup/source_env.sh" ]]; then source "$HOME/QianL
 SHELL
 fi
 if [[ -S "/run/user/$(id -u)/bus" ]]; then
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
   for entry in "$HOME"/Desktop/qianli-*.desktop; do
-    DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus" \
-      gio set "$entry" metadata::trusted true
+    gio set "$entry" metadata::trusted true
   done
 fi
 echo '[OK] Desktop, autostart and interactive terminal entries installed.'

@@ -21,4 +21,5 @@ mkdir -p "$HOME/.config" "$HOME/Desktop"
 touch "$HOME/.config/gnome-initial-setup-done"
 sudo systemctl set-default graphical.target
 sudo systemctl enable gdm3
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 echo '[OK] Persistent desktop installed; reboot after project setup.'
