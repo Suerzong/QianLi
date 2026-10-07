@@ -1,0 +1,3 @@
+{
+  "reason": "Manual early stop: short lookahead regressed to repeated progress-checker failure without translational motion; restore previous lookahead, retain planner tracking margin."
+}

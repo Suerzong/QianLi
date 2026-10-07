@@ -10,7 +10,9 @@ import numpy as np
 import rclpy
 from rclpy.task import Future
 from action_msgs.msg import GoalStatus
-from nav2_msgs.action import NavigateToPose, ComputePathToPose, Spin
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Path as RosPath
+from nav2_msgs.action import FollowPath, ComputePathToPose, Spin
 from std_srvs.srv import SetBool
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
@@ -105,7 +107,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertGreater(self.node.next_selection_wall, time.monotonic())
 
     def test_stop_before_acceptance_cancels_late_goal(self):
-        self.node.send('navigate', NavigateToPose.Goal(), self.candidate)
+        self.node.send('navigate', FollowPath.Goal(), self.candidate)
         self.node.stop('stopped')
         handle = FakeHandle()
         self.node.nav_clients['navigate'].sends[0][1].set_result(handle)
@@ -113,13 +115,13 @@ class LifecycleTests(unittest.TestCase):
         self.assertIsNotNone(self.node.operation)
         response = self.node.on_enable(SetBool.Request(data=True), SetBool.Response())
         self.assertFalse(response.success)
-        handle.result.set_result(SimpleNamespace(status=GoalStatus.STATUS_CANCELED, result=NavigateToPose.Result()))
+        handle.result.set_result(SimpleNamespace(status=GoalStatus.STATUS_CANCELED, result=FollowPath.Result()))
         self.assertIsNone(self.node.operation)
         self.assertEqual(self.node.phase, 'stopped')
         self.assertEqual(self.node.successes, 0)
 
     def test_cancel_ack_cannot_start_successor(self):
-        self.node.send('navigate', NavigateToPose.Goal(), self.candidate)
+        self.node.send('navigate', FollowPath.Goal(), self.candidate)
         handle = FakeHandle()
         self.node.nav_clients['navigate'].sends[0][1].set_result(handle)
         self.node.cancel('goal_timeout')
@@ -127,9 +129,37 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(self.node.phase, 'canceling')
         self.assertEqual(self.node.nav_clients['plan'].sends, [])
         # A SUCCESS racing a cancellation is still not permission to chain goals.
-        handle.result.set_result(SimpleNamespace(status=GoalStatus.STATUS_SUCCEEDED, result=NavigateToPose.Result()))
+        handle.result.set_result(SimpleNamespace(status=GoalStatus.STATUS_SUCCEEDED, result=FollowPath.Result()))
         self.assertEqual(self.node.successes, 0)
         self.assertEqual(self.node.failures, 1)
+
+    def test_controller_receives_the_validated_path(self):
+        self.node.healthy = lambda: ''
+        self.node.send('plan',ComputePathToPose.Goal(),self.candidate)
+        path = RosPath();path.header.frame_id='map'
+        for x in (.2,self.candidate.x):
+            p=PoseStamped();p.pose.position.x=x;path.poses.append(p)
+        result=ComputePathToPose.Result(path=path)
+        self.node.finish(self.node.operation,SimpleNamespace(status=GoalStatus.STATUS_SUCCEEDED,result=result),'')
+        goal = self.node.nav_clients['navigate'].sends[0][0]
+        self.assertIsInstance(goal,FollowPath.Goal)
+        self.assertEqual(goal.path.poses[0].pose.position.x,0.)
+        self.assertEqual(goal.path.poses[-1].pose.position.x,self.candidate.x)
+        self.assertEqual(goal.controller_id,'FollowPath')
+
+    def test_new_obstacle_in_path_cancels_even_with_safe_goal(self):
+        self.node.healthy = lambda: ''
+        candidate=Candidate(2.,0.,0.,2.5,0.,1.,1.)
+        path=RosPath();path.header.frame_id='map'
+        for x in (0.,2.):
+            p=PoseStamped();p.pose.position.x=x;path.poses.append(p)
+        self.node.send('navigate',FollowPath.Goal(path=path),candidate)
+        handle=FakeHandle();self.node.nav_clients['navigate'].sends[0][1].set_result(handle)
+        self.node.grid.cells[30,40]=100
+        self.node.tick()
+        self.assertEqual(handle.cancels,1)
+        self.assertEqual(self.node.operation['cancel'],'unsafe_path')
+        self.assertEqual(self.node.nav_clients['plan'].sends,[])
 
     def test_planner_tf_failure_does_not_blacklist_geometry(self):
         self.node.send('plan', ComputePathToPose.Goal(), self.candidate)
@@ -150,7 +180,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(self.node.nav_clients['navigate'].sends, [])
 
     def test_sensor_failure_requests_cancel_instead_of_new_target(self):
-        self.node.send('navigate', NavigateToPose.Goal(), self.candidate)
+        self.node.send('navigate', FollowPath.Goal(), self.candidate)
         handle = FakeHandle()
         self.node.nav_clients['navigate'].sends[0][1].set_result(handle)
         self.node.healthy = lambda: 'scan_invalid_or_stale'

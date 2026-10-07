@@ -1,0 +1,157 @@
+{
+  "src/qianli_exploration/package.xml": {
+    "source_sha256": "a85e8a0ae64815beeb2acc122369965eb58ac87c48122eb62ac3ca574f0fb116",
+    "installed_sha256": "a85e8a0ae64815beeb2acc122369965eb58ac87c48122eb62ac3ca574f0fb116",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/coverage_core.py": {
+    "source_sha256": "808f7dac98c26ecff45c822d0dc8e9eca825580305e10e4dfac377b754bbf3b9",
+    "installed_sha256": "808f7dac98c26ecff45c822d0dc8e9eca825580305e10e4dfac377b754bbf3b9",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/frontier_explorer.py": {
+    "source_sha256": "a77f4c44fbd26698b991b8e9e62ecc4085b0addb8670b8a9e203022296ddb1a9",
+    "installed_sha256": "a77f4c44fbd26698b991b8e9e62ecc4085b0addb8670b8a9e203022296ddb1a9",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/coverage_watch.py": {
+    "source_sha256": "472a13e91e376b970c3f172b39cc3e9c32405ecebcf146b251ef54e0ed13da29",
+    "installed_sha256": "472a13e91e376b970c3f172b39cc3e9c32405ecebcf146b251ef54e0ed13da29",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/frontier_core.py": {
+    "source_sha256": "7788579f3fe90de2fd32a4ab7172573f6d64fb85c841780f996f69877e599123",
+    "installed_sha256": "7788579f3fe90de2fd32a4ab7172573f6d64fb85c841780f996f69877e599123",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/exploration_check.py": {
+    "source_sha256": "6a24f9015e29b1c6ae0b656bc6dc135665d9333e00577799772d3395d54e5ba7",
+    "installed_sha256": "6a24f9015e29b1c6ae0b656bc6dc135665d9333e00577799772d3395d54e5ba7",
+    "match": true
+  },
+  "src/qianli_exploration/config/exploration.yaml": {
+    "source_sha256": "c0cf0ecc96f6f462f0aa148769479162efc9c2dafce95d3186a0061ba02b98bf",
+    "installed_sha256": "c0cf0ecc96f6f462f0aa148769479162efc9c2dafce95d3186a0061ba02b98bf",
+    "match": true
+  },
+  "src/qianli_exploration/launch/exploration.launch.py": {
+    "source_sha256": "99d0f2ae69824636132e955e36be1c587a3ffb839f0621bc8fa3e9bb8b41d6aa",
+    "installed_sha256": "99d0f2ae69824636132e955e36be1c587a3ffb839f0621bc8fa3e9bb8b41d6aa",
+    "match": true
+  },
+  "src/qianli_navigation/package.xml": {
+    "source_sha256": "fd840728e6d3fc791856aef261b89e33224ebaa045ccb783e35147266f1eb40b",
+    "installed_sha256": "fd840728e6d3fc791856aef261b89e33224ebaa045ccb783e35147266f1eb40b",
+    "match": true
+  },
+  "src/qianli_navigation/scripts/navigation_test.py": {
+    "source_sha256": "a2d4ab7e8ed538cda99514bf68ca05092e67145e107ac6585873f15f2d7c2da7",
+    "installed_sha256": "a2d4ab7e8ed538cda99514bf68ca05092e67145e107ac6585873f15f2d7c2da7",
+    "match": true
+  },
+  "src/qianli_navigation/config/nav2_params.yaml": {
+    "source_sha256": "a8dfed84fac5e65232b3d58d19f2d72214102f03538a979ff8305c8811c4fc29",
+    "installed_sha256": "a8dfed84fac5e65232b3d58d19f2d72214102f03538a979ff8305c8811c4fc29",
+    "match": true
+  },
+  "src/qianli_navigation/launch/navigation.launch.py": {
+    "source_sha256": "5bfef0fc66876284fc56f22769ab947f6dd2f4f65a0e2cf5387db69021fb577b",
+    "installed_sha256": "5bfef0fc66876284fc56f22769ab947f6dd2f4f65a0e2cf5387db69021fb577b",
+    "match": true
+  },
+  "src/qianli_navigation/launch/localization.launch.py": {
+    "source_sha256": "058d84c50b3882127273e7b0ac192031e62827f5152721d90fbb9506ee80278d",
+    "installed_sha256": "058d84c50b3882127273e7b0ac192031e62827f5152721d90fbb9506ee80278d",
+    "match": true
+  },
+  "src/qianli_bringup/package.xml": {
+    "source_sha256": "e53831ffabde1d9bd324fb0c040832016087a00f092cf699e98569eb405e3521",
+    "installed_sha256": "e53831ffabde1d9bd324fb0c040832016087a00f092cf699e98569eb405e3521",
+    "match": true
+  },
+  "src/qianli_bringup/launch/floorplan.launch.py": {
+    "source_sha256": "73e26217652d540ab6523c740dd91a8d7fc6438a8a41513ba8232985fc1fbda2",
+    "installed_sha256": "73e26217652d540ab6523c740dd91a8d7fc6438a8a41513ba8232985fc1fbda2",
+    "match": true
+  },
+  "src/qianli_bringup/launch/training.launch.py": {
+    "source_sha256": "d5c33f3d4cabe045dd9588649e2e7798fa61c45775b9d612f39dcc4f7e2bfcf0",
+    "installed_sha256": "d5c33f3d4cabe045dd9588649e2e7798fa61c45775b9d612f39dcc4f7e2bfcf0",
+    "match": true
+  },
+  "src/qianli_bringup/launch/sim.launch.py": {
+    "source_sha256": "f8df339582549e96f15ef9ad4da87ee361090ccdd2a7b8d1fb6af8008c91bd9a",
+    "installed_sha256": "f8df339582549e96f15ef9ad4da87ee361090ccdd2a7b8d1fb6af8008c91bd9a",
+    "match": true
+  },
+  "src/qianli_sim/package.xml": {
+    "source_sha256": "d59a21446393e32c56e126725aac6721b64f96f2c606a948b06fb3a7f3b76851",
+    "installed_sha256": "d59a21446393e32c56e126725aac6721b64f96f2c606a948b06fb3a7f3b76851",
+    "match": true
+  },
+  "src/qianli_sim/scripts/normalize_sim_scan.py": {
+    "source_sha256": "c4d349fe96212584376f874aee67233e5b01514bc904fae1145d7aa5a357e499",
+    "installed_sha256": "c4d349fe96212584376f874aee67233e5b01514bc904fae1145d7aa5a357e499",
+    "match": true
+  },
+  "src/qianli_sim/scripts/check_system.py": {
+    "source_sha256": "4f4c42a2b2524bdc10f7514e0e4926c32c272842a7d7ded7b99149f900e70bc4",
+    "installed_sha256": "4f4c42a2b2524bdc10f7514e0e4926c32c272842a7d7ded7b99149f900e70bc4",
+    "match": true
+  },
+  "src/qianli_sim/scripts/scan_ranges.py": {
+    "source_sha256": "e6392813f40a14dbbd56415967b26f0bd788f3aeb9666fb4717300a2f24ee069",
+    "installed_sha256": "e6392813f40a14dbbd56415967b26f0bd788f3aeb9666fb4717300a2f24ee069",
+    "match": true
+  },
+  "src/qianli_sim/scripts/check_imu_motion.py": {
+    "source_sha256": "2a0dcc1897eeb4f9072aeb1eb695daa1e1b5b5e0af14589a4f74403cc0980337",
+    "installed_sha256": "2a0dcc1897eeb4f9072aeb1eb695daa1e1b5b5e0af14589a4f74403cc0980337",
+    "match": true
+  },
+  "src/qianli_sim/scripts/ideal_kinematic_sim.py": {
+    "source_sha256": "82f06b8e93444499adeab05f0858bfddb309666b7b75f9ec859528ca47b83e30",
+    "installed_sha256": "82f06b8e93444499adeab05f0858bfddb309666b7b75f9ec859528ca47b83e30",
+    "match": true
+  },
+  "src/qianli_sim/config/bridge.yaml": {
+    "source_sha256": "62841d5dd0178f60efab06cd1a020ea48d587251aa2a92d97b2d813f26d55524",
+    "installed_sha256": "62841d5dd0178f60efab06cd1a020ea48d587251aa2a92d97b2d813f26d55524",
+    "match": true
+  },
+  "src/qianli_sim/launch/sim.launch.py": {
+    "source_sha256": "8c3818a1914256877325c81bdf523cdaf2c8502130c75c294a9d0cf476f65acc",
+    "installed_sha256": "8c3818a1914256877325c81bdf523cdaf2c8502130c75c294a9d0cf476f65acc",
+    "match": true
+  },
+  "src/qianli_slam/package.xml": {
+    "source_sha256": "b34d07aa2a83f629e7486e6728f2c9fabda6293c0fd2235a91441b54a2dc256c",
+    "installed_sha256": "b34d07aa2a83f629e7486e6728f2c9fabda6293c0fd2235a91441b54a2dc256c",
+    "match": true
+  },
+  "src/qianli_slam/maps/qianli_test_map.yaml": {
+    "source_sha256": "94d8f7ccc305be22ff948611ab3bda56a6aeca9d82fe324400d9b01a6854391e",
+    "installed_sha256": "94d8f7ccc305be22ff948611ab3bda56a6aeca9d82fe324400d9b01a6854391e",
+    "match": true
+  },
+  "src/qianli_slam/maps/qianli_bupt_shahe_public_teaching_floor1_approx.yaml": {
+    "source_sha256": "7ac036f39d18e826fd2df77e0c261b2dbe95f7ceac759a08620f647b4cd74cad",
+    "installed_sha256": "7ac036f39d18e826fd2df77e0c261b2dbe95f7ceac759a08620f647b4cd74cad",
+    "match": true
+  },
+  "src/qianli_slam/maps/qianli_bupt_shahe_public_teaching_floor1_clean_abstract_v0_2.yaml": {
+    "source_sha256": "a96c2ea2c7930017079c4ca91845be7dec66f7711bb514c3b9b329b1fc242695",
+    "installed_sha256": "a96c2ea2c7930017079c4ca91845be7dec66f7711bb514c3b9b329b1fc242695",
+    "match": true
+  },
+  "src/qianli_slam/config/mapper_params.yaml": {
+    "source_sha256": "ebc6340c8e75281a7283e4ca677205cab85aea8141b04f4e860e9339a9e3bb97",
+    "installed_sha256": "ebc6340c8e75281a7283e4ca677205cab85aea8141b04f4e860e9339a9e3bb97",
+    "match": true
+  },
+  "src/qianli_slam/launch/slam.launch.py": {
+    "source_sha256": "f2e25f0bc1cbbd4889892fbbfd8c735186386e422e1ef7adf302cd528c759670",
+    "installed_sha256": "f2e25f0bc1cbbd4889892fbbfd8c735186386e422e1ef7adf302cd528c759670",
+    "match": true
+  }
+}

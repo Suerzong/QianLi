@@ -1,0 +1,5 @@
+{
+  "source_trial": "smac_follow",
+  "reason": "Additional planner tracking margin and shorter lookahead variants regressed; selected existing measured trial, not a fresh replay or exhaustive-validation PASS.",
+  "source_and_scene_match": true
+}

@@ -6,7 +6,7 @@
 | 输入 | /scan | LaserScan，传感器有效性/墙钟超时检查 |
 | 输入 | map→base_footprint | TF2，目标与地图使用同一 frame |
 | 查询 | /compute_path_to_pose | ComputePathToPose，成功后检查整段路径净空 |
-| 输出 | /navigate_to_pose | NavigateToPose，串行委托 Nav2 |
+| 输出 | /follow_path | FollowPath，直接执行已检查路径，串行委托 Nav2 |
 | 输出 | /spin | Spin，仅用于启动时的原地观察 |
 | 输出 | /exploration/status | String JSON，transient_local |
 | 输出 | /exploration/frontiers | MarkerArray，transient_local |

@@ -1,0 +1,791 @@
+{
+  "result": "FAIL",
+  "reason": "premature_stalled",
+  "stop_confirmed": true,
+  "wall_elapsed_s": 594.115,
+  "initial_known_cells": 1441,
+  "final_known_cells": 266254,
+  "known_gain_cells": 264813,
+  "free_gain_cells": 250549,
+  "path_length_m": 88.6268174422217,
+  "truth_samples": 29220,
+  "geometry_samples": 3665,
+  "raw_collision_samples": 0,
+  "padded_collision_samples": 0,
+  "min_padded_clearance_m": 0.06524848746331581,
+  "exploration_before_stop": {
+    "schema_version": 1,
+    "phase": "stalled",
+    "reason": "stalled",
+    "enabled": false,
+    "terminal": "stalled",
+    "wall_elapsed_s": 600.104,
+    "initial_known_cells": 1441,
+    "known_cells": 266254,
+    "known_gain_cells": 264813,
+    "known_area_m2": 665.635019837469,
+    "successful_goals": 16,
+    "failed_candidates": 1,
+    "map_resets": 0,
+    "blacklisted_goals": 0,
+    "frontier_cells": 5906,
+    "frontier_clusters": 62,
+    "candidate_goals": 0,
+    "scan_age_s": 0.035,
+    "map_age_s": 0.36,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 15.989,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 19.162,
+        "x": -0.1493993860946583,
+        "y": 2.963030309741735,
+        "yaw": 2.999695598985629,
+        "frontier_x": -1.1993994017408776,
+        "frontier_y": 3.1130303119769094,
+        "gain_m2": 1.1275000336021188,
+        "score": 0.2750000050972875,
+        "path_length_m": 3.070735209328812
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 32.614,
+        "goal": [
+          -0.1493993860946583,
+          2.963030309741735
+        ],
+        "known_cells": 61597
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 35.166,
+        "x": -0.4625742336638483,
+        "y": 4.564855308833277,
+        "yaw": -2.4149503129080676,
+        "frontier_x": -0.9125742403693708,
+        "frontier_y": 4.164855302872812,
+        "gain_m2": 2.0350000606477265,
+        "score": 0.6564516258405659,
+        "path_length_m": 1.8568773502418818
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 44.105,
+        "goal": [
+          -0.4625742336638483,
+          4.564855308833277
+        ],
+        "known_cells": 68721
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 46.646,
+        "x": -1.112574243349603,
+        "y": 7.455231136794786,
+        "yaw": -2.896613990462929,
+        "frontier_x": -1.7125742522902998,
+        "frontier_y": 7.3052311345596115,
+        "gain_m2": 3.007500089630485,
+        "score": 0.6398936285851915,
+        "path_length_m": 3.157620318050571
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 62.092,
+        "goal": [
+          -1.112574243349603,
+          7.455231136794786
+        ],
+        "known_cells": 78822
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 64.16,
+        "x": -0.9125742403693708,
+        "y": 9.455231166597109,
+        "yaw": -2.714965160462917,
+        "frontier_x": -1.4625742485650095,
+        "frontier_y": 9.205231162871819,
+        "gain_m2": 2.690000080168248,
+        "score": 0.80298509016404,
+        "path_length_m": 2.333113756807876
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 75.305,
+        "goal": [
+          -0.9125742403693708,
+          9.455231166597109
+        ],
+        "known_cells": 84912
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 77.653,
+        "x": -1.012574241859487,
+        "y": 12.105231206085186,
+        "yaw": -2.7928216500058864,
+        "frontier_x": -1.5625742500551256,
+        "frontier_y": 11.905231203104954,
+        "gain_m2": 3.350000099837781,
+        "score": 0.8481012816598946,
+        "path_length_m": 2.9460062569135816
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 90.993,
+        "goal": [
+          -1.012574241859487,
+          12.105231206085186
+        ],
+        "known_cells": 98191
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 93.176,
+        "x": -0.32615957425535314,
+        "y": 14.655231244083147,
+        "yaw": 3.141592653589793,
+        "frontier_x": -0.9261595831960499,
+        "frontier_y": 14.655231244083147,
+        "gain_m2": 3.245000096708537,
+        "score": 0.7375000134872441,
+        "path_length_m": 2.9787226214867952
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 106.926,
+        "goal": [
+          -0.32615957425535314,
+          14.655231244083147
+        ],
+        "known_cells": 134926
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 109.202,
+        "x": 3.7238404860943497,
+        "y": 18.655231303687792,
+        "yaw": 2.0032041023654346,
+        "frontier_x": 3.4238404816240013,
+        "frontier_y": 19.305231313373547,
+        "gain_m2": 4.477500133439899,
+        "score": 0.4947513894024662,
+        "path_length_m": 6.053158497045455
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 136.759,
+        "goal": [
+          3.7238404860943497,
+          18.655231303687792
+        ],
+        "known_cells": 159458
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 139.219,
+        "x": 0.8738404436260403,
+        "y": 20.605231332745056,
+        "yaw": 1.3101939350475555,
+        "frontier_x": 1.0738404466062725,
+        "frontier_y": 21.355231343920927,
+        "gain_m2": 3.1150000928342347,
+        "score": 0.541739139911245,
+        "path_length_m": 3.8239861673710602
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 158.671,
+        "goal": [
+          0.8738404436260403,
+          20.605231332745056
+        ],
+        "known_cells": 168369
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 161.224,
+        "x": 0.2231433674013914,
+        "y": 21.775333068715675,
+        "yaw": -2.1112158270654806,
+        "frontier_x": -0.07685663706895696,
+        "frontier_y": 21.275333061265094,
+        "gain_m2": 2.8975000863522298,
+        "score": 0.9822034094278257,
+        "path_length_m": 1.6380064128604521
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 172.48,
+        "goal": [
+          0.2231433674013914,
+          21.775333068715675
+        ],
+        "known_cells": 175325
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 174.728,
+        "x": 0.6731433741069139,
+        "y": 24.375333107458694,
+        "yaw": -2.7928216500058864,
+        "frontier_x": 0.12314336591127528,
+        "frontier_y": 24.17533310447846,
+        "gain_m2": 3.7100001105666167,
+        "score": 0.872941192539093,
+        "path_length_m": 2.971899210067032
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 188.198,
+        "goal": [
+          0.6731433741069139,
+          24.375333107458694
+        ],
+        "known_cells": 182025
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 190.799,
+        "x": 0.6731433741069139,
+        "y": 27.175333149181945,
+        "yaw": -2.875340604438868,
+        "frontier_x": 0.12314336591127528,
+        "frontier_y": 27.02533314694677,
+        "gain_m2": 4.192500124946237,
+        "score": 1.0481250195228493,
+        "path_length_m": 3.074917295082261
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 204.05,
+        "goal": [
+          0.6731433741069139,
+          27.175333149181945
+        ],
+        "known_cells": 191471
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 206.262,
+        "x": 0.6231433733618559,
+        "y": 30.12533319314037,
+        "yaw": -2.7928216500058864,
+        "frontier_x": 0.07314336516621722,
+        "frontier_y": 29.92533319016014,
+        "gain_m2": 4.490000133812429,
+        "score": 1.0690476387705392,
+        "path_length_m": 3.1898839322721457
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 219.507,
+        "goal": [
+          0.6231433733618559,
+          30.12533319314037
+        ],
+        "known_cells": 204608
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 221.76,
+        "x": 2.6731434039092363,
+        "y": 32.67533323113833,
+        "yaw": 3.141592653589793,
+        "frontier_x": 2.0731433949685396,
+        "frontier_y": 32.67533323113833,
+        "gain_m2": 3.7425001115351924,
+        "score": 0.6623893921483127,
+        "path_length_m": 3.819383248163086
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 237.614,
+        "goal": [
+          2.6731434039092363,
+          32.67533323113833
+        ],
+        "known_cells": 223613
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 240.339,
+        "x": 6.623143462768823,
+        "y": 32.42533322741304,
+        "yaw": -1.5707963267948966,
+        "frontier_x": 6.623143462768823,
+        "frontier_y": 31.825333218472345,
+        "gain_m2": 2.9250000871717936,
+        "score": 0.5792079311320331,
+        "path_length_m": 4.126029979437491
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 260.596,
+        "goal": [
+          6.623143462768823,
+          32.42533322741304
+        ],
+        "known_cells": 237198
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 263.332,
+        "x": 7.123143470219404,
+        "y": 28.12533316333805,
+        "yaw": -0.22679884805388587,
+        "frontier_x": 7.773143479905158,
+        "frontier_y": 27.975333161102874,
+        "gain_m2": 1.847500055059791,
+        "score": 0.3105042070851712,
+        "path_length_m": 4.523430831004799
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 284.996,
+        "goal": [
+          7.123143470219404,
+          28.12533316333805
+        ],
+        "known_cells": 244052
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 287.246,
+        "x": 7.323143473199636,
+        "y": 20.775333053814514,
+        "yaw": 0.0,
+        "frontier_x": 7.973143482885391,
+        "frontier_y": 20.775333053814514,
+        "gain_m2": 2.1725000647455457,
+        "score": 0.24971264782687136,
+        "path_length_m": 7.648001814915483
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 332.48,
+        "goal": [
+          7.323143473199636,
+          20.775333053814514
+        ],
+        "known_cells": 248775
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 334.77,
+        "x": -9.826856782355279,
+        "y": 13.475332945036037,
+        "yaw": -2.485897027348257,
+        "frontier_x": -10.476856792041033,
+        "frontier_y": 12.975332937585456,
+        "gain_m2": 5.76500017181039,
+        "score": 0.22563601132162162,
+        "path_length_m": 20.609827269216066
+      },
+      {
+        "event": "candidate_failed",
+        "wall_elapsed_s": 448.919,
+        "goal": [
+          -9.826856782355279,
+          13.475332945036037
+        ],
+        "reason": ""
+      }
+    ]
+  },
+  "exploration_after_stop": {
+    "schema_version": 1,
+    "phase": "stopped",
+    "reason": "stopped",
+    "enabled": false,
+    "terminal": "stopped",
+    "wall_elapsed_s": 600.113,
+    "initial_known_cells": 1441,
+    "known_cells": 266254,
+    "known_gain_cells": 264813,
+    "known_area_m2": 665.635019837469,
+    "successful_goals": 16,
+    "failed_candidates": 1,
+    "map_resets": 0,
+    "blacklisted_goals": 0,
+    "frontier_cells": 5906,
+    "frontier_clusters": 62,
+    "candidate_goals": 0,
+    "scan_age_s": 0.043,
+    "map_age_s": 0.368,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 15.989,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 19.162,
+        "x": -0.1493993860946583,
+        "y": 2.963030309741735,
+        "yaw": 2.999695598985629,
+        "frontier_x": -1.1993994017408776,
+        "frontier_y": 3.1130303119769094,
+        "gain_m2": 1.1275000336021188,
+        "score": 0.2750000050972875,
+        "path_length_m": 3.070735209328812
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 32.614,
+        "goal": [
+          -0.1493993860946583,
+          2.963030309741735
+        ],
+        "known_cells": 61597
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 35.166,
+        "x": -0.4625742336638483,
+        "y": 4.564855308833277,
+        "yaw": -2.4149503129080676,
+        "frontier_x": -0.9125742403693708,
+        "frontier_y": 4.164855302872812,
+        "gain_m2": 2.0350000606477265,
+        "score": 0.6564516258405659,
+        "path_length_m": 1.8568773502418818
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 44.105,
+        "goal": [
+          -0.4625742336638483,
+          4.564855308833277
+        ],
+        "known_cells": 68721
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 46.646,
+        "x": -1.112574243349603,
+        "y": 7.455231136794786,
+        "yaw": -2.896613990462929,
+        "frontier_x": -1.7125742522902998,
+        "frontier_y": 7.3052311345596115,
+        "gain_m2": 3.007500089630485,
+        "score": 0.6398936285851915,
+        "path_length_m": 3.157620318050571
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 62.092,
+        "goal": [
+          -1.112574243349603,
+          7.455231136794786
+        ],
+        "known_cells": 78822
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 64.16,
+        "x": -0.9125742403693708,
+        "y": 9.455231166597109,
+        "yaw": -2.714965160462917,
+        "frontier_x": -1.4625742485650095,
+        "frontier_y": 9.205231162871819,
+        "gain_m2": 2.690000080168248,
+        "score": 0.80298509016404,
+        "path_length_m": 2.333113756807876
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 75.305,
+        "goal": [
+          -0.9125742403693708,
+          9.455231166597109
+        ],
+        "known_cells": 84912
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 77.653,
+        "x": -1.012574241859487,
+        "y": 12.105231206085186,
+        "yaw": -2.7928216500058864,
+        "frontier_x": -1.5625742500551256,
+        "frontier_y": 11.905231203104954,
+        "gain_m2": 3.350000099837781,
+        "score": 0.8481012816598946,
+        "path_length_m": 2.9460062569135816
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 90.993,
+        "goal": [
+          -1.012574241859487,
+          12.105231206085186
+        ],
+        "known_cells": 98191
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 93.176,
+        "x": -0.32615957425535314,
+        "y": 14.655231244083147,
+        "yaw": 3.141592653589793,
+        "frontier_x": -0.9261595831960499,
+        "frontier_y": 14.655231244083147,
+        "gain_m2": 3.245000096708537,
+        "score": 0.7375000134872441,
+        "path_length_m": 2.9787226214867952
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 106.926,
+        "goal": [
+          -0.32615957425535314,
+          14.655231244083147
+        ],
+        "known_cells": 134926
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 109.202,
+        "x": 3.7238404860943497,
+        "y": 18.655231303687792,
+        "yaw": 2.0032041023654346,
+        "frontier_x": 3.4238404816240013,
+        "frontier_y": 19.305231313373547,
+        "gain_m2": 4.477500133439899,
+        "score": 0.4947513894024662,
+        "path_length_m": 6.053158497045455
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 136.759,
+        "goal": [
+          3.7238404860943497,
+          18.655231303687792
+        ],
+        "known_cells": 159458
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 139.219,
+        "x": 0.8738404436260403,
+        "y": 20.605231332745056,
+        "yaw": 1.3101939350475555,
+        "frontier_x": 1.0738404466062725,
+        "frontier_y": 21.355231343920927,
+        "gain_m2": 3.1150000928342347,
+        "score": 0.541739139911245,
+        "path_length_m": 3.8239861673710602
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 158.671,
+        "goal": [
+          0.8738404436260403,
+          20.605231332745056
+        ],
+        "known_cells": 168369
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 161.224,
+        "x": 0.2231433674013914,
+        "y": 21.775333068715675,
+        "yaw": -2.1112158270654806,
+        "frontier_x": -0.07685663706895696,
+        "frontier_y": 21.275333061265094,
+        "gain_m2": 2.8975000863522298,
+        "score": 0.9822034094278257,
+        "path_length_m": 1.6380064128604521
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 172.48,
+        "goal": [
+          0.2231433674013914,
+          21.775333068715675
+        ],
+        "known_cells": 175325
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 174.728,
+        "x": 0.6731433741069139,
+        "y": 24.375333107458694,
+        "yaw": -2.7928216500058864,
+        "frontier_x": 0.12314336591127528,
+        "frontier_y": 24.17533310447846,
+        "gain_m2": 3.7100001105666167,
+        "score": 0.872941192539093,
+        "path_length_m": 2.971899210067032
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 188.198,
+        "goal": [
+          0.6731433741069139,
+          24.375333107458694
+        ],
+        "known_cells": 182025
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 190.799,
+        "x": 0.6731433741069139,
+        "y": 27.175333149181945,
+        "yaw": -2.875340604438868,
+        "frontier_x": 0.12314336591127528,
+        "frontier_y": 27.02533314694677,
+        "gain_m2": 4.192500124946237,
+        "score": 1.0481250195228493,
+        "path_length_m": 3.074917295082261
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 204.05,
+        "goal": [
+          0.6731433741069139,
+          27.175333149181945
+        ],
+        "known_cells": 191471
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 206.262,
+        "x": 0.6231433733618559,
+        "y": 30.12533319314037,
+        "yaw": -2.7928216500058864,
+        "frontier_x": 0.07314336516621722,
+        "frontier_y": 29.92533319016014,
+        "gain_m2": 4.490000133812429,
+        "score": 1.0690476387705392,
+        "path_length_m": 3.1898839322721457
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 219.507,
+        "goal": [
+          0.6231433733618559,
+          30.12533319314037
+        ],
+        "known_cells": 204608
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 221.76,
+        "x": 2.6731434039092363,
+        "y": 32.67533323113833,
+        "yaw": 3.141592653589793,
+        "frontier_x": 2.0731433949685396,
+        "frontier_y": 32.67533323113833,
+        "gain_m2": 3.7425001115351924,
+        "score": 0.6623893921483127,
+        "path_length_m": 3.819383248163086
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 237.614,
+        "goal": [
+          2.6731434039092363,
+          32.67533323113833
+        ],
+        "known_cells": 223613
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 240.339,
+        "x": 6.623143462768823,
+        "y": 32.42533322741304,
+        "yaw": -1.5707963267948966,
+        "frontier_x": 6.623143462768823,
+        "frontier_y": 31.825333218472345,
+        "gain_m2": 2.9250000871717936,
+        "score": 0.5792079311320331,
+        "path_length_m": 4.126029979437491
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 260.596,
+        "goal": [
+          6.623143462768823,
+          32.42533322741304
+        ],
+        "known_cells": 237198
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 263.332,
+        "x": 7.123143470219404,
+        "y": 28.12533316333805,
+        "yaw": -0.22679884805388587,
+        "frontier_x": 7.773143479905158,
+        "frontier_y": 27.975333161102874,
+        "gain_m2": 1.847500055059791,
+        "score": 0.3105042070851712,
+        "path_length_m": 4.523430831004799
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 284.996,
+        "goal": [
+          7.123143470219404,
+          28.12533316333805
+        ],
+        "known_cells": 244052
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 287.246,
+        "x": 7.323143473199636,
+        "y": 20.775333053814514,
+        "yaw": 0.0,
+        "frontier_x": 7.973143482885391,
+        "frontier_y": 20.775333053814514,
+        "gain_m2": 2.1725000647455457,
+        "score": 0.24971264782687136,
+        "path_length_m": 7.648001814915483
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 332.48,
+        "goal": [
+          7.323143473199636,
+          20.775333053814514
+        ],
+        "known_cells": 248775
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 334.77,
+        "x": -9.826856782355279,
+        "y": 13.475332945036037,
+        "yaw": -2.485897027348257,
+        "frontier_x": -10.476856792041033,
+        "frontier_y": 12.975332937585456,
+        "gain_m2": 5.76500017181039,
+        "score": 0.22563601132162162,
+        "path_length_m": 20.609827269216066
+      },
+      {
+        "event": "candidate_failed",
+        "wall_elapsed_s": 448.919,
+        "goal": [
+          -9.826856782355279,
+          13.475332945036037
+        ],
+        "reason": ""
+      }
+    ]
+  },
+  "scope": "Partial exploration smoke check unless exhausted_verified; sampled ideal geometry, no wheel dynamics"
+}

@@ -172,3 +172,5 @@ ros2 launch qianli_bringup training.launch.py variant:=train_000 \
 ## 许可证
 
 [MIT](LICENSE)
+
+探索覆盖率口径、完整时长命令与结果见 [教学楼覆盖率验证](docs/EXPLORATION_COVERAGE.md)。

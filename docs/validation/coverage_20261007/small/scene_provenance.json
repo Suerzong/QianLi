@@ -1,0 +1,5 @@
+{
+  "file": "src/qianli_sim/worlds/qianli_test_world.sdf",
+  "sha256": "3acd9491cc89e26314b4e9ed35516afb5f50856bdce9f27c5a0fd763dc863e90",
+  "checker_wall_budget_s": 240
+}

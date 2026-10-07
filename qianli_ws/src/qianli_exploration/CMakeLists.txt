@@ -13,6 +13,8 @@ if(BUILD_TESTING)
     GENERATE_RESULT_FOR_RETURN_CODE_ZERO TIMEOUT 60)
   ament_add_test(frontier_lifecycle COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test/test_frontier_lifecycle.py"
     GENERATE_RESULT_FOR_RETURN_CODE_ZERO TIMEOUT 60)
+  ament_add_test(coverage_core COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test/test_coverage_core.py"
+    GENERATE_RESULT_FOR_RETURN_CODE_ZERO TIMEOUT 60)
   set_tests_properties(frontier_lifecycle PROPERTIES ENVIRONMENT "ROS_DOMAIN_ID=82")
 endif()
 ament_package()

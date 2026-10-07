@@ -74,9 +74,11 @@ def setup(context):
             'initial_y': spawn['spawn_y'],
             'initial_yaw': spawn['spawn_yaw'],
         }, condition=localization),
-        include('qianli_navigation', 'navigation.launch.py', condition=IfCondition(nav2)),
+        include('qianli_navigation', 'navigation.launch.py',
+                {'exploration_mode': LaunchConfiguration('explore')}, condition=IfCondition(nav2)),
         include('qianli_exploration', 'exploration.launch.py', {
             'report_file': LaunchConfiguration('exploration_report'),
+            'max_duration_s': LaunchConfiguration('exploration_duration_s'),
         }, condition=IfCondition(LaunchConfiguration('explore'))),
         Node(package='rviz2', executable='rviz2', name='qianli_training_rviz',
              arguments=['-d', str(scene_share / 'rviz/training.rviz'), '-f', fixed_frame],
@@ -88,6 +90,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('explore', default_value='false'),
         DeclareLaunchArgument('exploration_report', default_value=''),
+        DeclareLaunchArgument('exploration_duration_s', default_value='900.0',
+                             description='Wall-clock exploration budget; 0 disables the time limit'),
         DeclareLaunchArgument('variant', default_value='baseline'),
         DeclareLaunchArgument('world', default_value='', description='Override generated variant SDF'),
         DeclareLaunchArgument('map', default_value='', description='Override generated variant map YAML'),

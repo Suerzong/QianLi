@@ -1,0 +1,3 @@
+{
+  "reason": "Manual stop after unsafe-space pause and persistent coverage plateau: additional global tracking margin regressed coverage. Select previously measured smac_follow version; no claim of exhaustive mapping."
+}

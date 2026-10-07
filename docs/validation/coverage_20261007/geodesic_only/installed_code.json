@@ -1,0 +1,47 @@
+{
+  "src/qianli_exploration/scripts/coverage_core.py": {
+    "source": "808f7dac98c26ecff45c822d0dc8e9eca825580305e10e4dfac377b754bbf3b9",
+    "installed": "808f7dac98c26ecff45c822d0dc8e9eca825580305e10e4dfac377b754bbf3b9",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/frontier_explorer.py": {
+    "source": "5d3f2bfd17dcfd49c57fe3fa0816dfce101052ef2b7ef5f0b6a38a240048964f",
+    "installed": "5d3f2bfd17dcfd49c57fe3fa0816dfce101052ef2b7ef5f0b6a38a240048964f",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/coverage_watch.py": {
+    "source": "472a13e91e376b970c3f172b39cc3e9c32405ecebcf146b251ef54e0ed13da29",
+    "installed": "472a13e91e376b970c3f172b39cc3e9c32405ecebcf146b251ef54e0ed13da29",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/frontier_core.py": {
+    "source": "d777f842b7dcdb083f4fe023761d35332c660e598881397ea4cc1c3eab6e65f3",
+    "installed": "d777f842b7dcdb083f4fe023761d35332c660e598881397ea4cc1c3eab6e65f3",
+    "match": true
+  },
+  "src/qianli_exploration/scripts/exploration_check.py": {
+    "source": "6a24f9015e29b1c6ae0b656bc6dc135665d9333e00577799772d3395d54e5ba7",
+    "installed": "6a24f9015e29b1c6ae0b656bc6dc135665d9333e00577799772d3395d54e5ba7",
+    "match": true
+  },
+  "src/qianli_exploration/launch/exploration.launch.py": {
+    "source": "99d0f2ae69824636132e955e36be1c587a3ffb839f0621bc8fa3e9bb8b41d6aa",
+    "installed": "99d0f2ae69824636132e955e36be1c587a3ffb839f0621bc8fa3e9bb8b41d6aa",
+    "match": true
+  },
+  "src/qianli_bringup/launch/floorplan.launch.py": {
+    "source": "73e26217652d540ab6523c740dd91a8d7fc6438a8a41513ba8232985fc1fbda2",
+    "installed": "73e26217652d540ab6523c740dd91a8d7fc6438a8a41513ba8232985fc1fbda2",
+    "match": true
+  },
+  "src/qianli_bringup/launch/training.launch.py": {
+    "source": "06d789930b2aac4fcc75f60f9502488fec2f1423eabcecde0fd1e320b9d6a847",
+    "installed": "06d789930b2aac4fcc75f60f9502488fec2f1423eabcecde0fd1e320b9d6a847",
+    "match": true
+  },
+  "src/qianli_bringup/launch/sim.launch.py": {
+    "source": "9533afe8c4573748d512825e62b27eda8a24c283e571c0024b64d5781e122077",
+    "installed": "9533afe8c4573748d512825e62b27eda8a24c283e571c0024b64d5781e122077",
+    "match": true
+  }
+}

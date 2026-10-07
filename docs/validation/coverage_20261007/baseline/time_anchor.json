@@ -1,0 +1,7 @@
+{
+  "explorer_process_start_ticks": 1905509,
+  "watcher_process_start_ticks": 1912701,
+  "clock_ticks_per_second": 100,
+  "approximate_history_offset_s": 71.92,
+  "note": "Baseline watcher started late. Offset from process starts; import/initialization skew remains. Improved uses explorer status time directly."
+}

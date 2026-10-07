@@ -29,3 +29,5 @@ qianli_ws/src/qianli_omni_learning/**/*.json -text -eol whitespace=blank-at-eol,
 
 # Keep captured validation logs unchanged, including terminal whitespace.
 docs/validation/frontier_v04_20261006/*.txt text eol=lf whitespace=-blank-at-eol
+
+docs/validation/coverage_20261007/*.txt text eol=lf whitespace=-blank-at-eol

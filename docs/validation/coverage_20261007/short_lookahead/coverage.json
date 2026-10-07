@@ -1,0 +1,209 @@
+{
+  "reachable_cells": 482123,
+  "reachable_area_m2": 1205.3075000000003,
+  "mapped_free_cells": 37032,
+  "mapped_known_cells": 37032,
+  "free_coverage_pct": 7.681027455649285,
+  "known_coverage_pct": 7.681027455649285,
+  "unknown_reachable_cells": 445091,
+  "alignment": "Fixed simulation spawn -> initial SLAM frame; not an accuracy metric",
+  "status": {
+    "phase": "stopped",
+    "reason": "stopped",
+    "terminal": "stopped",
+    "successful_goals": 0,
+    "failed_candidates": 5,
+    "known_cells": 47482
+  },
+  "history": [
+    {
+      "elapsed_s": 13.088,
+      "free_coverage_pct": 0.29867896781526704,
+      "goals": 0,
+      "phase": "waiting",
+      "reason": "waiting_for_nav2"
+    },
+    {
+      "elapsed_s": 17.09,
+      "free_coverage_pct": 6.584626744627409,
+      "goals": 0,
+      "phase": "waiting",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 22.088,
+      "free_coverage_pct": 7.602624226597777,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 27.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 33.088,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 37.086,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 42.588,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 47.588,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 52.588,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 57.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 63.086,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 68.086,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 72.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 77.588,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 82.61,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "plan",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 88.086,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 93.088,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 98.091,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 103.088,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "waiting",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 108.088,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 112.588,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 118.086,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 122.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 128.088,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "navigate",
+      "reason": ""
+    },
+    {
+      "elapsed_s": 132.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "stopped",
+      "reason": "stopped"
+    },
+    {
+      "elapsed_s": 137.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "stopped",
+      "reason": "stopped"
+    },
+    {
+      "elapsed_s": 140.586,
+      "free_coverage_pct": 7.681027455649285,
+      "goals": 0,
+      "phase": "stopped",
+      "reason": "stopped"
+    }
+  ]
+}

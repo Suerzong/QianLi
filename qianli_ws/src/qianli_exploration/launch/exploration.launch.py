@@ -13,10 +13,12 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument('report_file', default_value=''),
+        DeclareLaunchArgument('max_duration_s', default_value='900.0'),
         Node(package='qianli_exploration', executable='frontier_explorer.py',
              name='qianli_frontier_explorer', output='screen',
              parameters=[str(config), {
                  'use_sim_time': ParameterValue(LaunchConfiguration('use_sim_time'), value_type=bool),
+                 'max_duration_s': ParameterValue(LaunchConfiguration('max_duration_s'), value_type=float),
                  'report_file': ParameterValue(LaunchConfiguration('report_file'), value_type=str),
              }]),
     ])

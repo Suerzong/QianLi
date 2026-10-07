@@ -1,0 +1,506 @@
+{
+  "baseline": {
+    "reachable_cells": 482123,
+    "reachable_area_m2": 1205.3075000000003,
+    "mapped_free_cells": 158322,
+    "mapped_known_cells": 158864,
+    "free_coverage_pct": 32.83850801558938,
+    "known_coverage_pct": 32.95092746041985,
+    "unknown_reachable_cells": 323259,
+    "alignment": "Fixed simulation spawn -> initial SLAM frame; not an accuracy metric",
+    "rooms": [
+      {
+        "id": "W101",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W105",
+        "locked": false,
+        "reachable_cells": 9382,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W102",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W106",
+        "locked": false,
+        "reachable_cells": 8906,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W103",
+        "locked": false,
+        "reachable_cells": 10521,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W107",
+        "locked": false,
+        "reachable_cells": 9227,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W104",
+        "locked": false,
+        "reachable_cells": 10462,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W108",
+        "locked": false,
+        "reachable_cells": 8784,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N201",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N202",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N203",
+        "locked": false,
+        "reachable_cells": 10650,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S301",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S302",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S303",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "STAIR",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "LIFT",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "SERVICE",
+        "locked": false,
+        "reachable_cells": 12606,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "AUD",
+        "locked": false,
+        "reachable_cells": 27804,
+        "free_coverage_pct": 98.30599913681485
+      },
+      {
+        "id": "LEC",
+        "locked": false,
+        "reachable_cells": 19136,
+        "free_coverage_pct": 99.08549331103679
+      }
+    ]
+  },
+  "improved_900": {
+    "reachable_cells": 482123,
+    "reachable_area_m2": 1205.3075000000003,
+    "mapped_free_cells": 195928,
+    "mapped_known_cells": 199996,
+    "free_coverage_pct": 40.63859222646503,
+    "known_coverage_pct": 41.48236031054316,
+    "unknown_reachable_cells": 282127,
+    "alignment": "Fixed simulation spawn -> initial SLAM frame; not an accuracy metric",
+    "rooms": [
+      {
+        "id": "W101",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W105",
+        "locked": false,
+        "reachable_cells": 9382,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W102",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W106",
+        "locked": false,
+        "reachable_cells": 8906,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W103",
+        "locked": false,
+        "reachable_cells": 10521,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W107",
+        "locked": false,
+        "reachable_cells": 9227,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W104",
+        "locked": false,
+        "reachable_cells": 10462,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W108",
+        "locked": false,
+        "reachable_cells": 8784,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N201",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N202",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N203",
+        "locked": false,
+        "reachable_cells": 10650,
+        "free_coverage_pct": 25.652582159624412
+      },
+      {
+        "id": "S301",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S302",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 1.531647905517623
+      },
+      {
+        "id": "S303",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 12.391585163314264
+      },
+      {
+        "id": "STAIR",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "LIFT",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "SERVICE",
+        "locked": false,
+        "reachable_cells": 12606,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "AUD",
+        "locked": false,
+        "reachable_cells": 27804,
+        "free_coverage_pct": 91.60912098978564
+      },
+      {
+        "id": "LEC",
+        "locked": false,
+        "reachable_cells": 19136,
+        "free_coverage_pct": 99.83277591973244
+      }
+    ]
+  },
+  "improved_final": {
+    "reachable_cells": 482123,
+    "reachable_area_m2": 1205.3075000000003,
+    "mapped_free_cells": 214330,
+    "mapped_known_cells": 218751,
+    "free_coverage_pct": 44.455460536004296,
+    "known_coverage_pct": 45.372446450387145,
+    "unknown_reachable_cells": 263372,
+    "alignment": "Fixed simulation spawn -> initial SLAM frame; not an accuracy metric",
+    "rooms": [
+      {
+        "id": "W101",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W105",
+        "locked": false,
+        "reachable_cells": 9382,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W102",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W106",
+        "locked": false,
+        "reachable_cells": 8906,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W103",
+        "locked": false,
+        "reachable_cells": 10521,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W107",
+        "locked": false,
+        "reachable_cells": 9227,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W104",
+        "locked": false,
+        "reachable_cells": 10462,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W108",
+        "locked": false,
+        "reachable_cells": 8784,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N201",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N202",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N203",
+        "locked": false,
+        "reachable_cells": 10650,
+        "free_coverage_pct": 26.281690140845072
+      },
+      {
+        "id": "S301",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S302",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 1.6146890570215906
+      },
+      {
+        "id": "S303",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 12.880605277726518
+      },
+      {
+        "id": "STAIR",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "LIFT",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "SERVICE",
+        "locked": false,
+        "reachable_cells": 12606,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "AUD",
+        "locked": false,
+        "reachable_cells": 27804,
+        "free_coverage_pct": 94.71658754136095
+      },
+      {
+        "id": "LEC",
+        "locked": false,
+        "reachable_cells": 19136,
+        "free_coverage_pct": 99.81709866220736
+      }
+    ]
+  },
+  "short_smoke": {
+    "reachable_cells": 482123,
+    "reachable_area_m2": 1205.3075000000003,
+    "mapped_free_cells": 49801,
+    "mapped_known_cells": 49801,
+    "free_coverage_pct": 10.32952171956119,
+    "known_coverage_pct": 10.32952171956119,
+    "unknown_reachable_cells": 432322,
+    "alignment": "Fixed simulation spawn -> initial SLAM frame; not an accuracy metric",
+    "rooms": [
+      {
+        "id": "W101",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W105",
+        "locked": false,
+        "reachable_cells": 9382,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W102",
+        "locked": false,
+        "reachable_cells": 10580,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W106",
+        "locked": false,
+        "reachable_cells": 8906,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W103",
+        "locked": false,
+        "reachable_cells": 10521,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W107",
+        "locked": false,
+        "reachable_cells": 9227,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W104",
+        "locked": false,
+        "reachable_cells": 10462,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "W108",
+        "locked": false,
+        "reachable_cells": 8784,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N201",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N202",
+        "locked": false,
+        "reachable_cells": 10614,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "N203",
+        "locked": false,
+        "reachable_cells": 10650,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S301",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S302",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "S303",
+        "locked": false,
+        "reachable_cells": 10838,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "STAIR",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "LIFT",
+        "locked": true,
+        "reachable_cells": 0,
+        "free_coverage_pct": null
+      },
+      {
+        "id": "SERVICE",
+        "locked": false,
+        "reachable_cells": 12606,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "AUD",
+        "locked": false,
+        "reachable_cells": 27804,
+        "free_coverage_pct": 0.0
+      },
+      {
+        "id": "LEC",
+        "locked": false,
+        "reachable_cells": 19136,
+        "free_coverage_pct": 60.31040969899666
+      }
+    ]
+  }
+}

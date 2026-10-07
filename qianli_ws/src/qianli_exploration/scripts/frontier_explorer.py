@@ -18,14 +18,14 @@ from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from lifecycle_msgs.srv import GetState
 from nav_msgs.msg import OccupancyGrid
-from nav2_msgs.action import ComputePathToPose, NavigateToPose, Spin
+from nav2_msgs.action import ComputePathToPose, FollowPath, Spin
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
 from tf2_ros import Buffer, TransformException, TransformListener
 from visualization_msgs.msg import Marker, MarkerArray
 
-from frontier_core import Grid, extract, path_is_safe, safe_cells
+from frontier_core import Grid, extract, path_is_safe, safe_cells, remaining_path
 
 
 def yaw(q):
@@ -77,7 +77,7 @@ class FrontierExplorer(Node):
         self.last_lifecycle_query = 0.
         self.nav_clients = {
             'plan': ActionClient(self, ComputePathToPose, '/compute_path_to_pose'),
-            'navigate': ActionClient(self, NavigateToPose, '/navigate_to_pose'),
+            'navigate': ActionClient(self, FollowPath, '/follow_path'),
             'spin': ActionClient(self, Spin, '/spin'),
         }
         latch = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -186,7 +186,9 @@ class FrontierExplorer(Node):
             raise RuntimeError('Only one Nav2 operation may be outstanding')
         now = time.monotonic()
         op = {'kind': kind, 'candidate': candidate, 'handle': None, 'cancel': '',
-              'cancel_sent': False, 'started': now, 'progress_wall': now, 'progress_pose': self.pose()}
+              'cancel_sent': False, 'started': now, 'progress_wall': now, 'progress_pose': self.pose(),
+              'path_points': [(p.pose.position.x,p.pose.position.y) for p in goal.path.poses]
+                             if kind == 'navigate' else []}
         self.operation = op
         self.phase, self.reason = kind, ''
         future = self.nav_clients[kind].send_goal_async(goal)
@@ -247,7 +249,7 @@ class FrontierExplorer(Node):
         if op['cancel']:
             self.event('action_terminated', kind=kind, reason=op['cancel'],
                        status=result.status if result else None)
-            if candidate and op['cancel'] in ('goal_timeout', 'no_motion_progress', 'unsafe_goal'):
+            if candidate and op['cancel'] in ('goal_timeout', 'no_motion_progress', 'unsafe_goal', 'unsafe_path'):
                 self.reject_candidate(candidate, op['cancel'])
             if self.terminal:
                 self.phase, self.reason = self.terminal, self.terminal
@@ -273,15 +275,22 @@ class FrontierExplorer(Node):
                 self.next_selection_wall = time.monotonic()+3.
                 self.event('planner_retry', error=error, error_code=code)
                 return
-            points = [(p.pose.position.x, p.pose.position.y) for p in result.result.path.poses] if success else []
+            pose = self.pose()
+            points = ([pose[:2]] if pose else [])+[(p.pose.position.x,p.pose.position.y)
+                       for p in result.result.path.poses] if success else []
             frame = result.result.path.header.frame_id if success else ''
             safe = safe_cells(self.grid, self.p['robot_radius'], self.p['free_threshold'])
-            if not success or frame != self.p['map_frame'] or not path_is_safe(self.grid, safe, points):
+            if not success or frame != self.p['map_frame'] or not path_is_safe(self.grid, safe, points, self.p['robot_radius'], self.p['free_threshold']):
                 self.reject_candidate(candidate, error or 'unreachable_or_unsafe_path: '+str(code))
                 return
             if self.healthy():
                 return
-            goal = NavigateToPose.Goal(pose=self.pose_message(candidate))
+            path = result.result.path
+            start_pose = self.pose_message(candidate)
+            start_pose.pose.position.x,start_pose.pose.position.y = pose[:2]
+            start_pose.pose.orientation.z,start_pose.pose.orientation.w = math.sin(pose[2]/2),math.cos(pose[2]/2)
+            path.poses.insert(0,start_pose)
+            goal = FollowPath.Goal(path=path,controller_id='FollowPath',goal_checker_id='goal_checker')
             self.event('goal_selected', **asdict(candidate), path_length_m=sum(
                 math.hypot(b[0]-a[0], b[1]-a[1]) for a, b in zip(points, points[1:])))
             self.send('navigate', goal, candidate)
@@ -292,7 +301,7 @@ class FrontierExplorer(Node):
             self.event('goal_succeeded', goal=[candidate.x, candidate.y], known_cells=self.known_cells)
             self.next_selection_wall = time.monotonic()+self.p['settle_time_s']
         else:
-            self.reject_candidate(candidate, error or getattr(result.result, 'error_msg', 'navigation_failed'))
+            self.reject_candidate(candidate, error or getattr(result.result, 'error_msg', '') or 'controller_failed')
 
     def nav2_ready(self):
         now = time.monotonic()
@@ -353,6 +362,10 @@ class FrontierExplorer(Node):
                         c, r = self.grid.cell(op['candidate'].x, op['candidate'].y)
                         if not (0 <= r < safe.shape[0] and 0 <= c < safe.shape[1] and safe[r, c]):
                             self.cancel('unsafe_goal')
+                        elif op['path_points'] and not path_is_safe(
+                                self.grid,safe,remaining_path(op['path_points'],self.pose()[:2]),
+                                self.p['robot_radius'],self.p['free_threshold']):
+                            self.cancel('unsafe_path')
             self.publish()
             return
         if not self.nav2_ready():
@@ -370,17 +383,22 @@ class FrontierExplorer(Node):
                                     approach_distance=self.p['approach_distance'],
                                     min_goal_distance=self.p['min_goal_distance'],
                                     goal_clearance_margin=self.p['goal_clearance_margin'],
-                                    max_candidates=self.p['max_candidates'])
-            choices = [c for c in self.analysis.candidates if all(
-                math.hypot(c.x-x, c.y-y) >= self.p['blacklist_radius'] for x, y, _ in self.blacklist)]
+                                    max_candidates=self.p['max_candidates'],
+                                    excluded=[(x, y) for x, y, _ in self.blacklist],
+                                    exclusion_radius=self.p['blacklist_radius'])
+            choices = self.analysis.candidates
             self.show_frontiers(choices)
             if choices:
                 self.empty_rounds = 0
-                goal = ComputePathToPose.Goal(goal=self.pose_message(choices[0]), use_start=False)
+                goal = ComputePathToPose.Goal(goal=self.pose_message(choices[0]),use_start=True)
+                goal.start = self.pose_message(choices[0])
+                goal.start.pose.position.x,goal.start.pose.position.y = self.analysis.anchor
+                angle = self.pose()[2]
+                goal.start.pose.orientation.z,goal.start.pose.orientation.w = math.sin(angle/2),math.cos(angle/2)
                 self.send('plan', goal, choices[0])
             elif self.analysis.reason == 'robot_outside_safe_space':
                 self.phase, self.reason = 'paused', self.analysis.reason
-            elif self.analysis.candidates:
+            elif self.analysis.reason == 'candidates_temporarily_blacklisted':
                 self.phase, self.reason = 'waiting', 'candidates_temporarily_blacklisted'
             else:
                 self.empty_rounds += 1

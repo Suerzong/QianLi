@@ -1,0 +1,24 @@
+{
+  "pose_map": [
+    1.6621978069743495,
+    5.3720077485839415
+  ],
+  "pose_projected_world": [
+    15.16219780697435,
+    -10.627992251416059
+  ],
+  "0.1": {
+    "reason": "robot_outside_safe_space",
+    "frontier_clusters": 62,
+    "candidate_count": 0,
+    "top_candidates": [],
+    "west_candidates": []
+  },
+  "0.0": {
+    "reason": "robot_outside_safe_space",
+    "frontier_clusters": 62,
+    "candidate_count": 0,
+    "top_candidates": [],
+    "west_candidates": []
+  }
+}

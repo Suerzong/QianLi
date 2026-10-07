@@ -1,0 +1,287 @@
+{
+  "result": "PASS",
+  "reason": "exhausted_verified",
+  "stop_confirmed": true,
+  "wall_elapsed_s": 125.825,
+  "initial_known_cells": 1475,
+  "final_known_cells": 24468,
+  "known_gain_cells": 22993,
+  "free_gain_cells": 21609,
+  "path_length_m": 17.755044686449523,
+  "truth_samples": 6075,
+  "geometry_samples": 767,
+  "raw_collision_samples": 0,
+  "padded_collision_samples": 0,
+  "min_padded_clearance_m": 0.17777819845953663,
+  "exploration_before_stop": {
+    "schema_version": 1,
+    "phase": "exhausted",
+    "reason": "exhausted",
+    "enabled": false,
+    "terminal": "exhausted",
+    "wall_elapsed_s": 132.093,
+    "initial_known_cells": 1475,
+    "known_cells": 24468,
+    "known_gain_cells": 22993,
+    "known_area_m2": 61.17000182300807,
+    "successful_goals": 5,
+    "failed_candidates": 0,
+    "map_resets": 0,
+    "blacklisted_goals": 2,
+    "frontier_cells": 3,
+    "frontier_clusters": 0,
+    "candidate_goals": 0,
+    "scan_age_s": 0.092,
+    "map_age_s": 0.564,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 13.497,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 16.75,
+        "x": 1.7894895662632058,
+        "y": -1.391098675448995,
+        "yaw": -0.7853981633974483,
+        "frontier_x": 2.639489578929193,
+        "frontier_y": -2.241098688114982,
+        "gain_m2": 3.5850001068413264,
+        "score": 0.8535714443190162,
+        "path_length_m": 2.418888337401416
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 32.459,
+        "goal": [
+          1.7894895662632058,
+          -1.391098675448995
+        ],
+        "known_cells": 20888
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 34.618,
+        "x": 3.187284078373774,
+        "y": -0.47017747476715144,
+        "yaw": 1.8692952583810758,
+        "frontier_x": 2.987284075393542,
+        "frontier_y": 0.17982253491860334,
+        "gain_m2": 2.662500079348684,
+        "score": 0.7717391452678699,
+        "path_length_m": 1.9793655034037498
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 46.624,
+        "goal": [
+          3.187284078373774,
+          -0.47017747476715144
+        ],
+        "known_cells": 23268
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 49.116,
+        "x": 2.887284073903426,
+        "y": 3.329822581857261,
+        "yaw": 1.5707963267948966,
+        "frontier_x": 2.887284073903426,
+        "frontier_y": 3.929822590797958,
+        "gain_m2": 4.027500120028854,
+        "score": 0.7975247667125687,
+        "path_length_m": 4.010551431679773
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 65.623,
+        "goal": [
+          2.887284073903426,
+          3.329822581857261
+        ],
+        "known_cells": 23695
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 68.111,
+        "x": -3.2127160169936575,
+        "y": -0.7701774792374998,
+        "yaw": -1.4940244355251187,
+        "frontier_x": -3.1627160162485994,
+        "frontier_y": -1.4201774889232546,
+        "gain_m2": 2.5800000768899922,
+        "score": 0.2345454583581814,
+        "path_length_m": 7.7276930307032305
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 105.216,
+        "goal": [
+          -3.2127160169936575,
+          -0.7701774792374998
+        ],
+        "known_cells": 24384
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 107.608,
+        "x": -1.7371971414921905,
+        "y": -2.725192305794595,
+        "yaw": 1.6539375586833378,
+        "frontier_x": -1.7871971422372486,
+        "frontier_y": -2.125192296853898,
+        "gain_m2": 0.9450000281631948,
+        "score": 0.21477273120044554,
+        "path_length_m": 3.091618309893686
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 125.112,
+        "goal": [
+          -1.7371971414921905,
+          -2.725192305794595
+        ],
+        "known_cells": 24465
+      }
+    ]
+  },
+  "exploration_after_stop": {
+    "schema_version": 1,
+    "phase": "stopped",
+    "reason": "stopped",
+    "enabled": false,
+    "terminal": "stopped",
+    "wall_elapsed_s": 132.101,
+    "initial_known_cells": 1475,
+    "known_cells": 24468,
+    "known_gain_cells": 22993,
+    "known_area_m2": 61.17000182300807,
+    "successful_goals": 5,
+    "failed_candidates": 0,
+    "map_resets": 0,
+    "blacklisted_goals": 2,
+    "frontier_cells": 3,
+    "frontier_clusters": 0,
+    "candidate_goals": 0,
+    "scan_age_s": 0.1,
+    "map_age_s": 0.572,
+    "active_goal": null,
+    "history": [
+      {
+        "event": "initial_observation",
+        "wall_elapsed_s": 13.497,
+        "succeeded": true,
+        "error": ""
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 16.75,
+        "x": 1.7894895662632058,
+        "y": -1.391098675448995,
+        "yaw": -0.7853981633974483,
+        "frontier_x": 2.639489578929193,
+        "frontier_y": -2.241098688114982,
+        "gain_m2": 3.5850001068413264,
+        "score": 0.8535714443190162,
+        "path_length_m": 2.418888337401416
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 32.459,
+        "goal": [
+          1.7894895662632058,
+          -1.391098675448995
+        ],
+        "known_cells": 20888
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 34.618,
+        "x": 3.187284078373774,
+        "y": -0.47017747476715144,
+        "yaw": 1.8692952583810758,
+        "frontier_x": 2.987284075393542,
+        "frontier_y": 0.17982253491860334,
+        "gain_m2": 2.662500079348684,
+        "score": 0.7717391452678699,
+        "path_length_m": 1.9793655034037498
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 46.624,
+        "goal": [
+          3.187284078373774,
+          -0.47017747476715144
+        ],
+        "known_cells": 23268
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 49.116,
+        "x": 2.887284073903426,
+        "y": 3.329822581857261,
+        "yaw": 1.5707963267948966,
+        "frontier_x": 2.887284073903426,
+        "frontier_y": 3.929822590797958,
+        "gain_m2": 4.027500120028854,
+        "score": 0.7975247667125687,
+        "path_length_m": 4.010551431679773
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 65.623,
+        "goal": [
+          2.887284073903426,
+          3.329822581857261
+        ],
+        "known_cells": 23695
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 68.111,
+        "x": -3.2127160169936575,
+        "y": -0.7701774792374998,
+        "yaw": -1.4940244355251187,
+        "frontier_x": -3.1627160162485994,
+        "frontier_y": -1.4201774889232546,
+        "gain_m2": 2.5800000768899922,
+        "score": 0.2345454583581814,
+        "path_length_m": 7.7276930307032305
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 105.216,
+        "goal": [
+          -3.2127160169936575,
+          -0.7701774792374998
+        ],
+        "known_cells": 24384
+      },
+      {
+        "event": "goal_selected",
+        "wall_elapsed_s": 107.608,
+        "x": -1.7371971414921905,
+        "y": -2.725192305794595,
+        "yaw": 1.6539375586833378,
+        "frontier_x": -1.7871971422372486,
+        "frontier_y": -2.125192296853898,
+        "gain_m2": 0.9450000281631948,
+        "score": 0.21477273120044554,
+        "path_length_m": 3.091618309893686
+      },
+      {
+        "event": "goal_succeeded",
+        "wall_elapsed_s": 125.112,
+        "goal": [
+          -1.7371971414921905,
+          -2.725192305794595
+        ],
+        "known_cells": 24465
+      }
+    ]
+  },
+  "scope": "Partial exploration smoke check unless exhausted_verified; sampled ideal geometry, no wheel dynamics"
+}

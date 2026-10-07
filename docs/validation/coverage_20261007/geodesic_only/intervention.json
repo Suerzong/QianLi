@@ -1,0 +1,4 @@
+{
+  "reason": "Read-only monitoring found repeated S302 goals with little coverage growth; stop this intermediate geodesic-only trial before adding occlusion-aware gain.",
+  "type": "manual_policy_revision"
+}

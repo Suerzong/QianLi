@@ -24,3 +24,13 @@ ideal_kinematic_sim 中模型可穿障碍，因此自动测试同时记录 Gazeb
 Nav2 Goal 的 action 确认窗口为 1000 ms（适应 VM 软件渲染调度）；成本地图保持真实八边形，
 padding=0.06 m 为轮外探与规划余量。AMCL 保存地图模式使用 OmniMotionModel，
 它与 SLAM 互斥；不同时发布 map→odom。运行自动验收 `test_base_sim.sh --map --navigation`。
+
+## 未知区域探索模式
+
+`exploration_mode:=true` 使用 Smac2D + RPP，禁用未知区域通行和路径平滑。
+`qianli_bringup` 的 `explore:=true` 会自动启用此配置。
+局部地图使用含安全余量的 0.47 m 圆形包络，全局另加栅格半对角线与
+0.005 m 插值余量；两层都融合实时 SLAM 并保持未知区域。
+探索节点检查完整路径后直接调用 FollowPath，地图变化时检查剩余路径。
+RPP 在该模式只使用前进和转向，暂不发挥底盘横移能力。
+配置依据与实测限制见仓库 `docs/EXPLORATION_COVERAGE.md`。

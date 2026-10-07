@@ -8,12 +8,68 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from frontier_core import Grid, extract, path_is_safe, safe_cells
+from frontier_core import Grid, extract, path_is_safe, safe_cells, travel_distances, visible_unknown_gain, segment_is_known_free, remaining_path
 
 
 class FrontierTests(unittest.TestCase):
     def grid(self, cells, yaw=0):
         return Grid(cells, .1, -2.5, -2.5, yaw)
+
+    def test_gain_does_not_see_unknown_through_a_known_wall(self):
+        cells = np.full((80, 80), -1, np.int16)
+        cells[:, :40] = 0
+        cells[:, 40] = 100
+        grid = self.grid(cells)
+        self.assertEqual(visible_unknown_gain(grid, 30, 40, 2.), 0.)
+        cells[35:46, 40] = 0
+        self.assertGreater(visible_unknown_gain(grid, 30, 40, 2.), 0.)
+
+    def test_visible_map_edge_can_gain_without_truth_map(self):
+        grid = self.grid(np.zeros((80, 80), np.int16))
+        self.assertGreater(visible_unknown_gain(grid, 70, 40, 2.), 0.)
+        self.assertEqual(visible_unknown_gain(grid, 40, 40, 2.), 0.)
+
+    def test_travel_cost_accounts_for_wall_detour(self):
+        reachable = np.ones((11, 11), bool)
+        reachable[:9, 5] = False
+        distances = travel_distances(reachable, (4, 1), 1.)
+        # Across a one-cell wall is 2 m Euclidean, but 18 m via its opening.
+        self.assertEqual(distances[1, 6], 18.)
+        self.assertEqual(distances[5, 4], 4.)
+        self.assertTrue(np.isinf(distances[1, 5]))
+
+    def test_safe_subcell_pose_is_not_rejected_by_cell_centre(self):
+        cells = np.zeros((30,30),np.int16);cells[:,5]=100;cells[:,20:]=-1
+        grid = self.grid(cells);pose=(-1.42,-1.0)
+        c,r = grid.cell(*pose)
+        self.assertFalse(safe_cells(grid,.47)[r,c])
+        self.assertTrue(segment_is_known_free(grid,pose,pose,.47))
+        self.assertTrue(extract(grid,pose).candidates)
+        self.assertFalse(segment_is_known_free(grid,(-1.44,-1.),(-1.44,-1.),.47))
+
+    def test_swept_circle_cannot_clip_a_rectangle_corner(self):
+        cells = np.zeros((30,30),np.int16);cells[10,10]=100
+        grid = self.grid(cells)
+        self.assertFalse(segment_is_known_free(grid,(-1.8,-1.55),(-1.1,-1.55),.1))
+        self.assertTrue(segment_is_known_free(grid,(-1.8,-1.61),(-1.1,-1.61),.1))
+
+    def test_continuous_segment_intersection_ignores_vertex_spacing(self):
+        cells = np.zeros((30,30),np.int16);cells[10,10]=-1
+        grid = self.grid(cells)
+        self.assertFalse(segment_is_known_free(grid,(-1.8,-1.8),(-1.1,-1.1),.01))
+
+    def test_rotated_map_swept_circle_geometry(self):
+        cells = np.zeros((30,30),np.int16);cells[10,10]=100
+        grid = self.grid(cells,.7)
+        self.assertFalse(segment_is_known_free(grid,grid.world(5,10),grid.world(15,10),.05))
+        self.assertTrue(segment_is_known_free(grid,grid.world(5,5),grid.world(15,5),.05))
+
+    def test_remaining_path_excludes_passed_segments(self):
+        result = remaining_path([(0.,0.),(0.,1.),(1.,1.)],(.9,1.))
+        self.assertEqual(result[0],(.9,1.))
+        self.assertEqual(result[-1],(1.,1.))
+        self.assertNotIn((0.,0.),result)
+        self.assertNotIn((0.,1.),result)
 
     def test_unknown_is_never_a_target(self):
         cells = np.full((50, 50), -1, np.int16)
@@ -105,6 +161,25 @@ class FrontierTests(unittest.TestCase):
         result = extract(grid, grid.world(12, 25), excluded=exclusions)
         for candidate in result.candidates:
             self.assertTrue(all(math.hypot(candidate.x-x, candidate.y-y) >= .65 for x, y in exclusions))
+
+    def test_exclusion_before_top_k_keeps_farther_goals_available(self):
+        cells = np.full((70, 70), -1, np.int16)
+        cells[5:65, 5:40] = 0
+        grid = self.grid(cells)
+        pose = grid.world(20, 30)
+        first = extract(grid, pose, max_candidates=1).candidates[0]
+        result = extract(grid, pose, max_candidates=1, excluded=[(first.x, first.y)])
+        self.assertEqual(len(result.candidates), 1)
+        self.assertGreaterEqual(math.hypot(result.candidates[0].x-first.x,
+                                          result.candidates[0].y-first.y), .65)
+
+    def test_all_excluded_is_waiting_not_blocked_or_exhausted(self):
+        cells = np.full((50, 50), -1, np.int16)
+        cells[5:45, 5:25] = 0
+        grid = self.grid(cells)
+        result = extract(grid, grid.world(12, 25), excluded=[(0., 0.)], exclusion_radius=100.)
+        self.assertEqual(result.candidates, [])
+        self.assertEqual(result.reason, 'candidates_temporarily_blacklisted')
 
     def test_robot_at_unknown_edge_does_not_produce_false_completion(self):
         cells = np.full((50, 50), -1, np.int16)

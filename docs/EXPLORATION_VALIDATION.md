@@ -12,6 +12,8 @@
 - 首次回归暴露 ROS Node `clients` 只读属性命名冲突，已改用 `nav_clients` 并复测。
 - 第一次仿真启动仍使用旧安装副本，保留失败日志后重建探索包再启动。
 
+后续完整时长及固定分母覆盖率见 [覆盖率验证](EXPLORATION_COVERAGE.md)。
+
 ## 仿真验收
 
 ![实际 SLAM 扫描地图](validation/frontier_v04_20261006/observed_maps.png)
