@@ -3,6 +3,8 @@
 ② 求"固定爪尖端"在 gripper_frame 中的常向量（供上方抓取 IK 用）
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera, project_path
 import json
 import math
@@ -30,7 +32,7 @@ coef, *_ = np.linalg.lstsq(X, B, rcond=None)
 CELL = 33.0
 COLS, ROWS = 7, 5
 FLAGS = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(12):
     ok, img = cap.read()
     if ok:

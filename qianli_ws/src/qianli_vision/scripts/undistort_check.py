@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 
 import sys
@@ -92,7 +94,7 @@ def main():
     img = grab_from_stream()
     if img is None:
         # 退路：直接开相机（前端没在跑时用）
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
         time.sleep(1.0)

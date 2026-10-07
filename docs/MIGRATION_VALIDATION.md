@@ -1,6 +1,26 @@
 # Ubuntu 22.04 迁移验证记录
 
-日期：2026-10-07。实施步骤见 [原生迁移与验收](UBUNTU22_MIGRATION.md)。这些结果验证仓库和运行基线；笔记本尚未安装原生 Ubuntu，也尚未完成原生 Linux GPU、相机、串口或真机验收。
+日期：2026-10-07。实施步骤见 [原生迁移与验收](UBUNTU22_MIGRATION.md)。已经另行安装持久 Ubuntu 22.04/Humble 虚拟机，运行入口见 [VM 使用说明](VM_HUMBLE.md)。笔记本尚未安装原生 Ubuntu，原生 Linux GPU及真机运动/抓取验收仍未完成。
+
+## 持久 VM 与生产 CUDA 环境
+
+新 VM 位于 `D:\VMs\QianLi-Ubuntu22-Humble\qianli-humble.vmx`，项目 `/home/ros/QianLi`，Git 分支 `codex/ubuntu22-humble`。采用校验过的 Canonical Jammy cloud VMDK，独立 120GB 磁盘、8GB 内存、8 vCPU。已安装 Ubuntu 桌面、HWE 6.8.0-138 内核、Humble、固定 ROS/训练环境和桌面入口；两次冷启动均自动登录并打开模拟 RViz，RobotModel/Global Status 显示 OK。没有修改或关闭另外两台运行中的 VM。
+
+| 实际环境 | 验收结果 |
+|---|---|
+| 独立 Ubuntu 22.04.5 VM / Humble / Python 3.10 | 六包构建成功；colcon 23 项测试全部通过；ROS 安装模块、视觉离线自检、模拟关节/TF/闸门消息通过；`allow_motion=false`、`calibrated=false` |
+| 同一 VM 的隔离训练环境 | 17 项完整迁移回归通过；20mm/40mm 各两个 spawn 进程、1024 步 PPO、权重更新与模型保存/加载通过；EGL 128×128 渲染通过 |
+| Windows 生产 `.venv-train-win` / RTX 5070 Ti / 591.74 / Torch 2.8.0+cu128 | 20mm/40mm 均通过实际 CUDA 运算、1024 步更新、保存/加载；25 项迁移/协议测试通过，1 项 Linux sysfs 用例在 Windows 跳过、在 VM 通过 |
+| VM CPU 与 Windows CUDA，原有两个策略归档 | `bc_policy.zip` 和 `ppo_bc_final.zip` 均可加载和预测；另存后重新加载的动作输出、全部策略权重与加载前一致；原归档未覆盖 |
+| Windows 生产环境的完整 `train.py` | 40mm / 两环境 / 128 步 / BC 热启动成功，生成 64/128 步 checkpoint 与最终模型；短跑成功率 0%，不代表抓取能力提升 |
+| 新 VM 的外置 UVC 相机 | xHCI + MJPG，640×480 连续 60 帧通过，实际图片无损坏条带；已配置稳定 by-id 路径；未执行新的几何标定 |
+| 新 VM 的 CH343 适配器 | `/dev/qianli_arm` 与 by-id 路径、dialout 权限、实际 sysfs USB 接口发现通过；六个舵机只读查询无回应，用户确认独立电源尚未打开，状态读取等待上电 |
+
+ROS 在线 GitHub 下载在 guest 内发生 TLS 断开，安装已通过宿主机下载的官方数据完成：`ros2-apt-source` 包匹配发布方 SHA256，rosdep YAML 绑定具体 rosdistro commit，官方 Humble 缓存来源由官方 index 解析，guest 内逐文件校验并执行了新的 `rosdep update`。此持久 VM 没有使用旧 VM 的 rosdep 缓存。`ament_python` 是 colcon build type，不是可解析的 ROS 包依赖；清除了三个 Python 包中的错误 buildtool 声明，保留 build type。
+
+验收脚本现在等待 DDS 发现并指定订阅消息类型，避免默认一秒发现窗口造成的误失败。相机最初 YUYV 超时、EHCI/MJPG 出现图像条带；最终换为 xHCI 并在机器配置中指定 MJPG，经过连续采集和图像检查后才记录通过。短桌面检查结束后保留输出窗口。
+
+持久 VM 的完整证据在 `migration_assets/vm-install/`、`migration_assets/vm-acceptance/`；Windows 生产日志在 `migration_assets/production-gpu-20mm.log`、`production-gpu-40mm.log`、`production-pretrain.log`。下文保留此前隔离验证记录，便于比较验证范围。
 
 ## 已交付
 
@@ -53,8 +73,8 @@ Humble 证据 ZIP 的 SHA256：`f7c9b253718abd8c837e1d828b692802a89e5b96beda4c13
 ## 尚待原生机器完成
 
 - 安装 Ubuntu 22.04.5/HWE 和支持 Blackwell 的 NVIDIA open 驱动，验收显示、网络、休眠、Secure Boot 和实际 Linux CUDA 运算。
-- 按迁移文档创建两个环境并完成在线 rosdep、完整构建/测试；训练环境执行两个尺寸短跑和 Linux EGL 渲染，ROS 环境打开 RViz 核对模型与 TF。
-- 实际相机采集、稳定串口路径/权限和 USB 看门狗验证；本次没有自动复位 USB。
+- 原生安装后按迁移文档重建两个环境并完成 rosdep、构建/测试、两个尺寸训练短跑、Linux EGL 与 RViz/TF 检查；这些软件项已经在持久 VM 完成，原生硬件仍需验收。
+- 原生系统重新核对相机、串口和 USB 接口；这些设备路径/权限、相机采集和 USB 发现已在持久 VM 验证，没有执行 USB 自动复位。
 - 已恢复相机内参、`board_cam.npz` 和触点记录；**缺少合格 `extrinsic.txt`、`tcp_calib.txt` 等临时标定产物**，需要依据原生机器的实际几何重新验证或标定。
 - 支撑机械臂后按 `allow_motion=false` 检查 direct 状态、限位和闸门；注意 direct 初始化会关闭扭矩。之后才由操作者进行现有低速运动、停止及抓取验收。
 

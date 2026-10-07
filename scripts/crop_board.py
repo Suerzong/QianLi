@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """裁出棋盘区域并放大 2 倍，便于目视确认图案四角。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 import cv2
 import numpy as np
 
 img = cv2.imread('/tmp/board_src.jpg')
 if img is None:
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     for _ in range(20):
         ok, f = cap.read()
         if ok:

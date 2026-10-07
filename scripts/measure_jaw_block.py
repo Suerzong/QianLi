@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """量爪口开度曲线（给定夹爪角 -> 开口 mm），并估方块实际尺寸。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import os
 import sys
@@ -27,7 +29,7 @@ frame = json.load(open(CAL))
 H = np.array(frame['H'])
 A = np.array(frame['affine'])
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 img = None
 for _ in range(15):
     ok, f = cap.read()

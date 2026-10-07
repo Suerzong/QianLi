@@ -16,6 +16,8 @@ baseline（折叠位）由 --capture-home 现场记录；同时算出夹进安�
 "可执行回位位姿"，避免再次触发 0x02 锁存错误。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import arm_source_path, default_camera, driver_params_path, project_path
@@ -346,7 +348,7 @@ class FSM:
         """关键时刻拍照存证（/tmp/fsm_<tag>.jpg）。"""
         try:
             import cv2
-            cap = cv2.VideoCapture(default_camera())
+            cap = open_video_capture(default_camera())
             img = None
             for _ in range(8):
                 ok, f = cap.read()

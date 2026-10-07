@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """调试：打印方块尺寸采样时每个候选的计算值。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import json
 import os
@@ -17,7 +19,7 @@ def g_of(p):
     return v[:2] / v[2] / 10.0
 
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 ok, img = cap.read()
 cap.release()
 print('读帧', ok, None if img is None else img.shape)

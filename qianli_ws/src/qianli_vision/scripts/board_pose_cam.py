@@ -25,6 +25,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, camera_source, default_camera
 
 import argparse
@@ -132,7 +134,7 @@ def main():
     print(f'内参 {w}x{h}  fx={K[0,0]:.2f} fy={K[1,1]:.2f}')
     print(f'棋盘 {COLS}x{ROWS} 内角点，格边长 {CELL*1000:.1f}mm')
 
-    cap = cv2.VideoCapture(args.camera)
+    cap = open_video_capture(args.camera)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
     time.sleep(1.5)

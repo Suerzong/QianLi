@@ -33,6 +33,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 
 import argparse
@@ -460,7 +462,7 @@ def main():
 
     # ---- 相机位移自检（与内参/外参是否就绪无关，所以放在前面） ----
     if args.save_camera_ref or args.check_camera:
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         time.sleep(0.8)
@@ -515,7 +517,7 @@ def main():
         rclpy.init()
         node = Node('block_pipeline')
         pub = node.create_publisher(String, '/blocks_base', 10)
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         while rclpy.ok():

@@ -143,6 +143,8 @@ QianLi/
 
 目标为原生 Ubuntu 22.04.5 + ROS 2 Humble。旧 Ubuntu 24.04/Jazzy 虚拟机保留用于回退；完整步骤、资产与硬件验收见 [迁移说明](docs/UBUNTU22_MIGRATION.md)。
 
+当前已安装独立 Ubuntu 22.04/Humble VM 和 Windows CUDA 训练环境，可直接使用桌面入口；打开方式与命令见 [运行说明](docs/VM_HUMBLE.md)，实测结果见 [验证记录](docs/MIGRATION_VALIDATION.md)。
+
 ```bash
 # 在新安装的原生 Ubuntu 22.04 中执行
 bash scripts/setup/install_ros2_humble.sh
@@ -157,6 +159,8 @@ bash scripts/tools/validate_ubuntu22.sh
 | 文档 | 内容 |
 |---|---|
 | [docs/UBUNTU22_MIGRATION.md](docs/UBUNTU22_MIGRATION.md) | 原生 Humble 安装、资产迁移与分阶段验收 |
+| [docs/VM_HUMBLE.md](docs/VM_HUMBLE.md) | 已安装 VM、桌面入口、Windows GPU 训练与设备配置 |
+| [docs/MIGRATION_VALIDATION.md](docs/MIGRATION_VALIDATION.md) | 本次实际验证、证据路径和待完成硬件项 |
 | [docs/PROJECT.md](docs/PROJECT.md) | 项目定义、目标能力、技术栈、设计原则 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 软件架构、模块职责、TF / 地图 / Agent 架构 |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 开发路线与 Milestone 定义 |

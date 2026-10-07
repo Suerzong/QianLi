@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """相机自检：试 video0/video1 两个索引。"""
+
+from project_paths import open_video_capture
 import time
 
 import cv2
 
 for idx in (0, 1):
-    cap = cv2.VideoCapture(idx)
+    cap = open_video_capture(idx)
     if not cap.isOpened():
         print(f'index {idx}: OPEN FAIL')
         cap.release()

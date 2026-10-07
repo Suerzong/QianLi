@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """验证 (0,0) 检测窗口：投影位置、参考掩码面积、当前重合度。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import json
 import os
@@ -17,7 +19,7 @@ PX = v[:2] / v[2]
 print(f'棋盘 (0,0) 投影像素 = ({PX[0]:.0f}, {PX[1]:.0f})')
 
 W = 70
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 img = None
 for _ in range(12):
     ok, f = cap.read()

@@ -13,6 +13,8 @@
 按 q 退出。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 
 import collections
@@ -78,7 +80,7 @@ def find_squares_v2(frame):
 
 
 def main():
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     if not cap.isOpened():
         print('无法打开相机 /dev/video0')
         return

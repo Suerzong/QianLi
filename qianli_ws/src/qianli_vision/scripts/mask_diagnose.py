@@ -12,6 +12,8 @@
 按键：q 退出 | s 保存 /tmp/mask_diag.png
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 
 import cv2
@@ -21,7 +23,7 @@ MIN_AREA = 100
 MIN_SIZE = 30    # 物块最小边长（像素）
 MAX_SIZE = 50    # 物块最大边长（像素）
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 if not cap.isOpened():
     print('无法打开相机')
     exit(1)

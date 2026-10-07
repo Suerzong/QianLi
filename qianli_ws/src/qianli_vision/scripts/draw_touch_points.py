@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import camera_source, default_camera
 
 import argparse
@@ -89,7 +91,7 @@ def main():
             return 1
         print(f'  ✅ 拿到 {frame.shape[1]}x{frame.shape[0]}')
     else:
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         if not cap.isOpened():

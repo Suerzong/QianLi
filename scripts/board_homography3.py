@@ -6,6 +6,8 @@
 于是 findChessboardCorners 找子尺寸即可；用上面的范围反推它是哪一块。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 import json
 import sys
@@ -22,7 +24,7 @@ KNOWN = (286.0, 475.0, 236.0, 364.0)     # xmin xmax ymin ymax
 def main():
     img = cv2.imread('/tmp/board_src.jpg')
     if img is None:
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         for _ in range(20):
             ok, f = cap.read()
             if ok:

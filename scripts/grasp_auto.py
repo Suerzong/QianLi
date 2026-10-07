@@ -19,6 +19,8 @@
 经用户示教的中间位 READY，路径更可控。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import arm_source_path, default_camera, driver_params_path, project_path
@@ -408,7 +410,7 @@ def main():
         # 下探到位拍照（供核对固定爪相对方块的位置）
         try:
             import cv2
-            cap = cv2.VideoCapture(default_camera())
+            cap = open_video_capture(default_camera())
             img = None
             for _ in range(8):
                 ok2, f2 = cap.read()

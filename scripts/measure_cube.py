@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """用棋盘单应精确量方块的实际边长（mm）。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import json
 import os
@@ -13,7 +15,7 @@ fr = json.load(open(os.path.join(CFG, 'board_frame.json')))
 H = np.array(fr['H'])
 Hi = np.linalg.inv(H)
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 img = None
 for _ in range(15):
     ok, f = cap.read()

@@ -10,6 +10,8 @@
   ~/QianLi/qianli_ws/config/board_frame.npz   (单应矩阵)
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import argparse
 import json
@@ -53,7 +55,7 @@ def affine_from_marks():
 
 
 def grab(n=15):
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     img = None
     for _ in range(n):
         ok, f = cap.read()

@@ -27,6 +27,8 @@ def main():
     parser.add_argument('--memory', type=int, default=8192)
     parser.add_argument('--cpus', type=int, default=8)
     parser.add_argument('--disk-gb', type=int, default=120)
+    parser.add_argument('--connect-project-usb', action='store_true',
+                        help='Auto-connect the CH343 arm adapter and 05a3:9230 external camera')
     parser.add_argument('--vmware', type=Path,
                         default=Path('C:/Program Files/VMware/VMware Workstation'))
     args = parser.parse_args()
@@ -108,12 +110,15 @@ def main():
               'sata0:0.startConnected':'TRUE','ethernet0.present':'TRUE',
               'ethernet0.connectionType':'nat','ethernet0.virtualDev':'e1000e',
               'ethernet0.addressType':'generated','ethernet0.startConnected':'TRUE',
-              'usb.present':'TRUE','ehci.present':'TRUE','usb_xhci.present':'TRUE',
+              'usb.present':'TRUE','ehci.present':'FALSE','usb_xhci.present':'TRUE',
               'sound.present':'FALSE','floppy0.present':'FALSE','vmci0.present':'TRUE',
               'mks.enable3d':'TRUE','svga.autodetect':'TRUE','svga.vramSize':'268435456',
               'tools.syncTime':'TRUE','uuid.action':'create',
               'serial0.present':'TRUE','serial0.fileType':'file',
               'serial0.fileName':(bootstrap/'serial.log').as_posix(),'serial0.startConnected':'TRUE'}
+    if args.connect_project_usb:
+        settings['usb.autoConnect.device0']='0x1a86:0x55d3'
+        settings['usb.autoConnect.device1']='0x05a3:0x9230'
     (target/'qianli-humble.vmx').write_text(
         ''.join(f'{key} = {json.dumps(value,ensure_ascii=False)}\n' for key,value in settings.items()),
         encoding='utf-8',newline='\n')

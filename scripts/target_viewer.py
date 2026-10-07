@@ -12,6 +12,8 @@
      浏览器打开 http://<VM_IP>:8099
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import arm_source_path, default_camera, driver_params_path, project_path
@@ -258,7 +260,7 @@ def main():
     vis = Vision(a.half_mm, a.clearance_mm, a.color)
 
     def loop():
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         while True:
             ok, img = cap.read()
             if not ok:

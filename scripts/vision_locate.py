@@ -6,6 +6,8 @@
 再把方块中心映射成棋盘坐标（cm）。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 import json
 
@@ -53,7 +55,7 @@ def detect_board(gray):
     return None, th
 
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(10):
     ok, img = cap.read()
     if ok:

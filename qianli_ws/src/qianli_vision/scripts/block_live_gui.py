@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, camera_source, default_camera
 
 import argparse
@@ -192,7 +194,7 @@ def reader_thread():
         return
     undist = cd.Undistorter(CONFIG['intrinsics'], log_fn=lambda *a, **k: None)
 
-    cap = cv2.VideoCapture(CONFIG['camera'])
+    cap = open_video_capture(CONFIG['camera'])
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CONFIG['width'])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CONFIG['height'])
     time.sleep(1.0)

@@ -23,6 +23,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 
 import argparse
@@ -82,7 +84,7 @@ def _blank(w=640, h=480):
 
 
 def reader_thread():
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CONFIG['width'])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CONFIG['height'])
     time.sleep(1.0)

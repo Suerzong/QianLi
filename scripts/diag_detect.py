@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """诊断：相机看到什么 + 黄色掩码在哪。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(8):
     ok, f = cap.read()
 cap.release()

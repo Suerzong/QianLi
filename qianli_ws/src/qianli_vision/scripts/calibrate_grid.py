@@ -17,6 +17,8 @@
 按键：t=算标定  s=保存  q=退出  r=重框 ROI  c=清除点重采
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 
 import cv2
@@ -52,7 +54,7 @@ def on_mouse(event, x, y, flags, param):
 
 def main():
     global roi, homography
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

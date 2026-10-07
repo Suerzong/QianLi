@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """探测各摄像头：能否读帧、能否识别 7x5 棋盘内角点。"""
+
+from project_paths import open_video_capture
 import cv2
 import numpy as np
 
@@ -7,7 +9,7 @@ FLAGS = (cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE
          | cv2.CALIB_CB_FAST_CHECK)
 
 for idx in range(4):
-    cap = cv2.VideoCapture(idx)
+    cap = open_video_capture(idx)
     if not cap.isOpened():
         print(f'cam{idx}: 打不开')
         cap.release()

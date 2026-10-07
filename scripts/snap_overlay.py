@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """导出 target_viewer 的一帧标注图，便于核对叠加是否正确。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import json
 import os
@@ -13,7 +15,7 @@ sys.path.insert(0, os.path.expanduser(
 import target_viewer as tv
 
 vis = tv.Vision(20.0, 6.0, 'yellow')
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 img = None
 for _ in range(15):
     ok, f = cap.read()

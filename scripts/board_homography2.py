@@ -6,6 +6,8 @@ findChessboardCorners 要求全部内角点可见，方块压上去就失败。
 外轮廓对应的棋盘坐标有相位歧义 -> 穷举 16 种组合，取点阵误差最小的。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 import itertools
 import json
@@ -80,7 +82,7 @@ def score(H, cents):
 def main():
     img = cv2.imread('/tmp/board_src.jpg')
     if img is None:
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         for _ in range(20):
             ok, f = cap.read()
             if ok:

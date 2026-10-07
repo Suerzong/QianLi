@@ -60,6 +60,8 @@ SO-101 抓取作业里，桌面上散着一批 4cm 边长的 EVA 泡棉方块（
 内参文件默认读 /tmp/camera_intrinsics.yaml，存在就自动去畸变，不存在就提示并继续。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, camera_source, default_camera
 
 import argparse
@@ -175,13 +177,13 @@ def wrap_half_open(angle):
 def open_camera(index, width, height):
     """打开 USB 摄像头。失败返回 None（绝不抛异常，方便 ROS 主循环重试）。"""
     if os.name == 'nt':
-        cap = cv2.VideoCapture(index)
+        cap = open_video_capture(index)
     else:
-        cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
+        cap = open_video_capture(index, cv2.CAP_V4L2)
         if not cap.isOpened():
             # 有些环境 V4L2 后端不可用（容器/虚拟相机），退回默认后端再试一次
             cap.release()
-            cap = cv2.VideoCapture(index)
+            cap = open_video_capture(index)
     if not cap.isOpened():
         cap.release()
         return None

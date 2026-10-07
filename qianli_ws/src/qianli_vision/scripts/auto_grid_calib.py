@@ -10,6 +10,8 @@
 按键：q 退出 | s 保存 | r 重框 ROI | a 重新标定
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 
 import cv2
@@ -89,7 +91,7 @@ def compute_homography(roi_img, show_callback=None):
 
 
 def main():
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

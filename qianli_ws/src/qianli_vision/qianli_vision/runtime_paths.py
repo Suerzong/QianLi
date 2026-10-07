@@ -92,6 +92,27 @@ def default_camera():
     return camera_source(os.environ.get('QI_CAMERA', '0'))
 
 
+def open_video_capture(source=None, *args, **kwargs):
+    """Open a camera with an optional machine-specific transport format.
+
+    QI_CAMERA_FOURCC=MJPG avoids raw YUYV USB bandwidth failures in VMware.
+    With no override, OpenCV retains its existing backend and format defaults.
+    Video files/URLs retain their decoder settings.
+    """
+    import cv2
+    source = default_camera() if source is None else camera_source(source)
+    fourcc = os.environ.get('QI_CAMERA_FOURCC', '')
+    device = isinstance(source, int) or str(source).startswith('/dev/')
+    if device and fourcc and len(fourcc) != 4:
+        raise ValueError('QI_CAMERA_FOURCC must contain four characters, e.g. MJPG')
+    capture = cv2.VideoCapture(source, *args, **kwargs)
+    if device and fourcc and capture.isOpened():
+        if not capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*fourcc)):
+            capture.release()
+            raise RuntimeError(f'Camera {source} cannot select format {fourcc}')
+    return capture
+
+
 def default_arm_port() -> str:
     return os.environ.get('QI_ARM_PORT',
                           '/dev/qianli_arm' if Path('/dev/qianli_arm').exists()

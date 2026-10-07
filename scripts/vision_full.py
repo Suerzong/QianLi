@@ -6,6 +6,8 @@
 3) 用外参换算到 base_link（旧外参，仅作初值）
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 import math
 
@@ -30,7 +32,7 @@ def to_base(gx_cm, gy_cm):
             EXT_ORIGIN[1] + s * gx + c * gy)
 
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(12):
     ok, img = cap.read()
     if ok:

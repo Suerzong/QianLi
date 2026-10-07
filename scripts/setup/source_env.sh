@@ -3,6 +3,10 @@
 _qi_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 export QI_PROJECT_ROOT="${QI_PROJECT_ROOT:-$(cd -- "$_qi_script_dir/../.." && pwd)}"
 export QI_CALIB_DIR="${QI_CALIB_DIR:-$QI_PROJECT_ROOT/calib}"
+_qi_ros_cache="${QI_ROS_INSTALL_CACHE:-$QI_PROJECT_ROOT/migration_assets/ros-install-cache}"
+if [[ -z "${ROSDISTRO_INDEX_URL:-}" && -f "$_qi_ros_cache/index-local.yaml" ]]; then
+  export ROSDISTRO_INDEX_URL="file://$_qi_ros_cache/index-local.yaml"
+fi
 _qi_distro="${QI_ROS_DISTRO:-humble}"
 if [[ -n "${ROS_DISTRO:-}" && "$ROS_DISTRO" != "$_qi_distro" ]]; then
   echo "[ERROR] Shell already sourced $ROS_DISTRO; open a fresh shell for $_qi_distro." >&2
@@ -29,5 +33,5 @@ if [[ -f "$QI_PROJECT_ROOT/qianli_ws/install/setup.bash" ]]; then
 fi
 export PYTHONPATH="$QI_PROJECT_ROOT/scripts:$QI_PROJECT_ROOT/qianli_ws/src/qianli_vision/scripts${PYTHONPATH:+:$PYTHONPATH}"
 echo "[OK] ROS_DISTRO=$ROS_DISTRO  project=$QI_PROJECT_ROOT"
-unset _qi_script_dir _qi_distro
+unset _qi_script_dir _qi_distro _qi_ros_cache
 unset -f _qi_source

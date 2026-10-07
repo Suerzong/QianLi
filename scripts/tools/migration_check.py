@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Read-only target checks. Simulation checks never connect to the arm."""
+
+from project_paths import open_video_capture
 import argparse
 import importlib.metadata
 import json
@@ -18,6 +20,7 @@ def main():
     parser.add_argument('--ros', action='store_true', help='Verify Humble and installed public modules')
     parser.add_argument('--calibration', action='store_true', help='Require quality-approved intrinsics/extrinsics')
     parser.add_argument('--devices', action='store_true', help='Capture one camera frame and check serial permissions')
+    parser.add_argument('--gpu', action='store_true', help='Require NVIDIA driver and actual PyTorch CUDA arithmetic')
     parser.add_argument('--render', action='store_true', help='Create a MuJoCo renderer (set MUJOCO_GL=egl for headless Linux)')
     args=parser.parse_args()
     failures=[]
@@ -81,13 +84,24 @@ def main():
         port=Path(default_arm_port())
         assert port.exists() and os.access(port,os.R_OK|os.W_OK), f'Serial permissions/path invalid: {port}'
         camera=default_camera()
-        capture=cv2.VideoCapture(camera)
+        capture=open_video_capture(camera)
         try: ok,frame=capture.read()
         finally: capture.release()
         assert ok and frame is not None, f'Camera capture failed: {camera}'
-        gpu=subprocess.check_output(['nvidia-smi','--query-gpu=name,driver_version','--format=csv,noheader'],text=True).strip()
-        return dict(port=str(port), camera=camera, frame=list(frame.shape),gpu=gpu)
+        return dict(port=str(port), camera=camera, frame=list(frame.shape))
     if args.devices: check('devices',devices)
+
+    def gpu():
+        import torch
+        driver=subprocess.check_output(['nvidia-smi','--query-gpu=name,driver_version','--format=csv,noheader'],text=True).strip()
+        assert torch.cuda.is_available(), 'PyTorch CUDA unavailable'
+        matrix=torch.arange(64,dtype=torch.float32,device='cuda').reshape(8,8)
+        product=matrix@matrix.T
+        torch.cuda.synchronize()
+        torch.testing.assert_close(product.cpu(),matrix.cpu()@matrix.cpu().T)
+        return dict(driver=driver,torch=torch.__version__,cuda=torch.version.cuda,
+                    device=torch.cuda.get_device_name(0),arithmetic=True)
+    if args.gpu: check('gpu',gpu)
 
     def render():
         import mujoco

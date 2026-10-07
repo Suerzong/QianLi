@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """仔细诊断：预热后单帧全面分析（棋盘暗格分布 + 宽范围黄色 + 亮度）。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(25):          # 预热，让自动曝光/白平衡稳定
     ok, f = cap.read()
 frames = []

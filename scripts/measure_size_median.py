@@ -4,6 +4,8 @@
 用棋盘单应在像素处的局部尺度换算，排除臂上黄件/工具（只取棋盘上、尺寸合理者）。
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import json
 import os
@@ -30,7 +32,7 @@ def size_mm(px, span):
     return span * (sx + sy) / 2 * 10.0
 
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 samples = []
 for _ in range(10):
     ok, img = cap.read()

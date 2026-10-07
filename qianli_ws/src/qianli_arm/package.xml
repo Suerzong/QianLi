@@ -5,7 +5,6 @@
   <description>QianLi SO-ARM101 serial driver and inverse kinematics</description>
   <maintainer email="suerzong2007@gmail.com">Suerzong</maintainer>
   <license>Apache-2.0</license>
-  <buildtool_depend>ament_python</buildtool_depend>
   <depend>rclpy</depend>
   <depend>rcl_interfaces</depend>
   <depend>ament_index_python</depend>

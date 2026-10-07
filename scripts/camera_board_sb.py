@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """更强棋盘检测：findChessboardCornersSB + CLAHE + 多尺寸/多尺度。"""
+
+from project_paths import open_video_capture
 import cv2
 import numpy as np
 
 SIZES = [(7, 5), (6, 4), (9, 6), (8, 6), (5, 4), (6, 5), (7, 6), (10, 7)]
 
 for idx in (0, 1):
-    cap = cv2.VideoCapture(idx)
+    cap = open_video_capture(idx)
     if not cap.isOpened():
         continue
     ok, img = False, None

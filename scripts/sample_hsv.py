@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """取样方块实际 HSV + 连续5次 (0,0) 重合稳定性。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import os
 
@@ -17,7 +19,7 @@ v = Hi @ np.array([0.0, 0.0, 1.0])
 PX = v[:2] / v[2]
 print('(0,0)像素:', PX.round(1))
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(25):
     cap.read()
 res = []

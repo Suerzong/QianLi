@@ -38,6 +38,10 @@ def make_env(rank, seed=0, jitter=None, max_steps=None, obj_size=0.04):
 
 
 def main():
+    if os.name == 'nt':
+        for stream in (sys.stdout, sys.stderr):
+            if hasattr(stream, 'reconfigure'):
+                stream.reconfigure(encoding='utf-8', errors='replace')
     import torch
     torch.set_num_threads(1)      # 并行环境各自单线程，避免 CPU 超订
 
@@ -112,7 +116,8 @@ def main():
                 tensorboard_log=tb_dir)
 
     if a.pretrain:
-        bc = PPO.load(a.pretrain, device=a.device)
+        from policy_compat import load_grasp_policy
+        bc = load_grasp_policy(a.pretrain, device=a.device, env=venv)
         sd_bc = bc.policy.state_dict()
         sd = model.policy.state_dict()
         n = 0

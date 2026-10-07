@@ -213,8 +213,8 @@ def main():
 
     # 行为克隆热启动：把 BC 策略的权重拷进 PPO（网络结构必须一致）
     if a.pretrain:
-        from stable_baselines3 import PPO as _PPO
-        bc = _PPO.load(a.pretrain, device='cpu')
+        from policy_compat import load_grasp_policy
+        bc = load_grasp_policy(a.pretrain, device='cpu', env=venv)
         sd_bc = bc.policy.state_dict()
         sd = model.policy.state_dict()
         copied, skipped = [], []

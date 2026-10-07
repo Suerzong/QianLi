@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, camera_source, default_camera
 
 import argparse
@@ -176,7 +178,7 @@ def main():
     st = {'jpg': None, 'lock': threading.Lock()}
     print(f'目标 {len(pts)} 个点，内参 {size[0]}x{size[1]}，触发文件 {TRIGGER}')
 
-    cap = cv2.VideoCapture(args.camera)
+    cap = open_video_capture(args.camera)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1])
     time.sleep(1.0)

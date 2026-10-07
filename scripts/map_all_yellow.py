@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """把当前画面所有大黄色块映射到棋盘坐标，判断哪个在棋盘上。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera, project_path
 import os
 
@@ -18,7 +20,7 @@ board_y = rows * cell
 print(f'棋盘范围 mm: x 0..{board_x:.0f}  y 0..{board_y:.0f} '
       f'({cols}x{rows}格, {cell}mm)')
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 for _ in range(20):
     ok, f = cap.read()
 ok, f = cap.read()

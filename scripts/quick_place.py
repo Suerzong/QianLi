@@ -4,6 +4,8 @@
 Default plans only. --execute carries and holds. --open opens the jaws only.
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import default_camera
@@ -44,7 +46,7 @@ def main():
         bus.write_positions(np.rint(zero+q*direction*4096/(2*math.pi)).astype(int).tolist())
     def picture(tag):
         import cv2
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         frames = [cap.read() for _ in range(5)]
         cap.release()
         ok, img = frames[-1]

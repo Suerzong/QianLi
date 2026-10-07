@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """记录用户示范的抓取位姿 -> config/taught_grasp.json（并拍照）。"""
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import arm_source_path, default_camera, driver_params_path, project_path
@@ -42,7 +44,7 @@ tcp = F[:3, 3]
 # 取张照片
 try:
     import cv2
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     img = None
     for _ in range(10):
         ok, f = cap.read()

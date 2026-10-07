@@ -7,6 +7,8 @@
 输出：每个颜色方块 -> 棋盘坐标(cm) -> base_link(m) -> 距底座水平半径(mm)
 """
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 import json
 import math
@@ -23,7 +25,7 @@ CACHE = calibration_path('vision_calib.json')
 
 
 def grab(n=15):
-    cap = cv2.VideoCapture(default_camera())
+    cap = open_video_capture(default_camera())
     best = None
     for _ in range(n):
         ok, img = cap.read()

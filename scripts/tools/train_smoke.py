@@ -55,9 +55,25 @@ def main():
             restored = PPO.load(path, device=args.device)
             restored_action, _ = restored.predict(observation, deterministic=True)
             np.testing.assert_array_equal(action, restored_action)
+            from policy_compat import load_grasp_policy
+            historical = []
+            for name in ('bc_policy.zip', 'ppo_bc_final.zip'):
+                source = Path(project_path('dual_twin/rl_out'))/name
+                legacy = load_grasp_policy(source, device=args.device, env=env)
+                original_action, _ = legacy.predict(observation, deterministic=True)
+                assert original_action.shape == (2, 6) and np.isfinite(original_action).all()
+                converted = Path(directory)/name
+                legacy.save(converted)
+                replay = PPO.load(converted, device=args.device)
+                replay_action, _ = replay.predict(observation, deterministic=True)
+                np.testing.assert_array_equal(original_action, replay_action)
+                for key, weight in legacy.policy.state_dict().items():
+                    torch.testing.assert_close(weight, replay.policy.state_dict()[key], rtol=0, atol=0)
+                historical.append(name)
         print(json.dumps(dict(passed=True, obj_size_m=args.obj_size, seed=73,
                               workers=2, steps=model.num_timesteps, device=args.device,
-                              gpu=gpu, torch=torch.__version__, model_roundtrip=True)))
+                              gpu=gpu, torch=torch.__version__, model_roundtrip=True,
+                              historical_models=historical)))
     finally:
         env.close()
 

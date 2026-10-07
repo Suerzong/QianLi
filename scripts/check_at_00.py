@@ -11,6 +11,8 @@
 用法: check_at_00.py [最小重合比例] [窗口像素半径]   ; --reset 重建参考
 """
 
+from project_paths import open_video_capture
+
 from project_paths import project_path
 import os
 import sys
@@ -48,7 +50,7 @@ def grab():
     def _do():
         for idx in (0, 1):
             try:
-                cap = cv2.VideoCapture(idx)
+                cap = open_video_capture(idx)
             except Exception:
                 continue
             if not cap.isOpened():

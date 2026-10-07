@@ -24,6 +24,8 @@
   ros2 run qianli_vision object_localizer --ros-args -p gui:=false
 """
 
+from qianli_vision.runtime_paths import open_video_capture
+
 from qianli_vision.runtime_paths import calibration_path, camera_source, default_camera
 
 import os
@@ -98,7 +100,7 @@ class ObjectLocalizer(Node):
         self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
         self.box_pts = None
 
-        self.cap = cv2.VideoCapture(camera_source(self.get_parameter('camera_device').value))
+        self.cap = open_video_capture(camera_source(self.get_parameter('camera_device').value))
         if not self.cap.isOpened():
             self.get_logger().error(f'无法打开相机 {self.get_parameter("camera_device").value}')
             raise SystemExit(1)

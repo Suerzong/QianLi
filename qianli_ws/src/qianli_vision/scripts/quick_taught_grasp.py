@@ -6,6 +6,8 @@ Requires sole ownership of the servo port. Reuses measured driver limits.
 The finished/error pose remains torque-held; --release explicitly releases it.
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_arm_port
 
 from project_paths import arm_source_path, default_camera, driver_params_path
@@ -58,7 +60,7 @@ def main():
     def snapshot(tag):
         try:
             import cv2
-            cap = cv2.VideoCapture(default_camera())
+            cap = open_video_capture(default_camera())
             frames = [cap.read() for _ in range(5)]
             cap.release()
             ok, img = frames[-1]

@@ -10,6 +10,8 @@
 输出：/tmp/chessboard.png 标注图（角点编号）
 """
 
+from project_paths import open_video_capture
+
 from project_paths import default_camera
 
 import itertools
@@ -21,7 +23,7 @@ import numpy as np
 CELL_CM = 3.3
 ROI = (205, 143, 281, 216)
 
-cap = cv2.VideoCapture(default_camera())
+cap = open_video_capture(default_camera())
 if not cap.isOpened():
     print('无法打开相机')
     sys.exit(1)

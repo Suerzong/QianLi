@@ -3,6 +3,8 @@
 
 用于在无法看图的情况下判断场景：棋盘在不在画面里、物块大致在哪。
 """
+
+from project_paths import open_video_capture
 import cv2
 import numpy as np
 
@@ -22,7 +24,7 @@ def textify(gray, cols=48, rows=20):
 
 
 for idx in (0, 1):
-    cap = cv2.VideoCapture(idx)
+    cap = open_video_capture(idx)
     if not cap.isOpened():
         continue
     ok, img = False, None

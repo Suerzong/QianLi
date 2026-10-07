@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """抗遮挡棋盘单应 v4：SB 检测器找子棋盘 + 已知像素范围定相位。"""
 
+from project_paths import open_video_capture
+
 from project_paths import calibration_path, default_camera
 import json
 import sys
@@ -16,7 +18,7 @@ KNOWN = (286.0, 475.0, 236.0, 364.0)
 def main():
     img = cv2.imread('/tmp/board_src.jpg')
     if img is None:
-        cap = cv2.VideoCapture(default_camera())
+        cap = open_video_capture(default_camera())
         for _ in range(20):
             ok, f = cap.read()
             if ok:
