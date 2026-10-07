@@ -375,8 +375,10 @@ def main():
             out['error'] = 'grasp IK unreachable'
             print('❌ 抓取位 IK 够不到')
             return
-        # 平滑下探到抓取位（时间基准正弦剖面，每段查净空）
+        # 平滑下探到抓取位（笛卡尔直线：TCP 沿竖直直线下降，每拍 IK 解算）
         q_from = read()
+        p_start = fk(q_from)['gripper_frame_link'][:3, 3].copy()
+        seed = q_from.copy()
         t0 = time.monotonic()
         dur = 2.4
         while True:
@@ -384,12 +386,17 @@ def main():
             if s >= 1.0:
                 break
             si = 0.5 * (1 - np.cos(np.pi * s))   # 快-慢：接近底部变缓
-            seg = q_from + (q_lo - q_from) * float(si)
-            low, lk = lowest(seg)
+            tp = p_start + (tgt - p_start) * float(si)   # TCP 竖直直线
+            q_c, e = solve(tp, 0.58, seed)
+            if e > 0.006:
+                print(f'  下探 IK 误差 {e*1000:.1f}mm，停')
+                break
+            low, lk = lowest(q_c)
             if low[2] < TABLE_Z - 0.002:
                 print(f'  下探最低 {lk} z={low[2]*1000:+.2f}mm，停')
                 break
-            write(seg)
+            write(q_c)
+            seed = q_c
             time.sleep(0.03)
         p = tip_of(read())
         print(f'落到底 爪尖 ({p[0]:.4f},{p[1]:.4f},{p[2]*1000:+.1f}mm)  '
@@ -508,12 +515,30 @@ def main():
             print(f'  [放置] 去 (0,0) 上方 IK 误差 {e1*1000:.1f}mm  '
                   f'TCP {np.round(ph,4).tolist()}')
             smooth_move(q_ph, check=True, tag='去放置点')
-            # 下降到放置高度
+            # 下降到放置高度（笛卡尔直线：夹着方块垂直落，避免画弧碰物）
             pl = np.array([a.place_x, a.place_y,
                            a.place_z_mm / 1000.0 + 0.0063])
             q_pl, e2 = solve(pl, gp, read())
             print(f'  [放置] 下降 IK 误差 {e2*1000:.1f}mm')
-            smooth_move(q_pl)
+            p_ph = fk(read())['gripper_frame_link'][:3, 3].copy()
+            seed = read()
+            t0 = time.monotonic()
+            dur = 2.0
+            while True:
+                s = (time.monotonic() - t0) / dur
+                if s >= 1.0:
+                    break
+                si = 0.5 * (1 - np.cos(np.pi * s))
+                tp = p_ph + (pl - p_ph) * float(si)
+                q_c, e = solve(tp, gp, seed)
+                if e > 0.006:
+                    break
+                low, lk = lowest(q_c)
+                if low[2] < TABLE_Z - 0.002:
+                    break
+                write(q_c)
+                seed = q_c
+                time.sleep(0.04)
             open_jaws()
             released_here = True
             out['placed_at_00'] = True

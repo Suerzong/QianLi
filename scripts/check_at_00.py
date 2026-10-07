@@ -26,7 +26,7 @@ RESET = '--reset' in sys.argv
 
 def yellow_mask(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    m = cv2.inRange(hsv, np.array((20, 90, 90)), np.array((34, 255, 255)))
+    m = cv2.inRange(hsv, np.array((15, 60, 60)), np.array((40, 255, 255)))
     m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
     m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     return m
