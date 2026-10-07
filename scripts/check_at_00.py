@@ -33,14 +33,42 @@ def yellow_mask(img):
 
 
 def grab():
-    cap = cv2.VideoCapture(0)
-    img = None
-    for _ in range(12):
-        ok, f = cap.read()
-        if ok:
-            img = f
-    cap.release()
-    return img
+    """带超时的相机取帧：绝不挂死/空转。
+
+    相机被锁或 USB 抖动时 cv2.read() 会阻塞，旧实现会永远卡住
+    （进程 99% CPU 空转 -> 拖慢流式下发 -> 抓取一卡一卡）。
+    这里用线程 + 1.5s 超时兜底，超时即返回 None（本次判定 NO）。
+    """
+    import threading
+
+    box = {'img': None}
+
+    def _do():
+        for idx in (0, 1):
+            try:
+                cap = cv2.VideoCapture(idx)
+            except Exception:
+                continue
+            if not cap.isOpened():
+                cap.release()
+                continue
+            for _ in range(4):
+                try:
+                    ok, f = cap.read()
+                except Exception:
+                    break
+                if ok:
+                    box['img'] = f
+                    cap.release()
+                    return
+            cap.release()
+
+    t = threading.Thread(target=_do, daemon=True)
+    t.start()
+    t.join(1.5)
+    if t.is_alive():
+        return None          # 卡住 -> 交给外层超时/重试
+    return box['img']
 
 
 import json

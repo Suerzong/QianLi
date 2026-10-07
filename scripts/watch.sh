@@ -16,7 +16,7 @@ round=0
 miss=0
 while true; do
   round=$((round+1))
-  AT=$(python3 check_at_00.py "$MINOV" 2>/dev/null)
+  AT=$(timeout 8 python3 check_at_00.py "$MINOV" 2>/dev/null)
   if [ "$AT" = "YES" ]; then
     miss=0
     echo "[$(date +%H:%M:%S)] (0,0) 掩码有重合 -> 没动，待命" >> $LOG
@@ -40,7 +40,7 @@ while true; do
       # 等臂完全归位后重建参考掩码（避免把夹爪黄件录进参考）
       for k in 1 2 3 4 5 6; do
         sleep 4
-        RS=$(python3 check_at_00.py --reset 2>/dev/null)
+        RS=$(timeout 8 python3 check_at_00.py --reset 2>/dev/null)
         case "$RS" in
           RESET_OK*) echo "[$(date +%H:%M:%S)] 参考掩码已重建 ($RS)" >> $LOG
                      miss=0

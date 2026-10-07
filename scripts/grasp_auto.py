@@ -51,8 +51,8 @@ class SkipGrasp(Exception):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--x', type=float, required=True)
-    ap.add_argument('--y', type=float, required=True)
+    ap.add_argument('--x', type=float, required=False, default=0.2)
+    ap.add_argument('--y', type=float, required=False, default=-0.1)
     ap.add_argument('--cube-mm', type=float, default=40.0, help='方块边长')
     ap.add_argument('--gap-mm', type=float, default=1.5,
                     help='固定爪与方块侧面的间隙（示范位实测约 0.6mm）')
@@ -239,15 +239,41 @@ def main():
 
     # ---- 快速/流畅动作原语 ----
     def open_jaws():
+        """平滑开爪：时间基准余弦剖面（与 smooth_move 同款）。"""
         q = read()
-        for g in np.linspace(q[5], 0.58, 10):
+        g0 = q[5]
+        g1 = 0.58
+        if abs(g1 - g0) < 0.005:
+            return
+        dur = 1.2
+
+        def ramp_oj(s):
+            # 单边加速-减速的简单正弦：s in [0,1] -> 位移
+            return 0.5 * (1 - np.cos(np.pi * s))
+
+        t0 = time.monotonic()
+        while True:
+            s = (time.monotonic() - t0) / dur
+            if s >= 1.0:
+                break
             qq = q.copy()
-            qq[5] = g
+            qq[5] = g0 + (g1 - g0) * float(ramp_oj(s))
             write(qq)
-            time.sleep(0.05)
+            time.sleep(0.03)
+        qq = q.copy()
+        qq[5] = g1
+        write(qq)
 
     def smooth_move(goal, check=False, tag=''):
-        """连续插值快速移动（不在中间点等收敛），到位后校验一次。"""
+        """梯形速度剖面**时间基准**流式下发。
+
+        丝滑三要素：
+          1. 梯形剖面（余弦加速/减速，f=0.13 平缓起步无蹬脚）
+          2. 目标按**真实流逝时间**插值（不是拍号）：
+             某拍被调度拖慢/抢CPU时，下一拍按时间重算 -> 无位置跳变，
+             轨迹平滑伸展，免疫"值守时一卡一卡"（旧实现按拍号会跳变）
+          3. 结束前补拍直至到位
+        """
         start = read()
         if check:
             worst = None
@@ -260,15 +286,40 @@ def main():
             if worst[0] < TABLE_Z - 0.003:
                 print(f'  [{tag}] 路径低于桌面，跳过')
                 return False
-        n = int(np.clip(float(np.max(np.abs(goal - start))) / 0.07, 6, 26))
-        for i in range(1, n + 1):
-            write(start + (goal - start) * i / n)
-            time.sleep(0.045)
-        for _ in range(10):
+        dist = float(np.max(np.abs(goal - start)))
+        if dist < 0.002:
+            write(goal)
+            return True
+        duration = np.clip(dist / 0.11, 1.1, 5.5)   # 巡航 ~0.11rad/s
+        f = 0.13                                    # 加速/减速段占比
+        NSTREAM = 0.012                             # 流式检查周期(秒)
+
+        def ramp(s):
+            """归一化时间 s -> [0,1] 位移（梯形余弦速度剖面的积分，已归一化）。
+
+            速度: [0,f) 余弦爬升0->1; [f,1-f] 巡航1; (1-f,1] 余弦降1->0
+            位移 = 积分 / (1-f)，保证 ramp(1)=1、处处连续。"""
+            if s < f:
+                return (s / 2 - f / (2 * np.pi) * np.sin(np.pi * s / f)) \
+                    / (1 - f)
+            if s <= 1 - f:
+                return (s - f / 2) / (1 - f)
+            u = s - (1 - f)
+            return (1 - 1.5 * f + u / 2
+                    + f / (2 * np.pi) * np.sin(np.pi * u / f)) / (1 - f)
+
+        t0 = time.monotonic()
+        while True:
+            s = (time.monotonic() - t0) / duration
+            if s >= 1.0:
+                break
+            write(start + (goal - start) * float(ramp(s)))
+            time.sleep(NSTREAM)
+        for _ in range(20):
             if np.max(np.abs(read() - goal)) < 0.05:
                 break
             write(goal)
-            time.sleep(0.07)
+            time.sleep(0.03)
         return True
 
     released_here = False
@@ -294,28 +345,16 @@ def main():
         legs.append(('HOVER(目标上方)', q_hi))
         cur = q_now
         for name, q_leg in legs:
-            n = 20
-            worst = None
-            for i in range(1, n + 1):
-                q = cur + (q_leg - cur) * i / n
-                low, lk = lowest(q)
-                if worst is None or low[2] < worst[0]:
-                    worst = (low[2], lk)
-            print(f'[{name}] 路径最低 {worst[1]} z={worst[0]*1000:+.2f}mm')
-            if worst[0] < TABLE_Z - 0.003:
+            # 用时间基准平滑流式（与摆动测试一致的丝滑），含净空检查
+            ok = smooth_move(q_leg, check=True, tag=name)
+            if not ok:
                 out['error'] = f'path below table ({name})'
-                print('❌ 路径低于桌面，中止')
+                print(f'❌ [{name}] 路径低于桌面，中止')
                 return
-            move(q_leg)
             cur = q_leg
             if name == 'READY':
                 # 出勤时在**中间位**就把爪子打开（用户要求）
-                qq = read()
-                for g in np.linspace(qq[5], 0.58, 12):
-                    qqq = qq.copy()
-                    qqq[5] = g
-                    write(qqq)
-                    time.sleep(0.08)
+                open_jaws()
                 print('  [READY] 已开爪')
         # 张开爪子到最大
         q = read()
@@ -336,16 +375,22 @@ def main():
             out['error'] = 'grasp IK unreachable'
             print('❌ 抓取位 IK 够不到')
             return
-        # 分段下探，每段都查净空
+        # 平滑下探到抓取位（时间基准正弦剖面，每段查净空）
         q_from = read()
-        for i in range(1, 13):
-            seg = q_from + (q_lo - q_from) * i / 12
+        t0 = time.monotonic()
+        dur = 2.4
+        while True:
+            s = (time.monotonic() - t0) / dur
+            if s >= 1.0:
+                break
+            si = 0.5 * (1 - np.cos(np.pi * s))   # 快-慢：接近底部变缓
+            seg = q_from + (q_lo - q_from) * float(si)
             low, lk = lowest(seg)
             if low[2] < TABLE_Z - 0.002:
-                print(f'  下探第{i}段最低 {lk} z={low[2]*1000:+.2f}mm，停')
+                print(f'  下探最低 {lk} z={low[2]*1000:+.2f}mm，停')
                 break
             write(seg)
-            time.sleep(0.3)
+            time.sleep(0.03)
         p = tip_of(read())
         print(f'落到底 爪尖 ({p[0]:.4f},{p[1]:.4f},{p[2]*1000:+.1f}mm)  '
               f'离桌面 {(p[2]-TABLE_Z)*1000:.1f}mm')
@@ -366,20 +411,32 @@ def main():
         except Exception as exc:
             print('  拍照失败:', exc)
 
-        # ---- 合爪：载荷闭环 ----
+        # ---- 合爪：载荷闭环（时间基准慢速平滑收拢 + 每轮查载荷）----
         q0 = read()
         load0 = load()
-        sq = q0.copy()
+        g_open = q0[5]
+        g_end = max(a.max_squeeze_rad, lo[5])
         pct = load0
+        dur_close = 2.5
+        seed = q0.copy()
+        sq = q0.copy()
+        t0 = time.monotonic()
         deadline = time.monotonic() + 20
-        while sq[5] > a.max_squeeze_rad and time.monotonic() < deadline:
-            sq[5] = max(a.max_squeeze_rad, sq[5] - 0.005)
+        while time.monotonic() < deadline:
+            s = (time.monotonic() - t0) / dur_close
+            if s >= 1.0:
+                break
+            # 先快后缓的正弦剖面：靠近方块时变慢，温柔接触
+            si = 0.5 * (1 - np.cos(np.pi * s))
+            sq = seed.copy()
+            sq[5] = g_open + (g_end - g_open) * float(si)
             low, lk = lowest(sq)
             if low[2] < TABLE_Z - 0.002:
                 print(f'  合爪触底({lk})，停')
                 break
             write(sq)
-            time.sleep(0.1)
+            seed = sq
+            time.sleep(0.04)
             pct = load()
             if pct >= a.target_load:
                 break
@@ -405,18 +462,27 @@ def main():
             else:
                 held = True
 
-        # ---- 抬升：载荷监控 ----
+        # ---- 抬升：载荷监控（时间基准流式 + 每轮查载荷）----
         if held:
             F = fk(read())['gripper_frame_link']
             p0 = F[:3, 3].copy()
             lifted = 0.0
-            for i in range(1, 13):
-                t2 = p0 + np.array([0, 0, a.lift_mm / 1000 * i / 12])
-                q_c, e = solve(t2, sq[5], read())
+            dur = 3.0                                   # 总抬升时长
+            seed = read()
+            t0 = time.monotonic()
+            while True:
+                s = (time.monotonic() - t0) / dur
+                if s >= 1.0:
+                    break
+                # 正弦剖面：先快后缓，避免末端惯性
+                si = 0.5 * (1 - np.cos(np.pi * s))
+                t2 = p0 + np.array([0, 0, a.lift_mm / 1000 * si])
+                q_c, e = solve(t2, sq[5], seed)
                 if e > 0.006:
                     break
                 write(q_c)
-                time.sleep(0.5)
+                seed = q_c
+                time.sleep(0.06)
                 cur_load = load()
                 lifted = float((fk(read())['gripper_frame_link'][2, 3]
                                 - p0[2]) * 1000)
@@ -472,19 +538,8 @@ def main():
                                   lo, hi)
 
             def safe_move(goal, tag):
-                a0 = read()
-                worst = None
-                for i in range(1, 17):
-                    q = a0 + (goal - a0) * i / 16
-                    low, lk = lowest(q)
-                    if worst is None or low[2] < worst[0]:
-                        worst = (low[2], lk)
-                print(f'  [{tag}] 路径最低 {worst[1]} z={worst[0]*1000:+.2f}mm')
-                if worst[0] < TABLE_Z - 0.003:
-                    print(f'  [{tag}] 路径低于桌面，跳过')
-                    return False
-                move(goal)
-                return True
+                # 用时间基准平滑流式 + 净空检查（与出勤大摆动一致）
+                return smooth_move(goal, check=True, tag=tag)
 
             def open_jaws_local():
                 open_jaws()
