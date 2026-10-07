@@ -11,6 +11,10 @@
 用法：先启动（扭矩必须为 0），然后手拖指尖贴桌面来回滑动，结束后
       touch /tmp/tap_stop 或等 --duration 到点。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -22,15 +26,14 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 STOP = '/tmp/tap_stop'
 
 
@@ -44,7 +47,7 @@ def main():
 
     cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
     zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     model = GripperModel(stride=14)
     gpts = model.parts['gripper_link']
 

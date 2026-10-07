@@ -22,6 +22,8 @@ SO-101 是"一片活动爪 + 一片固定爪"的夹爪。把活动爪转到**闭
 
 from __future__ import annotations
 
+from project_paths import so101_path
+
 import argparse
 import math
 import os
@@ -33,8 +35,7 @@ from pathlib import Path
 import numpy as np
 
 DEFAULT_URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 
 
 def load_stl(path):

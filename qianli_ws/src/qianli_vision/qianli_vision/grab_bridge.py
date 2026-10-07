@@ -4,15 +4,15 @@
 数据流：
   object_localizer 发布 /object_pose (grid 系, 米)
       ↓ 本节点订阅
-  外参变换：grid → base_link（自动读取 /tmp/extrinsic.txt）
+  外参变换：grid → base_link（读取持久标定目录的 extrinsic.txt）
       ↓
   发布 /arm/target_position (base_link 系)
       ↓
   ik_node 解算关节角 → 机械臂移动到物块上方
 
 外参来源（优先级）：
-  1. ROS 参数 grid_origin_x / grid_origin_y / grid_origin_z / grid_theta_deg
-  2. /tmp/extrinsic.txt（extrinsic_calib.py 两点标定产出）
+  1. 完整、有限的 ROS 外参参数，加 extrinsic_quality_ok:=true
+  2. QI_CALIB_DIR/extrinsic.txt（必须有合格质量标记，拒绝旧两点法）
 
 参数：
   approach_z   末端在物块上方多高（米，默认 0.05）
@@ -20,7 +20,7 @@
   mode         oneshot（默认，锁存第一个稳定目标后停止发送）
                / stream（持续跟随物块）
   stable_n     判定"稳定"所需的连续一致帧数（默认 3）
-  extrinsic_file  外参文件路径（默认 /tmp/extrinsic.txt）
+  extrinsic_file  外参文件路径（默认项目 calib/extrinsic.txt）
 
 用法：
   # 预览（不动机械臂）
@@ -28,6 +28,9 @@
   # 真发目标
   ros2 run qianli_vision grab_bridge --ros-args -p publish:=true -p approach_z:=0.05
 """
+
+from qianli_vision.runtime_paths import calibration_path
+from qianli_vision.calibration import load_extrinsics
 
 import math
 import os
@@ -40,28 +43,8 @@ from std_srvs.srv import SetBool
 
 
 def load_extrinsic(path):
-    """从外参文件读取 grid→base_link 变换。返回 dict 或 None。"""
-    if not os.path.exists(path):
-        return None
-    vals = {}
-    try:
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#') or '=' not in line:
-                    continue
-                k, v = line.split('=', 1)
-                try:
-                    vals[k.strip()] = float(v.strip())
-                except ValueError:
-                    pass
-    except OSError:
-        return None
-    need = ('grid_origin_x', 'grid_origin_y', 'grid_origin_z',
-            'grid_theta_deg')
-    if not all(k in vals for k in need):
-        return None
-    return vals
+    values, error = load_extrinsics(path)
+    return values if error is None else None
 
 
 class GrabBridge(Node):
@@ -73,18 +56,19 @@ class GrabBridge(Node):
         self.declare_parameter('mode', 'oneshot')
         self.declare_parameter('stable_n', 3)
         self.declare_parameter('auto_enable', False)  # 默认预览，不自动使能
-        self.declare_parameter('extrinsic_file', '/tmp/extrinsic.txt')
+        self.declare_parameter('extrinsic_file', calibration_path('extrinsic.txt'))
         # 允许命令行直接覆盖外参
         self.declare_parameter('grid_origin_x', float('nan'))
         self.declare_parameter('grid_origin_y', float('nan'))
         self.declare_parameter('grid_origin_z', float('nan'))
         self.declare_parameter('grid_theta_deg', float('nan'))
+        self.declare_parameter('extrinsic_quality_ok', False)
 
         self.ext = self._resolve_extrinsic()
         if self.ext is None:
             self.get_logger().error(
-                '缺少外参！请先运行 extrinsic_calib.py 完成两点标定，'
-                '或用 -p grid_origin_x/y/z/... 传入')
+                '缺少合格外参！请先运行 extrinsic_calib_multi.py，'
+                '参数覆盖需同时确认 extrinsic_quality_ok:=true')
         else:
             self.get_logger().info(
                 '外参: origin=(%.4f, %.4f, %.4f)m θ=%.2f° (来源: %s)'
@@ -138,16 +122,13 @@ class GrabBridge(Node):
 
     def _resolve_extrinsic(self):
         """参数优先，其次外参文件。"""
-        px = self.get_parameter('grid_origin_x').value
-        if not math.isnan(px):
-            return {'grid_origin_x': px,
-                    'grid_origin_y': self.get_parameter(
-                        'grid_origin_y').value,
-                    'grid_origin_z': self.get_parameter(
-                        'grid_origin_z').value,
-                    'grid_theta_deg': self.get_parameter(
-                        'grid_theta_deg').value,
-                    'source': 'params'}
+        keys=('grid_origin_x','grid_origin_y','grid_origin_z','grid_theta_deg')
+        values={key:self.get_parameter(key).value for key in keys}
+        if any(not math.isnan(value) for value in values.values()):
+            if not self.get_parameter('extrinsic_quality_ok').value or not all(
+                    math.isfinite(value) for value in values.values()):
+                return None
+            return {**values,'quality_ok':1.0,'source':'params'}
         d = load_extrinsic(self.get_parameter('extrinsic_file').value)
         if d:
             d['source'] = self.get_parameter('extrinsic_file').value

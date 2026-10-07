@@ -8,6 +8,10 @@
 固定爪顶端 = gripper_link 网格最低点（与之前标定同一口径）。
 每点要求 |爪尖z − 板面z| ≤ z_tol，否则拒收（"贴到板面"才算数）。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, calibration_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -19,15 +23,14 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 TRIGGER = '/tmp/grid_mark'
 
 
@@ -57,8 +60,8 @@ def main():
     ap.add_argument('--resume', action='store_true',
                     help='沿用已记录的点，跳过它们')
     ap.add_argument('--cell-cm', type=float, default=3.3)
-    ap.add_argument('--json', default='/tmp/extrinsic_marks_new.json')
-    ap.add_argument('--out', default='/tmp/extrinsic_new.txt')
+    ap.add_argument('--json', default=calibration_path('extrinsic_marks_new.json'))
+    ap.add_argument('--out', default=calibration_path('extrinsic_new.txt'))
     a = ap.parse_args()
 
     pts = []
@@ -71,7 +74,7 @@ def main():
     print(f'零点 {zero.tolist()}')
     print(f'限位 raw_min {cfg["raw_min"]}  raw_max {cfg["raw_max"]}')
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     model = GripperModel(stride=10)
     board_z = a.table_z + a.board_mm / 1000.0
     marks = []

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """qianli_vision object_localizer：全自动物块定位（棋盘格标定）
 
 流程（全自动，无需框 ROI / 手点格点）：
@@ -23,6 +23,8 @@
   ros2 run qianli_vision object_localizer
   ros2 run qianli_vision object_localizer --ros-args -p gui:=false
 """
+
+from qianli_vision.runtime_paths import calibration_path, camera_source, default_camera
 
 import os
 import threading
@@ -61,13 +63,14 @@ class ObjectLocalizer(Node):
         self.declare_parameter('cols', BOARD_COLS)
         self.declare_parameter('rows', BOARD_ROWS)
         self.declare_parameter('gui', True)
+        self.declare_parameter('camera_device', str(default_camera()))
         self.declare_parameter('min_area', MIN_AREA)
         self.declare_parameter('max_area', MAX_AREA)
         self.declare_parameter('min_size', MIN_SIZE)
         self.declare_parameter('max_size', MAX_SIZE)
         self.declare_parameter('max_diff', MAX_DIFF)
         self.declare_parameter('adaptive', True)   # 自适应灰度带（抗光照变化）
-        self.declare_parameter('bg_file', '/tmp/board_bg.png')  # 背景差分
+        self.declare_parameter('bg_file', calibration_path('board_bg.png'))  # 背景差分
         self.declare_parameter('bg_thresh', 25)    # 背景差分阈值（灰度级）
         self.declare_parameter('hybrid', True)     # 背景差分∩灰色带（排除影子/彩色物）
         self.declare_parameter('restrict_to_board', True)  # 候选须在棋盘邻域内
@@ -95,9 +98,9 @@ class ObjectLocalizer(Node):
         self.pub_yaw = self.create_publisher(Float64, '/object_yaw', 10)
         self.box_pts = None
 
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(camera_source(self.get_parameter('camera_device').value))
         if not self.cap.isOpened():
-            self.get_logger().error('无法打开相机 /dev/video0')
+            self.get_logger().error(f'无法打开相机 {self.get_parameter("camera_device").value}')
             raise SystemExit(1)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)

@@ -50,6 +50,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -60,9 +62,9 @@ import time
 import numpy as np
 
 TRIGGER = '/tmp/grid_mark'
-TCP_CALIB = '/tmp/tcp_calib.txt'
-OUT = '/tmp/extrinsic.txt'
-OUT_JSON = '/tmp/extrinsic_marks.json'
+TCP_CALIB = calibration_path('tcp_calib.txt')
+OUT = calibration_path('extrinsic.txt')
+OUT_JSON = calibration_path('extrinsic_marks.json')
 DEFAULT_POINTS_CM = [(0.0, 0.0), (9.9, 0.0), (0.0, 6.6), (9.9, 6.6), (3.3, 3.3)]
 
 # 固定爪顶端 = gripper_link 网格的最低点（SO-101 固定爪在 gripper_link 上）

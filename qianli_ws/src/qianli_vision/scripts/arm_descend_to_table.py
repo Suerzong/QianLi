@@ -24,6 +24,8 @@ ik_node 走的是"发笛卡尔目标 → 它自己解 → 够不到就静默拒�
 
 from __future__ import annotations
 
+from project_paths import driver_params_path
+
 import argparse
 import math
 import os
@@ -37,8 +39,7 @@ from gripper_model import GripperModel, JOINTS, JAW_LINK  # noqa: E402
 
 ARM_JOINTS = JOINTS[:5]          # 前 5 个是臂关节，gripper 单独保持
 DRIVER_CFG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 
 
 def read_joint_limits(path=DRIVER_CFG):

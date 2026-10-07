@@ -3,6 +3,10 @@
 
 只做规划与可行性检查，不写寄存器。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import math
 import os
 import sys
@@ -12,14 +16,13 @@ from scipy.optimize import least_squares
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'))
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(arm_source_path()))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 TABLE_Z = -0.06909
 BLOCK = np.array([0.346, 0.024])       # 物块中心 xy（放下时的 TCP）
 BLOCK_H = 0.040                        # 4cm EVA 方块
@@ -31,7 +34,7 @@ lo = (np.array(cfg['raw_min']) - zero) * direction * 2 * math.pi / 4096
 hi = (np.array(cfg['raw_max']) - zero) * direction * 2 * math.pi / 4096
 lo, hi = np.minimum(lo, hi), np.maximum(lo, hi)
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 q = (np.array(bus.read_positions()) - zero) * direction * 2 * math.pi / 4096
 bus.close()
 model = GripperModel(stride=12)

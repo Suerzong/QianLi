@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """对比：示范抓取位的工具姿态 vs 我算的目标姿态。"""
+
+from project_paths import project_path
 import json
 import math
 import os
@@ -10,10 +12,10 @@ import yaml
 from pathlib import Path
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 model = GripperModel(stride=8)
 
 tg = json.load(open(os.path.join(CFG, 'taught_grasp.json')))

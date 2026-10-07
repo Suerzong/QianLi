@@ -13,6 +13,8 @@
   ~/mj/bin/python sim_find_pinch3d.py --obj-size 0.020
 """
 
+from project_paths import calibration_path
+
 import argparse
 import sys
 
@@ -112,10 +114,10 @@ def main():
         for h in hits[:8]:
             print(f'    偏移({h[0]:+5.1f},{h[1]:+5.1f},{h[2]:+5.1f})mm  '
                   f'固定侧{h[3]} 活动侧{h[4]} 接触')
-        np.save('/tmp/pinch_offset.npy', c)
+        np.save(calibration_path('pinch_offset.npy'), c)
         idx = np.argmin(np.linalg.norm(arr, axis=1))
         print(f'  离原位最近的可夹位置 = {np.round(arr[idx], 1)} mm')
-        np.save('/tmp/pinch_offset.npy', arr[idx])
+        np.save(calibration_path('pinch_offset.npy'), arr[idx])
     else:
         print('  没有两侧同时接触的位置 —— 需要换夹爪角或调整臂的姿态')
 

@@ -16,6 +16,8 @@
                                      rpy(π/2, 0, 0)
 """
 
+from project_paths import so101_path
+
 import math
 import os
 import struct
@@ -24,8 +26,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 
 
 def load_stl(path):

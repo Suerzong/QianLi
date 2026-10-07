@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """合并两次扫行程结果：主报告取全关节，wrist_roll 用补扫报告。"""
+
+from project_paths import calibration_path
 import json
 import shutil
 
-main = json.load(open('/tmp/joint_ranges.json'))
-wr = json.load(open('/tmp/joint_ranges_wr.json'))
+main = json.load(open(calibration_path('joint_ranges.json')))
+wr = json.load(open(calibration_path('joint_ranges_wr.json')))
 
 j = wr['joints']['wrist_roll']
 lo = j['measured_min_unwrapped']
@@ -16,10 +18,10 @@ if lo is None or hi - lo < 200:
 
 main['joints']['wrist_roll'] = j
 main.setdefault('merged_from', []).append({
-    'wrist_roll_source': '/tmp/joint_ranges_wr.json',
+    'wrist_roll_source': calibration_path('joint_ranges_wr.json'),
     'sampled_at': wr['read_at'], 'samples': wr['samples']})
 main['merged_at'] = wr['read_at']
-json.dump(main, open('/tmp/joint_ranges_merged.json', 'w'), indent=2,
+json.dump(main, open(calibration_path('joint_ranges_merged.json'), 'w'), indent=2,
           ensure_ascii=False)
 print('已写 /tmp/joint_ranges_merged.json')
 for n, e in main['joints'].items():

@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+from project_paths import camera_source, default_camera
+
 import argparse
 import sys
 import time
@@ -64,7 +66,7 @@ def main():
                          '**必须和 extrinsic_calib_multi.py --points 完全一致**，'
                          '否则你对着图打点、程序按另一套坐标解，结果全错。'
                          '不给则用内置 5 点。')
-    ap.add_argument('--camera', type=int, default=0,
+    ap.add_argument('--camera', type=camera_source, default=default_camera(),
                     help='直接开相机（没有 --frame-url 时用）')
     args = ap.parse_args()
 
@@ -87,7 +89,7 @@ def main():
             return 1
         print(f'  ✅ 拿到 {frame.shape[1]}x{frame.shape[0]}')
     else:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         if not cap.isOpened():

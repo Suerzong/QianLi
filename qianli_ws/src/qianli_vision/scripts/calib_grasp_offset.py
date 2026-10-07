@@ -23,6 +23,8 @@
   safe_z_min        安全下限
 """
 
+from project_paths import calibration_path
+
 import json
 import math
 import os
@@ -37,8 +39,8 @@ from tf2_ros import Buffer, TransformListener
 
 TCP = 'gripper_frame_link'
 TRIGGER = '/tmp/mark_grasp'
-OUT = '/tmp/grasp_offset.txt'
-EXT = '/tmp/extrinsic.txt'
+OUT = calibration_path('grasp_offset.txt')
+EXT = calibration_path('extrinsic.txt')
 
 
 def read_kv(path):

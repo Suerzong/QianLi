@@ -11,6 +11,10 @@
 为什么这样更稳：固定爪是刚性基准，合爪时活动爪从另一侧把方块推向固定爪，
 对姿态误差不敏感（不需要把 TCP 精确对准方块中心）。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -23,13 +27,12 @@ import numpy as np
 from scipy.optimize import least_squares
 import yaml
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
-sys.path.insert(0, '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts')
+sys.path.insert(0, arm_source_path())
+sys.path.insert(0, project_path('qianli_ws/src/qianli_vision/scripts'))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 TABLE_Z = -0.06909
 DOWN = np.array([0.0, 0.0, -1.0])
 
@@ -66,7 +69,7 @@ def main():
 
     # 与舵机自身 EEPROM 限位取交集（driver 限位有几处超出舵机自身限位，
     # 打进去会触发 0x02 角度限位错误并锁存 + 切断力矩）
-    SAFE = os.path.expanduser('~/QianLi/qianli_ws/config/safe_limits.json')
+    SAFE = os.path.expanduser(project_path('config/safe_limits.json'))
     if os.path.exists(SAFE):
         sl = json.load(open(SAFE))
         slo, shi = np.array(sl['rad_lo']), np.array(sl['rad_hi'])
@@ -74,7 +77,7 @@ def main():
         lo, hi = np.maximum(lo, slo), np.minimum(hi, shi)
         print(f'已套用舵机安全限位（收紧了 {n_before} 处）')
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     model = GripperModel(stride=8)
     out = {'mode': 'execute' if a.execute else 'plan'}
 

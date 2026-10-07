@@ -12,6 +12,8 @@ PIL 可用且够用。做法是标准画家的算法：三角面按深度排序�
 
 from __future__ import annotations
 
+from project_paths import so101_path
+
 import argparse
 import math
 import os
@@ -24,8 +26,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 DEFAULT_URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 FONT_CANDIDATES = [
     '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
     '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',

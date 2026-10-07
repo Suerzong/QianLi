@@ -9,6 +9,8 @@
 按键：q 退出 | s 保存 | r 重框选
 """
 
+from project_paths import default_camera
+
 import cv2
 import numpy as np
 
@@ -16,7 +18,7 @@ INIT = {'S_MAX': 127, 'V_MIN': 69, 'V_MAX': 167, 'MIN_AREA': 602}
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

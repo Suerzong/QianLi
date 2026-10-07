@@ -54,7 +54,7 @@ class MetricCallback(BaseCallback):
     """定期做确定性评测，把成功率/抬升写进 TensorBoard 与 CSV。"""
 
     def __init__(self, eval_every=10000, n_eval=10, csv_path=None,
-                 verbose=0, max_steps=R.MAX_STEPS):
+                 verbose=0, max_steps=R.MAX_STEPS, obj_size=R.OBJ_SIZE):
         super().__init__(verbose)
         self.eval_every = eval_every
         self.n_eval = n_eval
@@ -64,7 +64,7 @@ class MetricCallback(BaseCallback):
         self._last_eval = 0
         self._t0 = time.time()
         self.eval_env = R.GraspEnv(seed=12345, jitter=R.OBJ_JITTER,
-                                   max_steps=max_steps)
+                                   max_steps=max_steps, obj_size=obj_size)
         if csv_path:
             os.makedirs(os.path.dirname(os.path.abspath(csv_path)),
                         exist_ok=True)

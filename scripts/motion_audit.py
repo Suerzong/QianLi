@@ -11,6 +11,10 @@
 
 用法: motion_audit.py [--f 0.13] [--incr 0.016] [--dt 0.03]
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import math
 import os
@@ -21,15 +25,14 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 
 F = float(sys.argv[sys.argv.index('--f') + 1]) if '--f' in sys.argv else 0.13
 INCR = float(sys.argv[sys.argv.index('--incr') + 1]) \
@@ -106,7 +109,7 @@ print(f'  TCP     最大线速度 {tcp_spd.max():6.3f} m/s  '
       f'速度突变max {np.abs(np.diff(tcp_spd)).max():6.4f} m/s/拍')
 
 # ---------- 实际侧(编码器) ----------
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.05)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.05)
 try:
     rd(lambda: (bus.set_torque(True), bus.read_torque_states())[1], tag='使能')
     time.sleep(0.4)

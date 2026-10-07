@@ -3,6 +3,8 @@
 
 对比刚性(4DOF) 与 仿射(6DOF)：仿射能吸收非刚性系统误差（尺度/剪切）。
 """
+
+from project_paths import default_camera
 import math
 
 import cv2
@@ -63,7 +65,7 @@ def to_base_affine(gx_cm, gy_cm):
 CELL = 33.0
 COLS, ROWS = 7, 5
 FLAGS = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(12):
     ok, img = cap.read()
     if ok:

@@ -10,13 +10,15 @@
 
 用法: check_at_00.py [最小重合比例] [窗口像素半径]   ; --reset 重建参考
 """
+
+from project_paths import project_path
 import os
 import sys
 
 import cv2
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 REF = os.path.join(CFG, 'at00_mask.png')
 args = [x for x in sys.argv[1:] if not x.startswith('--')]
 MIN_OVERLAP = float(args[0]) if args else 0.10

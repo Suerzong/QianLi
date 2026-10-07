@@ -37,6 +37,8 @@ EVA 泡棉是**可压缩**的，标称 40mm 的块实际可能在 39~41mm，压�
 
 from __future__ import annotations
 
+from project_paths import default_arm_port
+
 import argparse
 import math
 import os
@@ -50,7 +52,7 @@ from so101_bringup.servo_protocol import (  # noqa: E402
     REG_GOAL_POSITION, REG_TORQUE_ENABLE, FeetechSerialBus,
     decode_load)
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 ZERO_RAW = [2078, 1980, 3076, 2035, 2033, 2030]
 IDS = [1, 2, 3, 4, 5, 6]
 GRIPPER_ID = IDS[-1]

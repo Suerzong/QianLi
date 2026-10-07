@@ -18,6 +18,10 @@
 无论成败：张开爪子（若没夹住）或**保持夹持角**（若夹住）-> 自动回折叠位。
 经用户示教的中间位 READY，路径更可控。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, default_camera, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -30,16 +34,15 @@ from scipy.optimize import least_squares
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 TABLE_Z = -0.06485
 BOARD_MM = 0.5
 DOWN = np.array([0.0, 0.0, -1.0])
@@ -109,7 +112,7 @@ def main():
     hover = np.array([tcp_xy[0], tcp_xy[1],
                       tcp_z + a.hover_mm / 1000.0])
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
     model = GripperModel(stride=8)
     T0 = model.solve(dict(zip(JOINTS, np.zeros(6))))
     F0, G0 = T0['gripper_frame_link'], T0[FLANGE_LINK]
@@ -405,7 +408,7 @@ def main():
         # 下探到位拍照（供核对固定爪相对方块的位置）
         try:
             import cv2
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(default_camera())
             img = None
             for _ in range(8):
                 ok2, f2 = cap.read()

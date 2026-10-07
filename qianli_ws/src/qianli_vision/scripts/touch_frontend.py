@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, camera_source, default_camera
+
 import argparse
 import os
 import re
@@ -24,7 +26,7 @@ import cv2
 import numpy as np
 
 COLS, ROWS = 7, 5
-INTR = os.path.expanduser('~/QianLi/calib/camera_intrinsics.yaml')
+INTR = os.path.expanduser(calibration_path('camera_intrinsics.yaml'))
 LOG = '/tmp/touch_calib.log'
 TRIGGER = '/tmp/grid_mark'
 
@@ -139,7 +141,7 @@ setInterval(tick,700); tick();
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--port', type=int, default=8101)
-    ap.add_argument('--camera', type=int, default=0)
+    ap.add_argument('--camera', type=camera_source, default=default_camera())
     ap.add_argument('--points', required=True,
                     help='必须和触标工具 --points 一字不差')
     ap.add_argument('--intrinsics', default=INTR)

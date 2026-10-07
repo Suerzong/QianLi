@@ -12,6 +12,8 @@
   s 保存当前帧到 /tmp/gray_det_result.png
 """
 
+from project_paths import default_camera
+
 import cv2
 import numpy as np
 
@@ -44,7 +46,7 @@ def detect_gray(frame):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

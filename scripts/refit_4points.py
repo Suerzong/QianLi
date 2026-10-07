@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """用正确的 4 点 (0,0),(9.9,0),(0,6.6),(3.3,3.3) 重新拟合外参。
 去掉摆歪的 (9.9,6.6)。输出棋盘位姿 + 残差 + 格宽验证。"""
+
+from project_paths import calibration_path
 import json
 import math
 
 import numpy as np
 
-marks = json.load(open('/tmp/extrinsic_marks_merged.json'))
+marks = json.load(open(calibration_path('extrinsic_marks_merged.json')))
 DROP = (9.9, 6.6)
 sel = [m for m in marks if tuple(m['grid_cm']) != DROP]
 print(f'使用 {len(sel)} 点（剔除 {DROP}）: '

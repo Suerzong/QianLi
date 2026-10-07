@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """行动前的物块位置快照（用户提议：不要用流式读数，动作前定一次）
 
 为什么需要：
@@ -18,6 +18,8 @@
   ~/mj/bin/python vision_snapshot.py --no-park  # 不挪机械臂（它已在停靠位）
   ~/mj/bin/python vision_snapshot.py --no-bg    # 不重采背景
 """
+
+from project_paths import calibration_path, project_path
 
 import argparse
 import json
@@ -55,7 +57,7 @@ def quat(yaw_deg):
 
 def read_extrinsic():
     ext = {}
-    with open('/tmp/extrinsic.txt') as fh:
+    with open(calibration_path('extrinsic.txt')) as fh:
         for line in fh:
             line = line.strip()
             if line.startswith('#') or '=' not in line:
@@ -182,9 +184,8 @@ def main():
                        capture_output=True, text=True)
         try:
             r = subprocess.run(
-                ['bash', '-lc',
-                 'cd ~/QianLi/qianli_ws/src/qianli_vision/scripts; '
-                 'timeout 40 ~/mj/bin/python capture_background.py'],
+                ['timeout', '40', sys.executable,
+                 project_path('qianli_ws/src/qianli_vision/scripts/capture_background.py')],
                 capture_output=True, text=True, timeout=60)
             out = (r.stdout.strip().splitlines() or ['(无输出)'])[-1]
             print('   ' + out)
@@ -196,8 +197,7 @@ def main():
             capture_output=True, text=True).stdout.strip()
         subprocess.run(['bash', '-lc',
                         'pkill -f object_localizer; sleep 2; '
-                        'source /opt/ros/jazzy/setup.bash 2>/dev/null; '
-                        'source ~/QianLi/qianli_ws/install/setup.bash 2>/dev/null; '
+                        'source "$QI_PROJECT_ROOT/scripts/setup/source_env.sh"; '
                         f'DISPLAY=:0 XAUTHORITY={xa} nohup ros2 run '
                         'qianli_vision object_localizer > /tmp/loc.log 2>&1 &'],
                        capture_output=True, text=True)

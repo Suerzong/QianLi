@@ -3,6 +3,8 @@
 
 用棋盘单应在像素处的局部尺度换算，排除臂上黄件/工具（只取棋盘上、尺寸合理者）。
 """
+
+from project_paths import default_camera, project_path
 import json
 import os
 import statistics as st
@@ -11,7 +13,7 @@ import time
 import cv2
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 fr = json.load(open(os.path.join(CFG, 'board_frame.json')))
 H = np.array(fr['H'])          # H: 像素 -> 棋盘 mm（board_frame 里就是这么用的）
 
@@ -28,7 +30,7 @@ def size_mm(px, span):
     return span * (sx + sy) / 2 * 10.0
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 samples = []
 for _ in range(10):
     ok, img = cap.read()

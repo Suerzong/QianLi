@@ -17,6 +17,8 @@
 按键：t=算标定  s=保存  q=退出  r=重框 ROI  c=清除点重采
 """
 
+from project_paths import calibration_path, default_camera
+
 import cv2
 import numpy as np
 import sys
@@ -50,7 +52,7 @@ def on_mouse(event, x, y, flags, param):
 
 def main():
     global roi, homography
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return
@@ -206,7 +208,7 @@ def main():
         elif key == ord('s'):
             cv2.imwrite('/tmp/calib_result.png', display)
             if homography is not None:
-                np.save('/tmp/homography.npy', homography)
+                np.save(calibration_path('homography.npy'), homography)
                 print('已保存标定结果 /tmp/homography.npy 和截图')
 
     cap.release()

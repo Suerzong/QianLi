@@ -10,6 +10,10 @@
   11 = Max Angle Limit (2B, EEPROM)
   55 = Lock (0=可写, 1=锁定)
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, calibration_path, driver_params_path
 import argparse
 import json
 import math
@@ -20,12 +24,11 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 import so101_bringup.servo_protocol as sp
 from so101_bringup.servo_protocol import FeetechSerialBus
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 REG_MIN, REG_MAX, REG_LOCK = 9, 11, 55
 ERR = {}
 
@@ -61,7 +64,7 @@ def main():
     names = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
              'wrist_roll', 'gripper']
     if a.source == 'measured':
-        rep = json.load(open('/tmp/joint_ranges_merged.json'))
+        rep = json.load(open(calibration_path('joint_ranges_merged.json')))
         raw_min = [int(rep['joints'][n]['measured_min_unwrapped'])
                    for n in names]
         raw_max = [int(rep['joints'][n]['measured_max_unwrapped'])
@@ -73,7 +76,7 @@ def main():
         raw_max = list(cfg['raw_max'])
     ids = [1, 2, 3, 4, 5, 6]
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
     print('目标 EEPROM 限位（= 冻结的实测机械行程）：')
     for n, mn, mx in zip(names, raw_min, raw_max):
         print(f'  {n:<15} {mn:5d}..{mx:5d}')

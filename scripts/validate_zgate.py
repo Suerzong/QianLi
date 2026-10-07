@@ -5,6 +5,8 @@
 落在 gripper_link（固定爪）上，所以 contact_m ≈ 固定爪顶端，可以用它
 模拟新判据的效果。
 """
+
+from project_paths import calibration_path
 import json
 import math
 
@@ -31,7 +33,7 @@ def solve_planar(grid_xy, base_xy):
 
 
 def main():
-    marks = json.load(open('/tmp/extrinsic_marks.json'))
+    marks = json.load(open(calibration_path('extrinsic_marks.json')))
     print(f'板面 z = {BOARD_Z*1000:+.2f} mm, 判据容差 ±{Z_TOL*1000:.1f} mm\n')
     print(f'{"#":>3}{"grid(cm)":>12}{"contact z(mm)":>14}{"z-板面(mm)":>12}  判定')
     keep, reject = [], []

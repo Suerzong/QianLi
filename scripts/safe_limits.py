@@ -5,6 +5,10 @@
 EEPROM 限位，命令打到那里会触发 0x02 角度限位错误并锁存、切断力矩。
 本工具把两者取交集，供所有运动脚本使用。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import sys
 
@@ -12,13 +16,12 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 import so101_bringup.servo_protocol as sp
 from so101_bringup.servo_protocol import FeetechSerialBus
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
-OUT = '/home/ros/QianLi/qianli_ws/config/safe_limits.json'
+CONFIG = (driver_params_path())
+OUT = project_path('config/safe_limits.json')
 
 
 def patched(packet, expected_id, expected_data_size):
@@ -39,7 +42,7 @@ d_lo = np.array(cfg['raw_min'])
 d_hi = np.array(cfg['raw_max'])
 d_lo, d_hi = np.minimum(d_lo, d_hi), np.maximum(d_lo, d_hi)
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 s_lo, s_hi = [], []
 for sid in bus.IDS:
     s_lo.append(bus.read_word(sid, 9))

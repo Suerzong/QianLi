@@ -3,12 +3,14 @@
 
 用户只拖动，其余指令从这里来。
 """
+
+from project_paths import calibration_path
 import json
 import os
 import re
 
 LOG = '/tmp/ext_calib.log'
-MARKS = '/tmp/extrinsic_marks.json'
+MARKS = calibration_path('extrinsic_marks.json')
 DEFAULT_POINTS = [(0.0, 0.0), (9.9, 0.0), (0.0, 6.6), (9.9, 6.6), (3.3, 3.3)]
 
 marks = []

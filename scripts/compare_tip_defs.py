@@ -3,12 +3,14 @@
 A) 整体网格最低点（现用，会漂移）
 B) X 前端窗口最低点（爪尖，应稳定）
 """
+
+from project_paths import project_path
 import os
 import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 BASE = dict(zip(JOINTS, [0.4034, 0.6519, 0.1335, 0.8744, -1.5601, 0.7056]))

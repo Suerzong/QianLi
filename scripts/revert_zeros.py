@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """把 zero_raw 回滚到旧值（保留已冻结的 raw_min/raw_max）。"""
+
+from project_paths import driver_params_path
 import os
 import re
 import shutil
@@ -7,10 +9,8 @@ import time
 
 OLD_ZERO = [2078, 1980, 3076, 2035, 2033, 2030]
 YAMLS = [
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'
-                       '/config/driver_params.yaml'),
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup'
-                       '/share/so101_bringup/config/driver_params.yaml'),
+    os.path.expanduser(driver_params_path()),
+    os.path.expanduser(driver_params_path()),
 ]
 stamp = time.strftime('%Y%m%d_%H%M%S')
 for p in YAMLS:

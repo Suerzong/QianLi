@@ -5,6 +5,8 @@ No ROS publisher, serial access, IK, or physical stepping is used.
 Run on the VM: ~/mj/bin/python view_arm_model.py --board
 Keys: 1 overview, 2 jaws, 3 top. Mouse: rotate/pan/zoom.
 """
+
+from project_paths import calibration_path, so101_path
 import argparse
 import json
 import math
@@ -14,18 +16,18 @@ import threading
 import time
 
 import mujoco
+from qianli_vision.urdf_resources import load_mujoco_spec
 import numpy as np
 
 JOINTS = ['shoulder_pan', 'shoulder_lift', 'elbow_flex',
           'wrist_flex', 'wrist_roll', 'gripper']
-URDF = os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/'
-                         'so101_bringup/share/so101_bringup/urdf/so101.urdf')
+URDF = os.path.expanduser(so101_path('urdf/so101.urdf'))
 TABLE_Z = -0.06909
 
 
 def build(args):
     marks = json.loads(Path(args.marks).read_text())
-    spec = mujoco.MjSpec.from_file(URDF)
+    spec = load_mujoco_spec(URDF)
     spec.visual.global_.offwidth = 1400
     spec.visual.global_.offheight = 1000
     wb = spec.worldbody
@@ -81,8 +83,8 @@ def build(args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--marks', default='/tmp/extrinsic_marks_merged.json')
-    ap.add_argument('--extrinsic', default='/tmp/extrinsic.txt')
+    ap.add_argument('--marks', default=calibration_path('extrinsic_marks_merged.json'))
+    ap.add_argument('--extrinsic', default=calibration_path('extrinsic.txt'))
     ap.add_argument('--board', action='store_true', help='Show unverified board placement')
     ap.add_argument('--render-dir')
     args = ap.parse_args()

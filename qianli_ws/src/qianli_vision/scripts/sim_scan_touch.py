@@ -17,6 +17,8 @@
   ~/mj/bin/python sim_scan_touch.py --obj-size 0.020 --grasp   # 直接试抓最优解
 """
 
+from project_paths import calibration_path
+
 import argparse
 import sys
 
@@ -112,7 +114,7 @@ def main():
     tcp = op - np.array(best[:3]) / 1000.0
     print(f'\n最优: 物块偏移({best[0]:+.1f},{best[1]:+.1f},{best[2]:+.1f})mm '
           f'→ TCP 目标 = {np.round(tcp, 4)}')
-    np.save('/tmp/touch_offset.npy', np.array(best[:3]))
+    np.save(calibration_path('touch_offset.npy'), np.array(best[:3]))
 
     if a.grasp:
         print('\n直接试抓该位置:')

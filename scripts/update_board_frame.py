@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """把 /tmp/extrinsic_new.txt 的实测外参写进长期棋盘坐标系。"""
+
+from project_paths import calibration_path, project_path
 import json
 import math
 import os
 import re
 
-EXT = '/tmp/extrinsic_new.txt'
-FRAME = os.path.expanduser('~/QianLi/qianli_ws/config/board_frame.json')
+EXT = calibration_path('extrinsic_new.txt')
+FRAME = os.path.expanduser(project_path('config/board_frame.json'))
 
 
 def parse(path):

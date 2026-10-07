@@ -25,6 +25,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, camera_source, default_camera
+
 import argparse
 import os
 import sys
@@ -35,7 +37,7 @@ import numpy as np
 
 COLS, ROWS = 7, 5
 CELL = 0.033
-INTR_DEFAULT = os.path.expanduser('~/QianLi/calib/camera_intrinsics.yaml')
+INTR_DEFAULT = os.path.expanduser(calibration_path('camera_intrinsics.yaml'))
 
 
 def load_intrinsics(path):
@@ -110,10 +112,10 @@ def detect(frame, K, D, mode='raw_points'):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--intrinsics', default=INTR_DEFAULT)
-    ap.add_argument('--camera', type=int, default=0)
+    ap.add_argument('--camera', type=camera_source, default=default_camera())
     ap.add_argument('--frames', type=int, default=20)
     ap.add_argument('--out', default=os.path.expanduser(
-        '~/QianLi/calib/board_cam.npz'))
+        calibration_path('board_cam.npz')))
     ap.add_argument('--save-vis', default='/tmp/board_cam_vis.png')
     ap.add_argument('--mode', default='raw_points',
                     choices=['raw_points', 'undist_image', 'both'],

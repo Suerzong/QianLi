@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """全面诊断：连续多帧的黄色分布 + 棋盘多尺寸检测 + 帧间差异。"""
+
+from project_paths import default_camera
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 frames = []
 for _ in range(15):
     ok, f = cap.read()

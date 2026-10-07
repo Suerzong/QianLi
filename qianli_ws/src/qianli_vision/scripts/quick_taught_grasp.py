@@ -5,6 +5,10 @@ Place open jaws around the object with torque off, then use --execute.
 Requires sole ownership of the servo port. Reuses measured driver limits.
 The finished/error pose remains torque-held; --release explicitly releases it.
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, default_camera, driver_params_path
 import argparse
 import json
 import math
@@ -19,18 +23,18 @@ from scipy.optimize import least_squares
 import yaml
 
 warnings.filterwarnings('ignore', category=UserWarning, module='ikpy')
-sys.path.insert(0, os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'))
+sys.path.insert(0, os.path.expanduser(arm_source_path()))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
-CONFIG = os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup/config/driver_params.yaml')
+CONFIG = os.path.expanduser(driver_params_path())
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--execute', action='store_true')
     ap.add_argument('--release', action='store_true')
-    ap.add_argument('--port', default='/dev/ttyACM0')
+    ap.add_argument('--port', default=default_arm_port())
     ap.add_argument('--lift-mm', type=float, default=50)
     ap.add_argument('--load-pct', type=float, default=12)
     ap.add_argument('--hold-seconds', type=float, default=4)
@@ -54,7 +58,7 @@ def main():
     def snapshot(tag):
         try:
             import cv2
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(default_camera())
             frames = [cap.read() for _ in range(5)]
             cap.release()
             ok, img = frames[-1]

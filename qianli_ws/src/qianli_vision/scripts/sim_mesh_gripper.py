@@ -17,6 +17,8 @@
   ~/mj/bin/python sim_mesh_gripper.py --scan
 """
 
+from project_paths import parts_path
+
 import argparse
 import math
 import os
@@ -25,6 +27,7 @@ import sys
 import numpy as np
 
 import mujoco
+from qianli_vision.urdf_resources import load_mujoco_spec
 
 import sim_grasp as S
 
@@ -32,7 +35,7 @@ ASSETS = os.path.join(os.path.dirname(S.URDF), 'assets')
 # 凸分解零件目录：默认 ~/mj_parts（VM 上的位置）。可用 QI_PARTS_DIR 覆盖，
 # 让同一份脚本在 Windows 宿主机上复用同一批 CoACD 凸块（零件内容完全一样）。
 PARTS_DIR = os.environ.get('QI_PARTS_DIR',
-                           os.path.expanduser('~/mj_parts'))
+                           os.path.expanduser(parts_path()))
 
 # (网格文件, 挂在哪个 body, 局部平移, 局部四元数)
 # 平移/四元数来自 URDF 里该 visual/collision 的 origin
@@ -91,7 +94,7 @@ def load_manifest():
 
 def make_spec(obj_size):
     S._OBJ_SIZE_OVERRIDE[0] = obj_size
-    spec = mujoco.MjSpec.from_file(S.URDF)
+    spec = load_mujoco_spec(S.URDF)
     wb = spec.worldbody
     wb.add_light(name='grasp_key', pos=[0.2, -0.3, 0.7], dir=[0, 0, -1],
                  diffuse=[0.8, 0.8, 0.8])
@@ -105,14 +108,16 @@ def make_spec(obj_size):
     gp.type = mujoco.mjtGeom.mjGEOM_BOX
     gp.size = [0.045, 0.05, (S.BASE_BOTTOM - S.TABLE_Z) / 2]
     gp.pos = [0.0, 0.0, (S.TABLE_Z + S.BASE_BOTTOM) / 2]
-    cy, sy = math.cos(S.BOARD_YAW), math.sin(S.BOARD_YAW)
-    cx,cyy = S.board_center_world()
-    gb = wb.add_geom(); gb.name = 'board'
-    gb.type = mujoco.mjtGeom.mjGEOM_BOX
-    gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]
-    gb.pos = [cx, cyy, S.TABLE_Z + 0.0015]
-    gb.quat = [math.cos(S.BOARD_YAW / 2), 0, 0, math.sin(S.BOARD_YAW / 2)]
-    gb.rgba = [0.9, 0.9, 0.85, 1]
+    # An uncalibrated simulation may omit the board, as sim_grasp does.
+    # Do not manufacture an extrinsic transform: real entry points require it.
+    if S.BOARD_ORIGIN is not None and S.BOARD_YAW is not None:
+        cx, cyy = S.board_center_world()
+        gb = wb.add_geom(); gb.name = 'board'
+        gb.type = mujoco.mjtGeom.mjGEOM_BOX
+        gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]
+        gb.pos = [cx, cyy, S.TABLE_Z + 0.0015]
+        gb.quat = [math.cos(S.BOARD_YAW / 2), 0, 0, math.sin(S.BOARD_YAW / 2)]
+        gb.rgba = [0.9, 0.9, 0.85, 1]
     op = S.obj_world_pos()
     ob = wb.add_body(name='object'); ob.pos = list(op); ob.add_freejoint()
     go = ob.add_geom(); go.name = 'cube'

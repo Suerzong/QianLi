@@ -5,6 +5,10 @@
 直接拿来做 least_squares 的初值会报 "Initial guess is outside of bounds"，
 所以先 clamp 到界内。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -16,13 +20,12 @@ import numpy as np
 from scipy.optimize import least_squares
 import yaml
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
-sys.path.insert(0, '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts')
+sys.path.insert(0, arm_source_path())
+sys.path.insert(0, project_path('qianli_ws/src/qianli_vision/scripts'))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 TABLE_Z = -0.06909
 DOWN = np.array([0.0, 0.0, -1.0])
 
@@ -43,7 +46,7 @@ def main():
     hi = (np.array(cfg['raw_max']) - zero) * direction * 2 * math.pi / 4096
     lo, hi = np.minimum(lo, hi), np.maximum(lo, hi)
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     model = GripperModel(stride=12)
     out = {'mode': 'execute' if a.execute else 'plan'}
 

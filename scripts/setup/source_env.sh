@@ -1,28 +1,33 @@
 #!/usr/bin/env bash
-# ============================================================
-# source_env.sh — 加载 ROS 2 Humble 与 QianLi 工作区环境
-#
-# 用法（必须在当前 shell 中 source）：
-#   source scripts/setup/source_env.sh
-# ============================================================
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WS_DIR="$(cd "$SCRIPT_DIR/../../qianli_ws" && pwd)"
-
-if [ -d /opt/ros/jazzy ]; then
-  # shellcheck disable=SC1091
-  source /opt/ros/jazzy/setup.bash
-elif [ -f /opt/ros/humble/setup.bash ]; then
-  # shellcheck disable=SC1091
-  source /opt/ros/humble/setup.bash
-else
-  echo "[WARN] 未找到 /opt/ros/jazzy（或 humble）setup.bash，请先安装 ROS 2。"
+# Source this file in the current Bash shell. Never mix ROS distributions.
+_qi_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export QI_PROJECT_ROOT="${QI_PROJECT_ROOT:-$(cd -- "$_qi_script_dir/../.." && pwd)}"
+export QI_CALIB_DIR="${QI_CALIB_DIR:-$QI_PROJECT_ROOT/calib}"
+_qi_distro="${QI_ROS_DISTRO:-humble}"
+if [[ -n "${ROS_DISTRO:-}" && "$ROS_DISTRO" != "$_qi_distro" ]]; then
+  echo "[ERROR] Shell already sourced $ROS_DISTRO; open a fresh shell for $_qi_distro." >&2
+  return 1
 fi
-
-if [ -f "$WS_DIR/install/setup.bash" ]; then
-  # shellcheck disable=SC1091
-  source "$WS_DIR/install/setup.bash"
+if [[ ! -f "/opt/ros/$_qi_distro/setup.bash" ]]; then
+  echo "[ERROR] Missing /opt/ros/$_qi_distro/setup.bash" >&2
+  return 1
 fi
-
-echo "[OK] ROS_DISTRO=${ROS_DISTRO:-<未设置>}  workspace: $WS_DIR"
+_qi_source() {
+  local _qi_had_nounset=false _qi_result=0
+  [[ $- != *u* ]] || _qi_had_nounset=true
+  set +u
+  source "$1" || _qi_result=$?
+  if $_qi_had_nounset; then set -u; fi
+  return "$_qi_result"
+}
+_qi_source "/opt/ros/$_qi_distro/setup.bash" || return
+if [[ -f "$QI_PROJECT_ROOT/.venv-ros/bin/activate" ]]; then
+  _qi_source "$QI_PROJECT_ROOT/.venv-ros/bin/activate" || return
+fi
+if [[ -f "$QI_PROJECT_ROOT/qianli_ws/install/setup.bash" ]]; then
+  _qi_source "$QI_PROJECT_ROOT/qianli_ws/install/setup.bash" || return
+fi
+export PYTHONPATH="$QI_PROJECT_ROOT/scripts:$QI_PROJECT_ROOT/qianli_ws/src/qianli_vision/scripts${PYTHONPATH:+:$PYTHONPATH}"
+echo "[OK] ROS_DISTRO=$ROS_DISTRO  project=$QI_PROJECT_ROOT"
+unset _qi_script_dir _qi_distro
+unset -f _qi_source

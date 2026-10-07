@@ -17,14 +17,15 @@
   python3 patch_ik_node.py --revert   # 撤销
 """
 
+from project_paths import arm_source_path
+
 import argparse
 import os
 import shutil
 import sys
 
 TARGETS = [
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup/'
-                       'so101_bringup/ik_node.py'),
+    os.path.expanduser(arm_source_path('so101_bringup/ik_node.py')),
 ]
 
 MARK = '# ---- DLS IK patch ----'

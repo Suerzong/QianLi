@@ -33,6 +33,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, default_camera
+
 import argparse
 import json
 import math
@@ -43,11 +45,11 @@ import time
 import cv2
 import numpy as np
 
-INTRINSICS = '/tmp/camera_intrinsics.yaml'
-EXTRINSICS = '/tmp/extrinsic.txt'
+INTRINSICS = calibration_path('camera_intrinsics.yaml')
+EXTRINSICS = calibration_path('extrinsic.txt')
 # 已废弃：两点法旧值（θ=-97.75°），两个内角点 Z 差 9.5mm、反推格宽 34.6mm≠33mm。
 # 见 docs/GRASP_REAL_AUDIT.md。绝不允许静默使用。
-DEPRECATED_EXTRINSICS = '/tmp/extrinsic_old_twopoint.txt'
+DEPRECATED_EXTRINSICS = calibration_path('extrinsic_old_twopoint.txt')
 
 
 # ------------------------------------------------------------ 参数加载
@@ -137,39 +139,8 @@ def load_intrinsics(path=INTRINSICS):
 
 
 def load_extrinsics(path=EXTRINSICS):
-    """读外参。返回 (dict, None) 或 (None, 原因)。"""
-    if not os.path.exists(path):
-        return None, f'外参文件不存在：{path}（需先跑 extrinsic_calib_multi.py）'
-    vals = {}
-    quality = None
-    for line in open(path, encoding='utf-8'):
-        s = line.strip()
-        if s.startswith('#'):
-            if '两点法' in s or '废弃' in s or 'DEPRECATED' in s:
-                return None, f'外参是**已废弃的两点法旧值**，拒绝使用：{s}'
-            if '质量' in s:
-                quality = s
-            continue
-        if '=' in s:
-            k, v = s.split('=', 1)
-            try:
-                vals[k.strip()] = float(v.strip())
-            except ValueError:
-                pass
-    need = ('grid_origin_x', 'grid_origin_y', 'grid_origin_z',
-            'grid_theta_deg')
-    miss = [k for k in need if k not in vals]
-    if miss:
-        return None, f'外参缺字段 {miss}：{path}'
-    if quality and 'FAIL' in quality:
-        return None, f'外参质量裁决未通过：{quality}'
-    # 旧两点法的特征值：θ≈-97.75 且没有 quality_ok 字段
-    if 'quality_ok' not in vals:
-        return None, (f'外参文件没有质量标记（很可能是旧两点法产物），'
-                      f'拒绝使用：{path}')
-    if vals.get('quality_ok', 0) < 0.5:
-        return None, f'外参 quality_ok=0，拒绝使用：{path}'
-    return vals, None
+    from qianli_vision.calibration import load_extrinsics as validated_extrinsics
+    return validated_extrinsics(path)
 
 
 # ------------------------------------------------------------ 坐标变换
@@ -221,7 +192,7 @@ class CameraMoveWatch:
     挡住的区域。默认取左上角，通常那里是背景。
     """
 
-    def __init__(self, path='/tmp/camera_ref.npz', roi=None, thresh_px=3.0):
+    def __init__(self, path=calibration_path('camera_ref.npz'), roi=None, thresh_px=3.0):
         self.path = path
         self.roi = roi or (0.03, 0.03, 0.22, 0.22)   # x0,y0,x1,y1 归一化
         self.thresh_px = thresh_px
@@ -489,7 +460,7 @@ def main():
 
     # ---- 相机位移自检（与内参/外参是否就绪无关，所以放在前面） ----
     if args.save_camera_ref or args.check_camera:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         time.sleep(0.8)
@@ -544,7 +515,7 @@ def main():
         rclpy.init()
         node = Node('block_pipeline')
         pub = node.create_publisher(String, '/blocks_base', 10)
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         while rclpy.ok():

@@ -60,6 +60,8 @@ SO-101 抓取作业里，桌面上散着一批 4cm 边长的 EVA 泡棉方块（
 内参文件默认读 /tmp/camera_intrinsics.yaml，存在就自动去畸变，不存在就提示并继续。
 """
 
+from project_paths import calibration_path, camera_source, default_camera
+
 import argparse
 import json
 import math
@@ -76,7 +78,7 @@ import numpy as np
 # 常量与默认值
 # ---------------------------------------------------------------------------
 
-DEFAULT_INTRINSICS = '/tmp/camera_intrinsics.yaml'
+DEFAULT_INTRINSICS = calibration_path('camera_intrinsics.yaml')
 DEFAULT_DEBUG_IMAGE = '/tmp/color_blocks_debug.jpg'
 
 # OpenCV 的 H 是 0~179（真实色相角度的一半）：红≈0、黄≈30、绿≈60、青≈90、紫≈130。
@@ -2887,7 +2889,7 @@ def parse_args(argv=None):
                       help='色表自标定：量出现场色相并打印可粘贴的 --colors')
 
     cam = ap.add_argument_group('相机')
-    cam.add_argument('--camera', type=int, default=0, help='摄像头索引')
+    cam.add_argument('--camera', type=camera_source, default=default_camera(), help='摄像头索引')
     cam.add_argument('--width', type=int, default=640)
     cam.add_argument('--height', type=int, default=480)
     cam.add_argument('--intrinsics', default=DEFAULT_INTRINSICS,

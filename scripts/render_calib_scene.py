@@ -8,6 +8,8 @@
   ~/mj/bin/python render_calib_scene.py \
       --marks /tmp/extrinsic_marks_merged.json --out /tmp/calib_scene.png
 """
+
+from project_paths import calibration_path, so101_path
 import argparse
 import json
 import math
@@ -16,10 +18,10 @@ import os
 import numpy as np
 
 import mujoco
+from qianli_vision.urdf_resources import load_mujoco_spec
 
 URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 JOINT_ORDER = ['shoulder_pan', 'shoulder_lift', 'elbow_flex',
                'wrist_flex', 'wrist_roll', 'gripper']
 
@@ -41,7 +43,7 @@ CALIB = {
 
 
 def build_scene_with_marks(marks, origin, yaw_deg):
-    spec = mujoco.MjSpec.from_file(URDF)
+    spec = load_mujoco_spec(URDF)
     wb = spec.worldbody
 
     # 桌面
@@ -103,7 +105,7 @@ def build_scene_with_marks(marks, origin, yaw_deg):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--marks', default='/tmp/extrinsic_marks_merged.json')
+    ap.add_argument('--marks', default=calibration_path('extrinsic_marks_merged.json'))
     ap.add_argument('--out', default='/tmp/calib_scene.png')
     ap.add_argument('--lookat', nargs=3, type=float, default=[0.26, -0.02, -0.05])
     ap.add_argument('--distance', type=float, default=0.75)

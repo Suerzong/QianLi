@@ -11,6 +11,8 @@
       台面内正交），符号按旧仿射的 y 列取向。
 标签是"33mm 格"单位，换算：格数 = 标签mm / 33
 """
+
+from project_paths import project_path
 import json
 import math
 import os
@@ -60,7 +62,7 @@ for (gx, gy), bm in MARKS:
     print(f'  grid {str((gx,gy)):>12} 残差 ({r[0]*1000:+7.1f},{r[1]*1000:+7.1f}) mm')
 print(f'  RMS {math.sqrt(tot/len(MARKS))*1000:.2f} mm')
 
-FRAME = os.path.expanduser('~/QianLi/qianli_ws/config/board_frame.json')
+FRAME = os.path.expanduser(project_path('config/board_frame.json'))
 fr = json.load(open(FRAME))
 fr['affine'] = [A[0].tolist(), A[1].tolist(), b.tolist()]
 fr['affine_source'] = 'drag-measured (2 lines) + (0,0) mark'

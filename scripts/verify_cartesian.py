@@ -6,6 +6,8 @@
   2) 全程 IK 误差（应 <1mm）
   3) 关节指令平滑性（速度连续）
 """
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import math
 import os
@@ -16,15 +18,14 @@ import yaml
 from pathlib import Path
 from scipy.optimize import least_squares
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
 lo = (np.array(cfg['raw_min']) - zero) * direction * 2 * math.pi / 4096

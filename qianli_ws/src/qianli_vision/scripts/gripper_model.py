@@ -24,6 +24,8 @@ ikpy 的坑（踩过）
 
 from __future__ import annotations
 
+from project_paths import robot_urdf_path
+
 import math
 import os
 import struct
@@ -33,8 +35,7 @@ from pathlib import Path
 import numpy as np
 
 URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    robot_urdf_path())
 JOINTS = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
           'wrist_roll', 'gripper']
 JAW_LINK = 'moving_jaw_so101_v1_link'
@@ -86,6 +87,8 @@ class GripperModel:
         self.urdf = urdf_path
         root = ET.parse(urdf_path).getroot()
         self.assets = Path(urdf_path).parent / 'assets'
+        if not self.assets.is_dir():
+            self.assets = Path(urdf_path).parent.parent / 'meshes'
         self.joints = {j.get('name'): j for j in root.findall('joint')}
         self.joint_child = {j.get('name'): j.find('child').get('link')
                             for j in root.findall('joint')}

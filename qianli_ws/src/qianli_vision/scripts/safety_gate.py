@@ -49,9 +49,9 @@ def main():
     ap.add_argument('--stride', type=int, default=40)
     ap.add_argument('--dry-run', action='store_true',
                     help='只报告不拦截（先观察用）')
-    args = ap.parse_args()
-
     import rclpy
+    from rclpy.utilities import remove_ros_args
+    args = ap.parse_args(remove_ros_args(args=sys.argv)[1:])
     from rclpy.node import Node
     from sensor_msgs.msg import JointState
     from std_msgs.msg import String

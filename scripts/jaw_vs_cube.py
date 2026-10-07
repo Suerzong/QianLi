@@ -3,6 +3,8 @@
 
 输出：两个爪指到方块各面的最小间距、是否有穿透、接触面在工具系的位置。
 """
+
+from project_paths import driver_params_path, project_path
 import argparse
 import json
 import math
@@ -15,13 +17,12 @@ import yaml
 from pathlib import Path
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 TABLE_Z = -0.06485
 DOWN = np.array([0.0, 0.0, -1.0])
 

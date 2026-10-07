@@ -3,6 +3,10 @@
 
 不依赖任何尺寸假设（只依赖视觉给的方块中心 + 爪口开度模型）。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import math
 import os
@@ -14,16 +18,15 @@ from scipy.optimize import least_squares
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 TABLE_Z = -0.06485
 DOWN = np.array([0.0, 0.0, -1.0])
 
@@ -48,7 +51,7 @@ xax_w = np.array([ey[0], ey[1], 0.0])
 yax_w = np.cross(DOWN, xax_w)
 R_des = np.column_stack([xax_w, yax_w, DOWN])
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
 model = GripperModel(stride=8)
 
 

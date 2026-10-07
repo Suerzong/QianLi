@@ -8,6 +8,10 @@
   · PCA 求轨迹主方向 = 该边在机械臂坐标系下的方向
   · 按停留聚类得到各"交点"，相邻间距 = 真实格边长
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path
 import argparse
 import json
 import math
@@ -19,13 +23,12 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 STOP = '/tmp/drag_stop'
 
 
@@ -57,7 +60,7 @@ def main():
 
     cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
     zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 
     if a.release:
         bus.set_torque(False)

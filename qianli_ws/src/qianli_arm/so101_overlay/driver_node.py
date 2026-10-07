@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import threading
 import time
 
@@ -60,7 +61,7 @@ class So101DriverNode(Node):
         super().__init__('so101_driver')
 
         self.declare_parameter('mode', 'sim')
-        self.declare_parameter('port', '/dev/ttyACM0')
+        self.declare_parameter('port', os.environ.get('QI_ARM_PORT', '/dev/ttyACM0'))
         self.declare_parameter('baud', 1_000_000)
         self.declare_parameter('allow_motion', False)
         self.declare_parameter('calibrated', False)

@@ -7,11 +7,15 @@
 
 用法: servo_pid_tune.py --p 32 --d 64 --i 0 --ids 1 2 3 4 5
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path
 import argparse
 import sys
 import time
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 
 REG_P, REG_D, REG_I, REG_LOCK = 21, 22, 23, 55
@@ -42,7 +46,7 @@ def main():
     if a.i is not None and not 0 <= a.i <= 255:
         raise SystemExit('i out of range')
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     ids = tuple(a.ids)
     try:
         captured = rd(bus.read_positions, tag='读位置')

@@ -9,14 +9,15 @@ import json
 from pathlib import Path
 import sys
 import time
+from project_paths import arm_source_path, default_arm_port
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--port',default='/dev/ttyACM0')
+    ap.add_argument('--port',default=default_arm_port())
     ap.add_argument('--report',type=Path,required=True)
     args = ap.parse_args()
-    sys.path.insert(0,str(Path.home()/'legacy/arm/arm-final/ros2_ws/src/so101_bringup'))
+    sys.path.insert(0,arm_source_path())
     from so101_bringup.servo_protocol import FeetechSerialBus, REG_PRESENT_POSITION, REG_TORQUE_ENABLE
     result = dict(read_only=True,port=args.port,time=time.time(),servos=[])
     try:

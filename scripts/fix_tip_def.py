@@ -4,6 +4,8 @@
 判据：在示教抓取位（已知夹爪正环住方块）下，合格的"爪尖"必须是
       gripper_link 网格的**世界最低点**，且在 TCP 下方约 6mm。
 """
+
+from project_paths import project_path
 import math
 import os
 import sys
@@ -11,7 +13,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 TEACH = np.array([-0.11658253987930872, 0.9480001269133262,

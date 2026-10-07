@@ -12,6 +12,8 @@
   4. 分别统计两爪在 X 方向的分布 → 得到内侧面位置、口宽、口中心
 """
 
+from project_paths import so101_path
+
 import math
 import os
 import struct
@@ -22,8 +24,7 @@ import numpy as np
 import mujoco
 
 URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 ASSETS = os.path.join(os.path.dirname(URDF), 'assets')
 
 

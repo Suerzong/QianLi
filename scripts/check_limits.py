@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """打印关节实测限位与当前角度的对比，判断是否已到限位。"""
+
+from project_paths import driver_params_path
 import math
 from pathlib import Path
 
 import numpy as np
 import yaml
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
 lo = (np.array(cfg['raw_min']) - zero) * direction * 2 * math.pi / 4096

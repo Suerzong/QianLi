@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """把越界的肘关节挪回 EEPROM 合法区间，并尝试清 0x02 锁存。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path
 import sys
 import time
 
@@ -7,12 +11,11 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 import so101_bringup.servo_protocol as sp
 from so101_bringup.servo_protocol import FeetechSerialBus
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 ERR = {}
 
 
@@ -31,7 +34,7 @@ sp.parse_status_packet = patched
 
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
 
 # 读当前 EEPROM 限位
 lo, hi = [], []

@@ -23,6 +23,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, default_camera
+
 import argparse
 import json
 import os
@@ -80,7 +82,7 @@ def _blank(w=640, h=480):
 
 
 def reader_thread():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CONFIG['width'])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CONFIG['height'])
     time.sleep(1.0)
@@ -554,7 +556,7 @@ def main():
                          '标出来的畸变系数是外推噪声。')
     ap.add_argument('--cov-rows', type=int, default=4)
     ap.add_argument('--cov-cols', type=int, default=5)
-    ap.add_argument('--out', default='/tmp/camera_intrinsics.yaml')
+    ap.add_argument('--out', default=calibration_path('camera_intrinsics.yaml'))
     ap.add_argument('--auto', action='store_true', default=True)
     args = ap.parse_args()
 

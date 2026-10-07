@@ -9,6 +9,8 @@
   h = CELL/2
 并做校验：把所有黑方格质心映过去，应落在格心点阵上。
 """
+
+from project_paths import calibration_path, default_camera
 import json
 import sys
 
@@ -38,7 +40,7 @@ def square_lattice_score(H, cents):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     img = None
     for _ in range(20):
         ok, f = cap.read()
@@ -107,7 +109,7 @@ def main():
                        'src_quad': ordered.tolist(),
                        'lattice_med_mm': med, 'inliers': inl,
                        'n_squares': len(cents)},
-                      open('/tmp/board_homography.json', 'w'), indent=2)
+                      open(calibration_path('board_homography.json'), 'w'), indent=2)
             print('  已写 /tmp/board_homography.json')
             return 0
     print('❌ 未找到可信单应')

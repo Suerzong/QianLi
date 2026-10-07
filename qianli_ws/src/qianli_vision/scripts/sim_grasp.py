@@ -12,6 +12,8 @@
   ~/mj/bin/python sim_grasp.py --scan-size      # 扫描物块尺寸
 """
 
+from project_paths import calibration_path, so101_path
+
 import argparse
 import math
 import os
@@ -20,14 +22,12 @@ import numpy as np
 
 import mujoco
 from ikpy.chain import Chain
+from qianli_vision.urdf_resources import load_mujoco_spec
 
-# URDF 路径：默认仍是虚拟机上的真机 URDF（行为一字不变）。
-# 允许用环境变量覆盖，是为了让同一份脚本能在 Windows 宿主机上跑
-# （VM 里没有 GPU，宿主机有 RTX；搬过去只改这一个路径，物理参数全不动）。
+# URDF 来自显式覆盖、当前 ROS 安装或仓库中的同一份模型。
 SO101_PKG = os.environ.get(
     'QI_SO101_PKG',
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup'
-                       '/share/so101_bringup'))
+    os.path.expanduser(so101_path()))
 URDF = os.path.join(SO101_PKG, 'urdf/so101.urdf')
 
 # ---- 场景常量：全部改成 2026-10-06 的实测值 ----
@@ -59,25 +59,18 @@ OBJ_GRID = (0.111, 0.0)
 _OBJ_SIZE_OVERRIDE = [None]
 
 
-def load_extrinsics(path='/tmp/extrinsic.txt'):
+def load_extrinsics(path=calibration_path('extrinsic.txt')):
     """读棋盘位姿。**没有质量标记的一律拒绝** —— 旧的两点法写入方会往
     同一路径写，手滑跑一次就会静默覆盖掉标好的值。"""
     global BOARD_ORIGIN, BOARD_YAW
-    if not os.path.exists(path):
-        return None, f'外参文件不存在（{path}）'
-    kv = {}
-    for line in open(path, encoding='utf-8'):
-        s = line.strip()
-        if s and not s.startswith('#') and '=' in s:
-            k, v = s.split('=', 1)
-            kv[k.strip()] = v.strip()
-    if float(kv.get('quality_ok', 0) or 0) < 0.5:
-        return None, f'外参未通过质量裁决（quality_ok={kv.get("quality_ok", "缺失")}）'
-    try:
-        BOARD_ORIGIN = (float(kv['grid_origin_x']), float(kv['grid_origin_y']))
-        BOARD_YAW = math.radians(float(kv['grid_theta_deg']))
-    except (KeyError, ValueError) as exc:
-        return None, f'外参字段不完整: {exc}'
+    # A failed reload must not retain the previous machine's board pose.
+    BOARD_ORIGIN = BOARD_YAW = None
+    from qianli_vision.calibration import load_extrinsics as validated_extrinsics
+    kv, error = validated_extrinsics(path)
+    if error:
+        return None, error
+    BOARD_ORIGIN = (kv['grid_origin_x'], kv['grid_origin_y'])
+    BOARD_YAW = math.radians(kv['grid_theta_deg'])
     return (BOARD_ORIGIN, math.degrees(BOARD_YAW)), None
 
 
@@ -123,7 +116,7 @@ def obj_world_pos():
 
 def build_model():
     """搭场景 + 给关节加位置伺服执行器。"""
-    spec = mujoco.MjSpec.from_file(URDF)
+    spec = load_mujoco_spec(URDF)
     wb = spec.worldbody
 
     gt = wb.add_geom()

@@ -3,6 +3,7 @@ import math
 import os
 import time
 from pathlib import Path
+from project_paths import so101_path
 
 
 def down_quat_xyzw(yaw_deg):
@@ -61,7 +62,7 @@ class FeedbackGuard:
             return None
         if self._chain is None:
             from ikpy.chain import Chain
-            package = os.environ.get('QI_SO101_PKG',str(Path.home()/'legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'))
+            package = so101_path()
             self._chain = Chain.from_urdf_file(str(Path(package)/'urdf/so101.urdf'),base_elements=['base_link'])
             self._chain.active_links_mask = [link.name in self.positions for link in self._chain.links]
         q = np.array([self.positions.get(link.name,0.) for link in self._chain.links])

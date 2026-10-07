@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """量爪口开度曲线（给定夹爪角 -> 开口 mm），并估方块实际尺寸。"""
+
+from project_paths import default_camera, project_path
 import os
 import sys
 
@@ -7,7 +9,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel
 
 m = GripperModel(stride=8)
@@ -18,14 +20,14 @@ for g in (0.16, 0.30, 0.40, 0.52, 0.58, 0.70, 0.90, 1.10, 1.30, 1.50, 1.70):
 print()
 
 # 方块实际尺寸：用棋盘做尺度（同平面），按方块像素边长换算
-CAL = os.path.expanduser('~/QianLi/qianli_ws/config/board_frame.json')
+CAL = os.path.expanduser(project_path('config/board_frame.json'))
 import json
 import math
 frame = json.load(open(CAL))
 H = np.array(frame['H'])
 A = np.array(frame['affine'])
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 img = None
 for _ in range(15):
     ok, f = cap.read()

@@ -21,6 +21,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, camera_source, default_camera
+
 import argparse
 import json
 import os
@@ -371,11 +373,11 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--port', type=int, default=8097)
-    ap.add_argument('--camera', type=int, default=0)
+    ap.add_argument('--camera', type=camera_source, default=default_camera())
     ap.add_argument('--width', type=int, default=640)
     ap.add_argument('--height', type=int, default=480)
     ap.add_argument('--rate', type=float, default=10.0)
-    ap.add_argument('--intrinsics', default='/tmp/camera_intrinsics.yaml')
+    ap.add_argument('--intrinsics', default=calibration_path('camera_intrinsics.yaml'))
     ap.add_argument('--colors', default=None,
                     help='颜色表。**不给就用 color_block_detect 的默认表** —— '
                          '刻意做成单一来源：之前这里和检测器各写一份，'

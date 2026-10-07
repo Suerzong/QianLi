@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from project_paths import default_camera
+
 import sys
 import time
 
@@ -14,7 +16,7 @@ CELL_CM = 3.3
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('❌ 打不开 /dev/video0')
         return 1

@@ -1,8 +1,10 @@
+
+from project_paths import calibration_path
 #!/usr/bin/env python3
 import json
 import numpy as np
 
-marks = json.load(open('/tmp/extrinsic_marks.json'))
+marks = json.load(open(calibration_path('extrinsic_marks.json')))
 B = -0.06859
 print('点 | grid(cm)    | contact xy          | z-板面mm | TCP-接触水平mm')
 for i, m in enumerate(marks, 1):

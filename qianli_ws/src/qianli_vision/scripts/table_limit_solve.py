@@ -16,6 +16,8 @@ marks JSON 格式（与前端 /tmp/table_marks.json 一致）::
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -37,7 +39,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--marks', required=True)
     ap.add_argument('--margin-mm', type=float, default=8.0)
-    ap.add_argument('--out', default='/tmp/table_limit.txt')
+    ap.add_argument('--out', default=calibration_path('table_limit.txt'))
     args = ap.parse_args()
 
     with open(args.marks) as fh:

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """取样方块实际 HSV + 连续5次 (0,0) 重合稳定性。"""
+
+from project_paths import default_camera, project_path
 import os
 
 import cv2
 import json
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 REF = os.path.join(CFG, 'at00_mask.png')
 fr = json.load(open(os.path.join(CFG, 'board_frame.json')))
 H = np.array(fr['H'])
@@ -15,7 +17,7 @@ v = Hi @ np.array([0.0, 0.0, 1.0])
 PX = v[:2] / v[2]
 print('(0,0)像素:', PX.round(1))
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(25):
     cap.read()
 res = []

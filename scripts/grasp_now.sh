@@ -1,11 +1,15 @@
 #!/bin/bash
+
+QI_PROJECT_ROOT="${QI_PROJECT_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
+export QI_PROJECT_ROOT
+source "$QI_PROJECT_ROOT/scripts/setup/source_env.sh" || exit 1
 # 停值守 -> 定位 -> 抓取一轮
 bash /tmp/stop_all.sh >/dev/null 2>&1
-cd /home/ros/QianLi/qianli_ws/src/qianli_vision/scripts || exit 1
+cd "$QI_PROJECT_ROOT/scripts" || exit 1
 echo "=== 定位 ==="
-python3 board_frame.py --locate --color yellow 2>&1 \
+python3 "$QI_PROJECT_ROOT/scripts/board_frame.py" --locate --color yellow 2>&1 \
   | grep -vE 'Warning|warn|VIDIOC|obsensor' | tail -6
-SEL=$(python3 pick_block.py --color yellow 2>/dev/null)
+SEL=$(python3 "$QI_PROJECT_ROOT/scripts/pick_block.py" --color yellow 2>/dev/null)
 echo "选中: $SEL"
 X=$(echo "$SEL" | awk '{print $1}')
 case "$X" in

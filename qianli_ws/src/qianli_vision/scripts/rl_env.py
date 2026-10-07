@@ -121,7 +121,7 @@ def build_model(obj_size=OBJ_SIZE):
 
 
 class GraspEnv(gym.Env):
-    """机械臂抓取 20mm 立方体 —— MuJoCo 数字孪生，纯仿真。"""
+    """MuJoCo grasp environment; object size is explicit (default 40mm)."""
 
     metadata = {'render_modes': []}
 

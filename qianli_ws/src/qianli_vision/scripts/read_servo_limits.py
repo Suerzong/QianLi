@@ -23,12 +23,14 @@ Feetech STS3215 协议：
   ~/mj/bin/python read_servo_limits.py          # 需先停 driver 释放串口
 """
 
+from project_paths import default_arm_port
+
 import sys
 import time
 
 import serial
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 BAUD = 1000000
 JOINTS = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
           'wrist_roll', 'gripper']

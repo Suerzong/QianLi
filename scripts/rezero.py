@@ -8,6 +8,8 @@
 两者取平均（实测行程与 URDF 行程略有差异时取最小二乘中值）。
 对称 URDF 行程的关节（±x）等价于 zero = 实测中点。
 """
+
+from project_paths import calibration_path, driver_params_path, project_path
 import argparse
 import json
 import os
@@ -17,14 +19,12 @@ import sys
 import time
 
 K = 4096.0 / (2 * 3.141592653589793)     # counts per rad
-RANGES = '/tmp/joint_ranges_merged.json'
+RANGES = calibration_path('joint_ranges_merged.json')
 YAMLS = [
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'
-                       '/config/driver_params.yaml'),
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup'
-                       '/share/so101_bringup/config/driver_params.yaml'),
+    os.path.expanduser(driver_params_path()),
+    os.path.expanduser(driver_params_path()),
 ]
-OUT = os.path.expanduser('~/QianLi/qianli_ws/config/zero_frozen.json')
+OUT = os.path.expanduser(project_path('config/zero_frozen.json'))
 NAMES = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
          'wrist_roll', 'gripper']
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """把黄色大轮廓的像素位置映射到棋盘坐标，判断是否在棋盘上。"""
+
+from project_paths import project_path
 import json
 
 import os
@@ -7,7 +9,7 @@ import os
 import numpy as np
 
 fr = json.load(open(os.path.expanduser(
-    '~/QianLi/qianli_ws/config/board_frame.json')))
+    project_path('config/board_frame.json'))))
 print('棋盘 cols,rows:', fr.get('cols'), fr.get('rows'),
       'cell_mm:', fr.get('cell_mm'), 'pixel_extent:', fr.get('pixel_extent'))
 H = np.array(fr['H'])

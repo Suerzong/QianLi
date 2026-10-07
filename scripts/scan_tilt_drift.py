@@ -4,12 +4,14 @@
 如果漂移，说明"固定爪顶端=网格最低点"在倾角大时不可靠——记录的 XY
 参考点会随姿态变化而错位（这就是 RMS 60mm 的真凶候选）。
 """
+
+from project_paths import project_path
 import os
 import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 BASE = dict(zip(JOINTS, [0.4034, 0.6519, 0.1335, 0.8744, -1.5601, 0.7056]))

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """分析 5 点标定的四边形几何：哪个角点摆歪了、扭曲多大。"""
+
+from project_paths import calibration_path
 import json
 
 import numpy as np
 
-marks = json.load(open('/tmp/extrinsic_marks.json'))
+marks = json.load(open(calibration_path('extrinsic_marks.json')))
 pts = {tuple(m['grid_cm']): np.array(m['contact_m'][:2]) for m in marks}
 
 order = [(0.0, 0.0), (9.9, 0.0), (9.9, 6.6), (0.0, 6.6)]  # 顺时针四角

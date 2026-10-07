@@ -1,11 +1,15 @@
 #!/bin/bash
+
+QI_PROJECT_ROOT="${QI_PROJECT_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
+export QI_PROJECT_ROOT
+source "$QI_PROJECT_ROOT/scripts/setup/source_env.sh" || exit 1
 # 值守模式：用**掩码重合**判断 (0,0) 上的方块有没有被拿走。
 #   与参考掩码有重合       -> 待命
 #   连续2次重合不足        -> 方块被拿走 -> 找棋盘上的方块 -> 抓取放回 (0,0)
 #   每轮结束后等臂归位，再重建参考掩码（面积校验通过才录）
 #
 # 用法: watch.sh [轮询秒] [最大轮次(0=无限)] [最小重合比例]
-cd /home/ros/QianLi/qianli_ws/src/qianli_vision/scripts || exit 1
+cd "$QI_PROJECT_ROOT/scripts" || exit 1
 POLL=${1:-4}
 MAX=${2:-0}
 MINOV=${3:-0.10}
@@ -16,7 +20,7 @@ round=0
 miss=0
 while true; do
   round=$((round+1))
-  AT=$(timeout 8 python3 check_at_00.py "$MINOV" 2>/dev/null)
+  AT=$(timeout 8 python3 "$QI_PROJECT_ROOT/scripts/check_at_00.py" "$MINOV" 2>/dev/null)
   if [ "$AT" = "YES" ]; then
     miss=0
     echo "[$(date +%H:%M:%S)] (0,0) 掩码有重合 -> 没动，待命" >> $LOG
@@ -30,7 +34,7 @@ while true; do
     continue
   fi
   echo "[$(date +%H:%M:%S)] 连续2次不重合 -> 方块被拿走，找棋盘上的方块…" >> $LOG
-  SEL=$(python3 pick_block.py --color yellow 2>/dev/null)
+  SEL=$(python3 "$QI_PROJECT_ROOT/scripts/pick_block.py" --color yellow 2>/dev/null)
   X=$(echo "$SEL" | awk '{print $1}')
   case "$X" in
     ''|NONE|*[!0-9.-]*) echo "[$(date +%H:%M:%S)] 棋盘上没找到方块，继续等" >> $LOG ;;
@@ -40,7 +44,7 @@ while true; do
       # 等臂完全归位后重建参考掩码（避免把夹爪黄件录进参考）
       for k in 1 2 3 4 5 6; do
         sleep 4
-        RS=$(timeout 8 python3 check_at_00.py --reset 2>/dev/null)
+        RS=$(timeout 8 python3 "$QI_PROJECT_ROOT/scripts/check_at_00.py" --reset 2>/dev/null)
         case "$RS" in
           RESET_OK*) echo "[$(date +%H:%M:%S)] 参考掩码已重建 ($RS)" >> $LOG
                      miss=0

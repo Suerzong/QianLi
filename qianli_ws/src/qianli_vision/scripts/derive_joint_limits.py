@@ -22,6 +22,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -57,11 +59,11 @@ def main():
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--ranges', default='/tmp/joint_ranges.json')
+    ap.add_argument('--ranges', default=calibration_path('joint_ranges.json'))
     ap.add_argument('--margin-deg', type=float, default=2.0,
                     help='机械死点侧的安全边距（度），默认 2°')
-    ap.add_argument('--json', default='/tmp/joint_limits_derived.json')
-    ap.add_argument('--yaml', default='/tmp/driver_params.proposed.yaml')
+    ap.add_argument('--json', default=calibration_path('joint_limits_derived.json'))
+    ap.add_argument('--yaml', default=calibration_path('driver_params.proposed.yaml'))
     args = ap.parse_args()
 
     with open(args.ranges) as fh:

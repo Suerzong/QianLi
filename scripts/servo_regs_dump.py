@@ -3,19 +3,23 @@
 
 用法: servo_regs_dump.py [servo_id] [起始地址] [长度]
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path
 import os
 import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 
 sid = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 start = int(sys.argv[2], 0) if len(sys.argv) > 2 else 0x00
 length = int(sys.argv[3], 0) if len(sys.argv) > 3 else 0x40
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.05)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.05)
 data = bus.read_bytes(sid, start, length)
 print(f'servo {sid} 寄存器 {start:#04x}..{start+length-1:#04x}:')
 for i in range(0, len(data), 8):

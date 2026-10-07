@@ -5,6 +5,8 @@
 方块压住，外框仍是完整四边形。由外框 4 角建立 像素↔棋盘坐标 单应，
 再把方块中心映射成棋盘坐标（cm）。
 """
+
+from project_paths import default_camera
 import json
 
 import cv2
@@ -51,7 +53,7 @@ def detect_board(gray):
     return None, th
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(10):
     ok, img = cap.read()
     if ok:

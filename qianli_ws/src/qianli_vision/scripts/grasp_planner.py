@@ -38,6 +38,8 @@ SO-101 是 5 个臂关节。看似要满足 6 个约束（位置 3 + 姿态 3）
 
 from __future__ import annotations
 
+from project_paths import driver_params_path
+
 import argparse
 import math
 import os
@@ -50,8 +52,7 @@ from gripper_model import GripperModel, JOINTS  # noqa: E402
 
 ARM_JOINTS = JOINTS[:5]
 DRIVER_CFG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 
 
 def read_joint_limits(path=DRIVER_CFG):

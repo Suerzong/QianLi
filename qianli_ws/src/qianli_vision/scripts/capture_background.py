@@ -12,16 +12,18 @@
   只留下"新出现的东西"（物块/影子），对光照模式不敏感。
 """
 
+from project_paths import calibration_path, default_camera
+
 import sys
 
 import cv2
 import numpy as np
 
-OUT = '/tmp/board_bg.png'
-OUT_COLOR = '/tmp/board_bg_color.png'
+OUT = calibration_path('board_bg.png')
+OUT_COLOR = calibration_path('board_bg_color.png')
 N = 11
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 if not cap.isOpened():
     print('无法打开相机')
     sys.exit(1)

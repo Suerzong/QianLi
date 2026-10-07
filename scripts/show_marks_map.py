@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """显示旧标定 10 点的 grid→base 映射，帮用户确认棋盘原点方位。"""
+
+from project_paths import calibration_path
 import json
 
-marks = json.load(open('/tmp/extrinsic_marks.json'))
+marks = json.load(open(calibration_path('extrinsic_marks.json')))
 print('旧标定 10 点顺序 (grid cm -> base m):')
 for p in marks:
     c = p['contact_m']

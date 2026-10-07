@@ -43,7 +43,7 @@ def build_fixed_gripper(obj_size, fixed_pos=None, moving_pos=None):
     fp = fixed_pos or FIXED_POS
     mp = moving_pos or MOVING_POS
     S._OBJ_SIZE_OVERRIDE[0] = obj_size
-    spec = mujoco.MjSpec.from_file(S.URDF)
+    spec = S.load_mujoco_spec(S.URDF)
     wb = spec.worldbody
     # 场景（与 sim_grasp 一致）
     gt = wb.add_geom(); gt.name = 'table'
@@ -55,15 +55,16 @@ def build_fixed_gripper(obj_size, fixed_pos=None, moving_pos=None):
     gp.size = [0.045, 0.05, (S.BASE_BOTTOM - S.TABLE_Z) / 2]
     gp.pos = [0.0, 0.0, (S.TABLE_Z + S.BASE_BOTTOM) / 2]
     gp.rgba = [0.3, 0.3, 0.32, 1]
-    cy, sy = math.cos(S.BOARD_YAW), math.sin(S.BOARD_YAW)
-    cx = S.BOARD_ORIGIN[0] + cy * (S.BOARD_W / 2) - sy * (S.BOARD_H / 2)
-    cyy = S.BOARD_ORIGIN[1] + sy * (S.BOARD_W / 2) + cy * (S.BOARD_H / 2)
-    gb = wb.add_geom(); gb.name = 'board'
-    gb.type = mujoco.mjtGeom.mjGEOM_BOX
-    gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]
-    gb.pos = [cx, cyy, S.TABLE_Z + 0.0015]
-    gb.quat = [math.cos(S.BOARD_YAW / 2), 0, 0, math.sin(S.BOARD_YAW / 2)]
-    gb.rgba = [0.9, 0.9, 0.9, 1]
+    if S.BOARD_ORIGIN is not None and S.BOARD_YAW is not None:
+        cy, sy = math.cos(S.BOARD_YAW), math.sin(S.BOARD_YAW)
+        cx = S.BOARD_ORIGIN[0] + cy * (S.BOARD_W / 2) - sy * (S.BOARD_H / 2)
+        cyy = S.BOARD_ORIGIN[1] + sy * (S.BOARD_W / 2) + cy * (S.BOARD_H / 2)
+        gb = wb.add_geom(); gb.name = 'board'
+        gb.type = mujoco.mjtGeom.mjGEOM_BOX
+        gb.size = [S.BOARD_W / 2, S.BOARD_H / 2, 0.0015]
+        gb.pos = [cx, cyy, S.TABLE_Z + 0.0015]
+        gb.quat = [math.cos(S.BOARD_YAW / 2), 0, 0, math.sin(S.BOARD_YAW / 2)]
+        gb.rgba = [0.9, 0.9, 0.9, 1]
     op = S.obj_world_pos()
     ob = wb.add_body(name='object'); ob.pos = list(op); ob.add_freejoint()
     go = ob.add_geom(); go.name = 'cube'

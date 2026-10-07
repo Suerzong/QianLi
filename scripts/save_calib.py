@@ -2,6 +2,8 @@
 """① 保存视觉标定（单应 + 仿射换算）到 /tmp/vision_calib.json
 ② 求"固定爪尖端"在 gripper_frame 中的常向量（供上方抓取 IK 用）
 """
+
+from project_paths import calibration_path, default_camera, project_path
 import json
 import math
 import os
@@ -11,7 +13,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 # ---- ① 视觉标定 ----
@@ -28,7 +30,7 @@ coef, *_ = np.linalg.lstsq(X, B, rcond=None)
 CELL = 33.0
 COLS, ROWS = 7, 5
 FLAGS = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(12):
     ok, img = cap.read()
     if ok:
@@ -54,7 +56,7 @@ if found:
     print(f'  单应重投影误差: 中位 {np.median(res):.2f}mm 最大 {res.max():.2f}mm')
 calib = {'H': Hcache.tolist() if Hcache is not None else None,
          'affine': coef.tolist(), 'cell_mm': CELL, 'cols': COLS, 'rows': ROWS}
-json.dump(calib, open('/tmp/vision_calib.json', 'w'), indent=2)
+json.dump(calib, open(calibration_path('vision_calib.json'), 'w'), indent=2)
 print('已写 /tmp/vision_calib.json')
 
 # ---- ② 固定爪尖端在工具系的常向量 ----

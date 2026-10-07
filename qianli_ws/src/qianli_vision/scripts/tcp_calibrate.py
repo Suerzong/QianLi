@@ -36,6 +36,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -46,8 +48,8 @@ import time
 import numpy as np
 
 TRIGGER = '/tmp/tcp_mark'
-OUT_JSON = '/tmp/tcp_marks.json'
-OUT_TXT = '/tmp/tcp_calib.txt'
+OUT_JSON = calibration_path('tcp_marks.json')
+OUT_TXT = calibration_path('tcp_calib.txt')
 PROGRESS = '/tmp/tcp_calibrate_progress.txt'
 FLANGE = 'gripper_link'
 BASE = 'base_link'

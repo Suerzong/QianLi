@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """尝试软件清除舵机锁存错误：写入合法目标位 -> 关/开力矩 -> 复读错误位。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, project_path
 import json
 import math
 import os
@@ -8,7 +12,7 @@ import time
 
 import numpy as np
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 import so101_bringup.servo_protocol as sp
 from so101_bringup.servo_protocol import FeetechSerialBus
 
@@ -28,11 +32,11 @@ def patched(packet, expected_id, expected_data_size):
 
 sp.parse_status_packet = patched
 
-SAFE = os.path.expanduser('~/QianLi/qianli_ws/config/safe_limits.json')
+SAFE = os.path.expanduser(project_path('config/safe_limits.json'))
 sl = json.load(open(SAFE))
 slo, shi = np.array(sl['raw_lo']), np.array(sl['raw_hi'])
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 try:
     cur = np.array(bus.read_positions())
     print('当前 raw:', cur.tolist())

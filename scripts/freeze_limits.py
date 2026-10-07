@@ -6,6 +6,8 @@
 - 不改 zero_raw（改零点会改变 FK 零位，使已标定的棋盘外参失效；
   零点偏差单独报告，作为后续建议）
 """
+
+from project_paths import calibration_path, driver_params_path, project_path
 import argparse
 import json
 import os
@@ -14,15 +16,13 @@ import shutil
 import sys
 import time
 
-RANGES = '/tmp/joint_ranges_merged.json' if os.path.exists(
-    '/tmp/joint_ranges_merged.json') else '/tmp/joint_ranges.json'
+RANGES = calibration_path('joint_ranges_merged.json') if os.path.exists(
+    calibration_path('joint_ranges_merged.json')) else calibration_path('joint_ranges.json')
 YAMLS = [
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'
-                       '/config/driver_params.yaml'),
-    os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/install/so101_bringup'
-                       '/share/so101_bringup/config/driver_params.yaml'),
+    os.path.expanduser(driver_params_path()),
+    os.path.expanduser(driver_params_path()),
 ]
-OUT = os.path.expanduser('~/QianLi/qianli_ws/config/limits_frozen.json')
+OUT = os.path.expanduser(project_path('config/limits_frozen.json'))
 NAMES = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
          'wrist_roll', 'gripper']
 

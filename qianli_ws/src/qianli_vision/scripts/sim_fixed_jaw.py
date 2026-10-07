@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """按"固定爪贴住物块一面 → 活动爪夹紧"的策略抓取
 
 与之前的区别：
@@ -18,6 +18,8 @@
   ~/mj/bin/python sim_fixed_jaw.py --obj-size 0.020 --clearance 2
 """
 
+from project_paths import parts_path
+
 import argparse
 import os
 import sys
@@ -30,7 +32,7 @@ import mujoco
 import sim_grasp as S
 import sim_mesh_gripper as MG
 
-PARTS_DIR = os.path.expanduser('~/mj_parts')
+PARTS_DIR = os.path.expanduser(parts_path())
 
 
 def load_parts():

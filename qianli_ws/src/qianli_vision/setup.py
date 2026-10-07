@@ -1,3 +1,4 @@
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'qianli_vision'
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/scripts', glob('scripts/*.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -21,6 +23,7 @@ setup(
         'console_scripts': [
             'object_localizer = qianli_vision.object_localizer:main',
             'grab_bridge = qianli_vision.grab_bridge:main',
+            'safety_gate = qianli_vision.script_entrypoints:safety_gate',
         ],
     },
 )

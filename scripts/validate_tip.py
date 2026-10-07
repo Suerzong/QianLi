@@ -5,13 +5,15 @@
   taught_tcp_m = (0.27146, 0.03502, -0.05662)
 若爪尖定义正确，爪尖应落在该点附近（物块中心），且不低于桌面。
 """
+
+from project_paths import project_path
 import os
 import sys
 
 import numpy as np
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 TAUGHT = [-0.11658253987930872, 0.9480001269133262, -0.4586602555778067,

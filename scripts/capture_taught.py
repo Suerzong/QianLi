@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """记录用户示范的抓取位姿 -> config/taught_grasp.json（并拍照）。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, default_camera, driver_params_path, project_path
 import json
 import math
 import os
@@ -10,20 +14,19 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-OUT = os.path.expanduser('~/QianLi/qianli_ws/config/taught_grasp.json')
+    driver_params_path())
+OUT = os.path.expanduser(project_path('config/taught_grasp.json'))
 
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
 raw = np.array(bus.read_positions())
 torque = bus.read_torque_states()
 q = (raw - zero) * direction * 2 * math.pi / 4096
@@ -39,7 +42,7 @@ tcp = F[:3, 3]
 # 取张照片
 try:
     import cv2
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     img = None
     for _ in range(10):
         ok, f = cap.read()

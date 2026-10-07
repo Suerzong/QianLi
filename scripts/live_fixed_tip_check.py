@@ -3,13 +3,15 @@
 
 回答用户核心问题：固定爪顶端能不能被模型稳定算出来、准不准。
 """
+
+from project_paths import project_path
 import os
 import sys
 import time
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 import rclpy

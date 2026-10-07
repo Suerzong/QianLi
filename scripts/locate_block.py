@@ -6,6 +6,8 @@
 
 输出：每个颜色方块 -> 棋盘坐标(cm) -> base_link(m) -> 距底座水平半径(mm)
 """
+
+from project_paths import calibration_path, default_camera
 import json
 import math
 import os
@@ -17,11 +19,11 @@ import numpy as np
 CELL = 33.0
 COLS, ROWS = 7, 5
 FLAGS = (cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE)
-CACHE = '/tmp/vision_calib.json'
+CACHE = calibration_path('vision_calib.json')
 
 
 def grab(n=15):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     best = None
     for _ in range(n):
         ok, img = cap.read()

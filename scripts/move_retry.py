@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """带重试的关节移动：串口偶发超时时自动重试，避免中途掉线。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path
 import argparse
 import math
 import os
@@ -10,12 +14,11 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 
 
 def main():
@@ -31,7 +34,7 @@ def main():
     hi = (np.array(cfg['raw_max']) - zero) * direction * 2 * math.pi / 4096
     lo, hi = np.minimum(lo, hi), np.maximum(lo, hi)
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
 
     def retry(fn, n=8, tag=''):
         last = None

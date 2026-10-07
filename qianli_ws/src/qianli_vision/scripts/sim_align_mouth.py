@@ -12,6 +12,8 @@
   ~/mj/bin/python sim_align_mouth.py --obj-size 0.020
 """
 
+from project_paths import calibration_path, parts_path
+
 import argparse
 import os
 import sys
@@ -24,7 +26,7 @@ import mujoco
 import sim_grasp as S
 import sim_mesh_gripper as MG
 
-PARTS_DIR = os.path.expanduser('~/mj_parts')
+PARTS_DIR = os.path.expanduser(parts_path())
 
 
 def load_parts():
@@ -118,7 +120,7 @@ def main():
     tgt = tcp0 + offset
     print(f'修正后 TCP 目标 = ({tgt[0]:+.4f}, {tgt[1]:+.4f}, {tgt[2]:+.4f})')
     print(f'物块中心        = ({op[0]:+.4f}, {op[1]:+.4f}, {op[2]:+.4f})')
-    np.save('/tmp/mouth_offset.npy', offset)
+    np.save(calibration_path('mouth_offset.npy'), offset)
     print('\n偏移已存 /tmp/mouth_offset.npy')
 
 

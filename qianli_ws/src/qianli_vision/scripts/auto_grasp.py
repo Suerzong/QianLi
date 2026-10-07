@@ -22,12 +22,15 @@
   python3 auto_grasp.py                # 真抓
 """
 
+from project_paths import calibration_path
+
 import argparse
 import math
 import sys
 import time
 import json
 from grasp_guard import down_quat_xyzw, finite_position, tool_down_error_deg, FeedbackGuard
+from block_pipeline import load_extrinsics
 
 import numpy as np
 import rclpy
@@ -40,8 +43,8 @@ from tf2_ros import Buffer, TransformListener
 
 TCP = 'gripper_frame_link'
 POSE_FILE = '/tmp/grasp_pose.txt'
-OFFSET_FILE = '/tmp/grasp_offset.txt'
-EXT_FILE = '/tmp/extrinsic.txt'
+OFFSET_FILE = calibration_path('grasp_offset.txt')
+EXT_FILE = calibration_path('extrinsic.txt')
 GRIP_OPEN, GRIP_CLOSE = 1.2, 0.0
 PARK_DEFAULT = (0.26, 0.01, 0.18)
 
@@ -84,9 +87,9 @@ class AutoGrasp(Node):
     def __init__(self, args):
         super().__init__('auto_grasp')
         self.a = args
-        self.ext = read_kv(EXT_FILE)
-        if not self.ext:
-            raise SystemExit('缺少外参 /tmp/extrinsic.txt')
+        self.ext, error = load_extrinsics(EXT_FILE)
+        if error:
+            raise SystemExit(f'拒绝抓取：{error}')
         pose = read_kv(POSE_FILE)
         off = read_kv(OFFSET_FILE)
         if 'grasp_z' not in pose and 'grasp_z' not in off:

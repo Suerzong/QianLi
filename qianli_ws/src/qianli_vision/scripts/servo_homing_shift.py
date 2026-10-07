@@ -48,6 +48,10 @@ Feetech 的 ``Homing_Offset`` **写入**用 12 位"符号+幅值"（符号位 = 
 
 from __future__ import annotations
 
+from project_paths import default_arm_port
+
+from project_paths import calibration_path
+
 import argparse
 import json
 import os
@@ -56,7 +60,7 @@ import time
 
 import serial
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 BAUD = 1_000_000
 JOINT_NAMES = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
                'wrist_roll', 'gripper']
@@ -159,7 +163,7 @@ def main():
     ap.add_argument('--joint')
     ap.add_argument('--shift', type=float,
                     help='Present_Position 的目标位移（计数）')
-    ap.add_argument('--backup', default='/tmp/homing_backup.json')
+    ap.add_argument('--backup', default=calibration_path('homing_backup.json'))
     ap.add_argument('--restore')
     ap.add_argument('--dry-run', action='store_true')
     args = ap.parse_args()

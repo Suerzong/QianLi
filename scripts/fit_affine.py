@@ -3,12 +3,14 @@
 
 仿射能吸收标定中的非刚性误差（尺度/剪切），对桌面抓取更实用。
 """
+
+from project_paths import calibration_path
 import json
 import math
 
 import numpy as np
 
-marks = json.load(open('/tmp/extrinsic_marks_merged.json'))
+marks = json.load(open(calibration_path('extrinsic_marks_merged.json')))
 G = np.array([m['grid_cm'] for m in marks], float) / 100.0
 B = np.array([m['contact_m'][:2] for m in marks], float)
 

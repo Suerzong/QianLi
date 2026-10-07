@@ -5,6 +5,8 @@ findChessboardCorners 要求全部内角点可见，方块压上去就失败。
 改用黑方格(48 个, 只被挡 1~2 个)的外轮廓四点建单应；
 外轮廓对应的棋盘坐标有相位歧义 -> 穷举 16 种组合，取点阵误差最小的。
 """
+
+from project_paths import calibration_path, default_camera
 import itertools
 import json
 import sys
@@ -78,7 +80,7 @@ def score(H, cents):
 def main():
     img = cv2.imread('/tmp/board_src.jpg')
     if img is None:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         for _ in range(20):
             ok, f = cap.read()
             if ok:
@@ -116,7 +118,7 @@ def main():
                    'quad': quad.tolist(), 'box': list(box),
                    'lattice_med_mm': med, 'inliers': inl,
                    'n_squares': len(cents)},
-                  open('/tmp/board_homography.json', 'w'), indent=2)
+                  open(calibration_path('board_homography.json'), 'w'), indent=2)
         print('✅ 已写 /tmp/board_homography.json')
         return 0
     print('❌ 点阵拟合不够好')

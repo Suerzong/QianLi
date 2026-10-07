@@ -33,6 +33,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -106,10 +108,10 @@ def load_marks(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--board-cam', default=os.path.expanduser(
-        '~/QianLi/calib/board_cam.npz'))
-    ap.add_argument('--marks', default='/tmp/extrinsic_marks.json')
+        calibration_path('board_cam.npz')))
+    ap.add_argument('--marks', default=calibration_path('extrinsic_marks.json'))
     ap.add_argument('--out', default=os.path.expanduser(
-        '~/QianLi/calib/camera_extrinsic.yaml'))
+        calibration_path('camera_extrinsic.yaml')))
     ap.add_argument('--cell-cm', type=float, default=3.3)
     ap.add_argument('--board-mm', type=float, default=0.5)
     args = ap.parse_args()
@@ -247,7 +249,7 @@ def main():
         f.write(f'grid_theta_deg={th:.6f}\n')
         f.write(f'grid_origin_x={t[0]:.10f}\ngrid_origin_y={t[1]:.10f}\n')
     print(f'\n📄 已写 {args.out}')
-    with open('/tmp/extrinsic.txt', 'w') as f:
+    with open(calibration_path('extrinsic.txt'), 'w') as f:
         f.write('# 由 compose_extrinsic.py 生成（含 quality_ok）\n')
         f.write(f'quality_ok={1 if ok else 0}\n')
         f.write(f'grid_theta_deg={th:.6f}\n')

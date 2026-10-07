@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import sys
@@ -28,7 +30,7 @@ import numpy as np
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--state', default='/tmp/s.json')
-    ap.add_argument('--out', default='/tmp/camera_intrinsics.yaml')
+    ap.add_argument('--out', default=calibration_path('camera_intrinsics.yaml'))
     ap.add_argument('--cols', type=int, default=7)
     ap.add_argument('--rows', type=int, default=5)
     ap.add_argument('--cell-mm', type=float, default=33.0)

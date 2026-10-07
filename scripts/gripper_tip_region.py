@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """看 gripper_link 网格的几何范围（frame 系），确定"爪尖区域"怎么截取。"""
+
+from project_paths import project_path
 import os
 import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 BASE = dict(zip(JOINTS, [0.4034, 0.6519, 0.1335, 0.8744, -1.5601, 0.7056]))

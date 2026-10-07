@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """同一个实测 raw，分别按"新零点"和"旧零点"算固定爪尖端高度。
 板面在 -68.59mm。谁算出来接近板面，谁的零点就是对的。"""
+
+from project_paths import project_path
 import math
 import os
 import sys
@@ -8,7 +10,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 K = 2 * math.pi / 4096

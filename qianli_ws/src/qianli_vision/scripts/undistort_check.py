@@ -9,13 +9,15 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, default_camera
+
 import sys
 import time
 
 import cv2
 import numpy as np
 
-YAML = '/tmp/camera_intrinsics.yaml'
+YAML = calibration_path('camera_intrinsics.yaml')
 
 
 def load_yaml(path):
@@ -90,7 +92,7 @@ def main():
     img = grab_from_stream()
     if img is None:
         # 退路：直接开相机（前端没在跑时用）
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, w)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
         time.sleep(1.0)

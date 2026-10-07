@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """汇总 joint_ranges.json 的关键字段。"""
+
+from project_paths import calibration_path
 import json
 import math
 
-R = json.load(open('/tmp/joint_ranges.json'))
+R = json.load(open(calibration_path('joint_ranges.json')))
 CFG_MIN = [826, 842, 1974, 954, 1264, 1944]
 CFG_MAX = [3276, 3118, 4061, 3116, 3885, 3168]
 CFG_ZERO = [2078, 1980, 3076, 2035, 3053, 2030]

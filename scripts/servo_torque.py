@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """舵机力矩开关 + 关节回读（用于解除/恢复过载保护）。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path
 import argparse
 import math
 import sys
@@ -9,11 +13,10 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
 
@@ -24,7 +27,7 @@ g.add_argument('--off', action='store_true')
 ap.add_argument('--wait', type=float, default=0.6)
 a = ap.parse_args()
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 if a.on:
     bus.set_torque(True)
     print('torque ON')

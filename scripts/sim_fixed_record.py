@@ -4,12 +4,14 @@
 旧 marks 第 10 点 (9.9, 6.6) 记录于当前这个姿态 —— 如果修复后的逻辑
 在相同姿态下给出相同/相近的固定爪顶端，且 z 判据通过，说明修复是自洽的。
 """
+
+from project_paths import project_path
 import os
 import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 Q = [0.3666214083046682, 0.7378447589729934, -0.007669903939428206,

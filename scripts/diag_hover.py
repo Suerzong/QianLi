@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """诊断悬停位：工具轴竖直度 + 整网格最低点 vs 固定爪尖端(p_fix)。"""
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import math
 import os
@@ -10,14 +12,13 @@ from scipy.optimize import least_squares
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 TABLE_Z = -0.06485
 DOWN = np.array([0.0, 0.0, -1.0])
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
@@ -75,7 +76,7 @@ def build(target, seed, grip, w):
 
 
 ready = json.load(open(os.path.expanduser(
-    '~/QianLi/qianli_ws/config/ready_pose.json')))
+    project_path('config/ready_pose.json'))))
 q_r = (np.array(ready['raw_exec']) - zero) * direction * 2 * math.pi / 4096
 
 for w in (0.15, 0.6, 1.5, 3.0):

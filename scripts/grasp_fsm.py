@@ -15,6 +15,10 @@
 baseline（折叠位）由 --capture-home 现场记录；同时算出夹进安全限位的
 "可执行回位位姿"，避免再次触发 0x02 锁存错误。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, default_camera, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -28,16 +32,15 @@ import numpy as np
 from scipy.optimize import least_squares
 import yaml
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG_DIR = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG_DIR = os.path.expanduser(project_path('config'))
 HOME_PATH = os.path.join(CFG_DIR, 'home_pose.json')
 SAFE_PATH = os.path.join(CFG_DIR, 'safe_limits.json')
 TABLE_Z = -0.06485       # 拖拽标定实测（平面残差 0.073mm），非旧值 -0.06909
@@ -65,7 +68,7 @@ class FSM:
             sl = json.load(open(SAFE_PATH))
             self.lo = np.maximum(self.lo, np.array(sl['rad_lo']))
             self.hi = np.minimum(self.hi, np.array(sl['rad_hi']))
-        self.bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+        self.bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
         self.model = GripperModel(stride=8)
         self.state = 'INIT'
 
@@ -343,7 +346,7 @@ class FSM:
         """关键时刻拍照存证（/tmp/fsm_<tag>.jpg）。"""
         try:
             import cv2
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(default_camera())
             img = None
             for _ in range(8):
                 ok, f = cap.read()
@@ -530,7 +533,7 @@ class FSM:
 def capture_home():
     cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
     zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     raw = np.array(bus.read_positions())
     torque = bus.read_torque_states()
     bus.close()

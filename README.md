@@ -8,8 +8,8 @@
 
 一个面向室内复杂环境的自主探索、语义认知与任务执行移动机器人项目。
 
-![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy-22314E?logo=ros&logoColor=white)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-E95420?logo=ubuntu&logoColor=white)
+![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E?logo=ros&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
 ![Language](https://img.shields.io/badge/C%2B%2B%20%7C%20Python-3776AB?logo=python&logoColor=white)
 ![Simulation](https://img.shields.io/badge/Simulation-MuJoCo-000000)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -39,7 +39,7 @@
 
 | 领域 | 状态 | 说明 |
 |---|---|---|
-| ROS 2 工作区 | ✅ 完成 | 17 个 packages，Ubuntu 24.04 + ROS 2 Jazzy 下 `colcon build` 通过 |
+| ROS 2 工作区 | ✅ 完成 | 6 个实际可构建包（含恢复的 so101_bringup）；Humble 迁移与验收见迁移文档 |
 | 机械臂建模 | ✅ 完成 | **SO-ARM101** 6-DOF + 夹爪 URDF 建模，STL 网格资产整合，RViz 显示 |
 | 真实机械臂驱动 | ✅ 完成 | Feetech 舵机总线（SYNC_WRITE / GroupSyncRead），关节状态、限位与健康检查 |
 | 机械限位实测重标定 | ✅ 完成 | 实测各关节机械死点，**找回被静默吞掉的 71.2°** 腕部行程 |
@@ -113,7 +113,7 @@ Agent: find(vending_machine)        # 查询 Semantic Map → 坐标
 
 | 类别 | 技术 |
 |---|---|
-| 目标平台 | Ubuntu 24.04 + ROS 2 Jazzy |
+| 目标平台 | Ubuntu 22.04.5 + ROS 2 Humble |
 | 主要语言 | C++ / Python |
 | 中间件 | ROS 2（Topic / Service / Action） |
 | 建模与可视化 | URDF / Xacro / TF2 / RViz2 |
@@ -136,29 +136,27 @@ QianLi/
 ├── datasets/      # 数据集（不纳入版本控制）
 ├── scripts/       # 辅助脚本（setup / tools / vm）
 └── qianli_ws/     # ROS 2 工作区（colcon）
-    └── src/       # 17 个 ROS 2 packages
+    └── src/       # 6 个可构建 ROS 包及规划占位目录
 ```
 
 ## 快速开始 · Quick Start
 
-> 开发环境为 Windows 11 + VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy，`192.168.26.128`），详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+目标为原生 Ubuntu 22.04.5 + ROS 2 Humble。旧 Ubuntu 24.04/Jazzy 虚拟机保留用于回退；完整步骤、资产与硬件验收见 [迁移说明](docs/UBUNTU22_MIGRATION.md)。
 
 ```bash
-# 1. 安装 ROS 2 Jazzy（基础环境，一般已装好）
-bash scripts/setup/install_ros2_jazzy.sh
-
-# 2. 构建工作区（等价于 cd qianli_ws && colcon build --symlink-install）
-source /opt/ros/jazzy/setup.bash
+# 在新安装的原生 Ubuntu 22.04 中执行
+bash scripts/setup/install_ros2_humble.sh
+bash scripts/setup/setup_python_envs.sh
 bash scripts/tools/build.sh
-
-# 3. 加载工作区环境
 source scripts/setup/source_env.sh
+bash scripts/tools/validate_ubuntu22.sh
 ```
 
 ## 文档索引 · Documentation
 
 | 文档 | 内容 |
 |---|---|
+| [docs/UBUNTU22_MIGRATION.md](docs/UBUNTU22_MIGRATION.md) | 原生 Humble 安装、资产迁移与分阶段验收 |
 | [docs/PROJECT.md](docs/PROJECT.md) | 项目定义、目标能力、技术栈、设计原则 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 软件架构、模块职责、TF / 地图 / Agent 架构 |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 开发路线与 Milestone 定义 |

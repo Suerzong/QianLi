@@ -4,13 +4,15 @@
 用当前实时姿态触发一次记录，输出到测试 JSON（不碰正式标定数据）。
 预期：z 判据通过（当前臂姿压在板上），一个点被记录并立即落盘。
 """
+
+from project_paths import calibration_path, project_path
 import os
 import sys
 import time
 
 import numpy as np
 
-sys.path.insert(0, '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts')
+sys.path.insert(0, project_path('qianli_ws/src/qianli_vision/scripts'))
 
 import rclpy
 
@@ -20,7 +22,7 @@ TEST_JSON = '/tmp/smoke_marks.json'
 # 复制 collect 的核心逻辑：最小化 Collector
 import importlib.util
 spec = importlib.util.spec_from_file_location(
-    'ext_calib', '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts/extrinsic_calib_multi.py')
+    'ext_calib', project_path('qianli_ws/src/qianli_vision/scripts/extrinsic_calib_multi.py'))
 ext = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ext)
 
@@ -31,7 +33,7 @@ class A:
     board_mm = 0.5
     z_tol_mm = 2.0
     max_face_offset_mm = 5.0
-    tcp = '/tmp/tcp_calib.txt'
+    tcp = calibration_path('tcp_calib.txt')
 
 # 直接调 collect 但需要 ROS 上下文与节点；为不干扰正式实例，
 # 这里改为验证底层：GripperModel.fixed_tip 在实时关节角下的输出。

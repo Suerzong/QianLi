@@ -3,6 +3,10 @@
 
 READY 是"折叠位 -> 工作区"之间的途经姿态，用于绕开关节空间插值下塌。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -14,13 +18,12 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-OUT = os.path.expanduser('~/QianLi/qianli_ws/config/ready_pose.json')
+    driver_params_path())
+OUT = os.path.expanduser(project_path('config/ready_pose.json'))
 
 ap = argparse.ArgumentParser()
 g = ap.add_mutually_exclusive_group(required=True)
@@ -39,7 +42,7 @@ if a.show:
         print('尚未示教中间位')
     sys.exit(0)
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
 if a.release:
     bus.set_torque(False)
     time.sleep(0.6)

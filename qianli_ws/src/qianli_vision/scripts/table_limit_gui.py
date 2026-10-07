@@ -20,6 +20,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -47,7 +49,7 @@ STATE = {
     'message': '等待 /joint_states …',
     'stable_s': 0.0,
 }
-CONFIG = {'out': '/tmp/table_limit.txt', 'margin_mm': 8.0}
+CONFIG = {'out': calibration_path('table_limit.txt'), 'margin_mm': 8.0}
 _last = {'low': None, 'since': time.monotonic()}
 
 
@@ -349,7 +351,7 @@ class Handler(BaseHTTPRequestHandler):
             STATE['flash'] = (f"已记录第 {len(STATE['marks'])} 点  "
                               f"最低点 Z = {low[2]*1000:.1f} mm  "
                               f"(倾角 {STATE['tilt_deg']}°)")
-            with open('/tmp/table_marks.json', 'w') as fh:
+            with open(calibration_path('table_marks.json'), 'w') as fh:
                 json.dump(STATE['marks'], fh, indent=2)
 
     def _write(self):
@@ -386,7 +388,7 @@ def main():
     ap.add_argument('--host', default='0.0.0.0')
     ap.add_argument('--stride', type=int, default=4)
     ap.add_argument('--margin-mm', type=float, default=8.0)
-    ap.add_argument('--out', default='/tmp/table_limit.txt')
+    ap.add_argument('--out', default=calibration_path('table_limit.txt'))
     args = ap.parse_args()
 
     CONFIG['margin_mm'] = args.margin_mm

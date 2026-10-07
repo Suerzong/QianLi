@@ -17,6 +17,8 @@
   ... 找到物块后坐标加回 (x, y) 偏移 → 全图坐标
 """
 
+from project_paths import default_camera
+
 import cv2
 import numpy as np
 
@@ -61,7 +63,7 @@ def detect_in_roi(roi):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

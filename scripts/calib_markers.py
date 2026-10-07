@@ -7,6 +7,8 @@ RViz 里加载后即可对照真实世界检查"建模是否符合物理"。
   - 已打点(红球, 0.8cm)
   - 当前固定爪顶端(绿球, 1cm)
 """
+
+from project_paths import calibration_path, project_path
 import json
 import math
 import os
@@ -18,7 +20,7 @@ from rclpy.node import Node
 from visualization_msgs.msg import Marker, MarkerArray
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 CELL_M = 0.033
@@ -29,7 +31,7 @@ TABLE_Z = -0.06909
 
 # 当前标定结果（merged marks 求解）
 CALIB = {'origin': (0.2246, 0.0218), 'yaw_deg': -83.499}
-MARKS_PATH = '/tmp/extrinsic_marks_merged.json'
+MARKS_PATH = calibration_path('extrinsic_marks_merged.json')
 
 
 class CalibMarkers(Node):

@@ -24,6 +24,8 @@
 
 from __future__ import annotations
 
+from project_paths import default_arm_port
+
 import argparse
 import json
 import sys
@@ -31,7 +33,7 @@ import time
 
 import serial
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 BAUD = 1_000_000
 JOINT_NAMES = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
                'wrist_roll', 'gripper']

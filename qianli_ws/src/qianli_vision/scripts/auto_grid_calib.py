@@ -10,6 +10,8 @@
 按键：q 退出 | s 保存 | r 重框 ROI | a 重新标定
 """
 
+from project_paths import calibration_path, default_camera
+
 import cv2
 import numpy as np
 
@@ -87,7 +89,7 @@ def compute_homography(roi_img, show_callback=None):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return
@@ -187,7 +189,7 @@ def main():
         elif key == ord('s'):
             cv2.imwrite('/tmp/autocalib_result.png', display)
             if H is not None:
-                np.save('/tmp/homography.npy', H)
+                np.save(calibration_path('homography.npy'), H)
                 print('已保存 H 与截图')
         elif key == ord('a'):
             ok2, frame2 = cap.read()

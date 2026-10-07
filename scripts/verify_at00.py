@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """验证 (0,0) 检测窗口：投影位置、参考掩码面积、当前重合度。"""
+
+from project_paths import default_camera, project_path
 import json
 import os
 
 import cv2
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 fr = json.load(open(os.path.join(CFG, 'board_frame.json')))
 H = np.array(fr['H'])
 Hi = np.linalg.inv(H)
@@ -15,7 +17,7 @@ PX = v[:2] / v[2]
 print(f'棋盘 (0,0) 投影像素 = ({PX[0]:.0f}, {PX[1]:.0f})')
 
 W = 70
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 img = None
 for _ in range(12):
     ok, f = cap.read()

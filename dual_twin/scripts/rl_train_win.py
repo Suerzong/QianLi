@@ -18,7 +18,7 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import win_twin  # noqa: E402
+import twin_runtime as win_twin  # noqa: E402
 
 # 注意：torch / stable_baselines3 / rl_env 的 import 必须放在 main() 里面。
 # Windows 上 SubprocVecEnv 用 spawn，子进程会把本文件当 __main__ 重新执行
@@ -27,12 +27,12 @@ import win_twin  # noqa: E402
 # 模块顶层只保留 win_twin（它很轻，且必须先把路径环境变量设好）。
 
 
-def make_env(rank, seed=0, jitter=None, max_steps=None):
+def make_env(rank, seed=0, jitter=None, max_steps=None, obj_size=0.04):
     import rl_env as R
 
     def _init():
         from stable_baselines3.common.monitor import Monitor
-        return Monitor(R.GraspEnv(seed=seed + rank, jitter=jitter,
+        return Monitor(R.GraspEnv(seed=seed + rank, jitter=jitter, obj_size=obj_size,
                                   max_steps=max_steps))
     return _init
 
@@ -51,6 +51,8 @@ def main():
     ap.add_argument('--steps', type=int, default=600000)
     ap.add_argument('--n-envs', type=int, default=10)
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--obj-size', type=float, choices=[0.02, 0.04], default=0.04,
+                    help='Keep historical 20mm and current 40mm runs separate')
     ap.add_argument('--tag', default='ppo_win')
     ap.add_argument('--device', default='cuda')
     ap.add_argument('--pretrain', default=None)
@@ -66,17 +68,32 @@ def main():
     ap.add_argument('--max-ep-steps', type=int, default=None)
     ap.add_argument('--outdir', default=os.path.join(win_twin.DUAL, 'rl_out'))
     a = ap.parse_args()
+    if a.device.startswith('cuda') and not torch.cuda.is_available():
+        ap.error('CUDA requested but unavailable; check the NVIDIA driver and PyTorch build')
     if a.jitter is None:
         a.jitter = R.OBJ_JITTER
     if a.max_ep_steps is None:
         a.max_ep_steps = R.MAX_STEPS
 
     outdir = os.path.join(a.outdir, a.tag)
+    import json
+    from pathlib import Path
+    import sim_grasp as S
+    metadata = dict(obj_size_m=a.obj_size, seed=a.seed, table_z=S.TABLE_Z,
+                    board_origin=S.BOARD_ORIGIN, board_yaw=S.BOARD_YAW,
+                    device=a.device, urdf=S.URDF, parts_dir=win_twin.PARTS_DIR,
+                    torch=torch.__version__, observations=R.OBS_DIM)
+    metadata_path = Path(outdir)/'scenario.json'
+    if Path(outdir).is_dir() and not metadata_path.exists() and any(Path(outdir).iterdir()):
+        ap.error('Existing output has no scene metadata; preserve the historical run and choose a new --tag')
+    if metadata_path.exists() and json.loads(metadata_path.read_text()) != metadata:
+        ap.error('Existing output contains a different scene; choose a new --tag')
     os.makedirs(os.path.join(outdir, 'ckpt'), exist_ok=True)
+    metadata_path.write_text(json.dumps(metadata, indent=2), encoding='utf-8')
     csv_path = os.path.join(outdir, 'eval.csv')
     tb_dir = os.path.join(outdir, 'tb')
 
-    print(f'=== 宿主机训练 {a.tag} ===')
+    print(f'=== PPO 训练 {a.tag} ({a.obj_size*1000:.0f}mm) ===')
     print(f'  device={a.device}  cuda可用={torch.cuda.is_available()}')
     if torch.cuda.is_available():
         print(f'  GPU={torch.cuda.get_device_name(0)}')
@@ -84,7 +101,7 @@ def main():
           f'lr={a.lr}  ent={a.ent_coef}  抖动±{a.jitter*1000:.0f}mm')
     print(f'  输出 {outdir}', flush=True)
 
-    venv = SubprocVecEnv([make_env(i, a.seed, a.jitter, a.max_ep_steps)
+    venv = SubprocVecEnv([make_env(i, a.seed, a.jitter, a.max_ep_steps, a.obj_size)
                           for i in range(a.n_envs)], start_method='spawn')
     model = PPO('MlpPolicy', venv, verbose=1, seed=a.seed, device=a.device,
                 learning_rate=a.lr, n_steps=a.n_steps,
@@ -107,7 +124,7 @@ def main():
         print(f'  ✅ 已载入行为克隆权重 {n} 项（{a.pretrain}）', flush=True)
 
     cb = RT.MetricCallback(eval_every=a.eval_every, n_eval=a.n_eval,
-                           csv_path=csv_path, max_steps=a.max_ep_steps)
+                           csv_path=csv_path, max_steps=a.max_ep_steps, obj_size=a.obj_size)
     cb.init_callback(model)
     st0 = cb._eval()
     print(f'  训练前评测: 成功率={st0["success_rate"]*100:.0f}%  '
@@ -115,7 +132,10 @@ def main():
 
     t0 = time.perf_counter()
     try:
-        model.learn(total_timesteps=a.steps, callback=cb, progress_bar=False)
+        from stable_baselines3.common.callbacks import CheckpointCallback
+        checkpoint = CheckpointCallback(save_freq=max(a.save_every//a.n_envs, 1),
+                                        save_path=os.path.join(outdir, 'ckpt'), name_prefix=a.tag)
+        model.learn(total_timesteps=a.steps, callback=[cb, checkpoint], progress_bar=False)
     finally:
         dt = time.perf_counter() - t0
         final = os.path.join(outdir, f'{a.tag}_final.zip')

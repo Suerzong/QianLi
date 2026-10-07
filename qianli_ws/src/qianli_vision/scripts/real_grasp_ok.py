@@ -20,6 +20,8 @@
   ~/mj/bin/python real_grasp_ok.py               # 执行
 """
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -67,14 +69,10 @@ def quat_from_RzRx(yaw_deg):
 def read_vision():
     """读 /tmp/object_pose.txt（grid 系 cm）与 /tmp/extrinsic.txt。"""
     X,Y,pose = read_observation()
-    ext = {}
-    with open('/tmp/extrinsic.txt') as fh:
-        for line in fh:
-            line = line.strip()
-            if line.startswith('#') or '=' not in line:
-                continue
-            k, v = line.split('=', 1)
-            ext[k.strip()] = float(v)
+    from qianli_vision.calibration import load_extrinsics
+    ext, error = load_extrinsics(calibration_path('extrinsic.txt'))
+    if error:
+        raise RuntimeError(error)
     yaw_grid = float(pose.get('yaw_deg', 0))
     th = math.radians(ext['grid_theta_deg'])
     c, s = math.cos(th), math.sin(th)
@@ -244,7 +242,7 @@ def main():
     elif os.path.exists('/tmp/obj_base.txt'):
         # 优先用 vision_snapshot.py 写下的"行动前快照"（动之前定一次）
         require_fresh('/tmp/obj_base.txt')
-        if os.path.getmtime('/tmp/extrinsic.txt') > os.path.getmtime('/tmp/obj_base.txt'):
+        if os.path.getmtime(calibration_path('extrinsic.txt')) > os.path.getmtime('/tmp/obj_base.txt'):
             raise ValueError('snapshot predates extrinsic calibration')
         with open('/tmp/obj_base.txt') as fh:
             vals = fh.readline().split()[:3]

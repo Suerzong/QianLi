@@ -28,6 +28,8 @@
   ~/mj/bin/python digital_twin.py --render out.png # 渲染一张图
 """
 
+from project_paths import calibration_path, so101_path
+
 import argparse
 import math
 import os
@@ -35,10 +37,10 @@ import os
 import numpy as np
 
 import mujoco
+from qianli_vision.urdf_resources import load_mujoco_spec
 
 URDF = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/urdf/so101.urdf')
+    so101_path('urdf/so101.urdf'))
 
 # ---- 实测场景参数 ----
 # TABLE_Z：2026-10-06 实测（夹爪最低点碰桌、6 点拟合平面，残差 RMS 0.469mm）。
@@ -63,7 +65,7 @@ BOARD_H = (BOARD_ROWS - 1) * CELL_M    # 0.132 m
 # 旧的 (0.3420, 0.0584) / -97.75° 出自那轮已被判定不可信的两点法标定
 # （见 docs/GRASP_REAL_AUDIT.md：两个内角点 Z 差 9.5mm、反推格宽 34.6mm），
 # 所以这里**不再内置旧值**，改成读外参文件；读不到就明确报警并跳过棋盘。
-EXTRINSIC_PATH = '/tmp/extrinsic.txt'
+EXTRINSIC_PATH = calibration_path('extrinsic.txt')
 BOARD_ORIGIN = None      # 由外参填充；None = 未知，不画棋盘
 BOARD_YAW_DEG = None
 
@@ -112,7 +114,7 @@ def build_scene(object_grid=OBJECT_GRID):
     注意：MjSpec 从 URDF 载入后，用 add_body 加的**无关节静态 body 会被
     compile 丢弃**（实测），所以环境几何体直接挂到 worldbody 上。
     """
-    spec = mujoco.MjSpec.from_file(URDF)
+    spec = load_mujoco_spec(URDF)
     wb = spec.worldbody
 
     # 桌面（上表面在 TABLE_Z）

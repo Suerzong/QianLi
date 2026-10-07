@@ -3,6 +3,10 @@
 
 Default plans only. --execute carries and holds. --open opens the jaws only.
 """
+
+from project_paths import default_arm_port
+
+from project_paths import default_camera
 import argparse
 import json
 import math
@@ -30,7 +34,7 @@ def main():
     lo = (np.array(cfg['raw_min'])-zero)*direction*2*math.pi/4096
     hi = (np.array(cfg['raw_max'])-zero)*direction*2*math.pi/4096
     lo, hi = np.minimum(lo, hi), np.maximum(lo, hi)
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=.08)
     result = {'mode': 'execute' if a.execute else 'plan'}
     def read():
         return (np.array(bus.read_positions())-zero)*direction*2*math.pi/4096
@@ -40,7 +44,7 @@ def main():
         bus.write_positions(np.rint(zero+q*direction*4096/(2*math.pi)).astype(int).tolist())
     def picture(tag):
         import cv2
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         frames = [cap.read() for _ in range(5)]
         cap.release()
         ok, img = frames[-1]

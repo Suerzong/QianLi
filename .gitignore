@@ -8,6 +8,11 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+.venv-*/
+.migration-backups/
+migration_assets/
+calib/*
+!calib/README.md
 venv/
 
 # ---- C / C++ 编译产物 ----

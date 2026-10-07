@@ -1,0 +1,6 @@
+numpy==1.26.4
+scipy==1.15.3
+opencv-python==4.10.0.84
+mujoco==3.14.0
+ikpy==4.1.0
+PyYAML==6.0.2

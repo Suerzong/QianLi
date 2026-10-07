@@ -8,6 +8,10 @@
 
 流程：抬到物块上方 50mm -> 下探到同一抓取高度 -> 合爪找接触 -> 抬升 -> 校验。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -19,13 +23,12 @@ import numpy as np
 from scipy.optimize import least_squares
 import yaml
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
-sys.path.insert(0, '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts')
+sys.path.insert(0, arm_source_path())
+sys.path.insert(0, project_path('qianli_ws/src/qianli_vision/scripts'))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
-CONFIG = ('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/'
-          'so101_bringup/config/driver_params.yaml')
+CONFIG = (driver_params_path())
 TABLE_Z = -0.06909
 TEACH_Q = np.array([-0.11658253987930872, 0.9480001269133262,
                     -0.4586602555778067, 1.2363885150358267,
@@ -57,7 +60,7 @@ def main():
     hi = (np.array(cfg['raw_max']) - zero) * direction * 2 * math.pi / 4096
     lo, hi = np.minimum(lo, hi), np.maximum(lo, hi)
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
     model = GripperModel(stride=12)
     out = {'mode': 'execute' if a.execute else 'plan'}
 

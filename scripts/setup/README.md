@@ -1,9 +1,14 @@
-# scripts/setup — 环境安装脚本
+# 环境安装脚本
 
-| 脚本 | 用途 | 适用环境 |
-|---|---|---|
-| install_ros2_jazzy.sh | 安装 ROS 2 Jazzy 基础环境（含 colcon / rosdep） | 目标 Ubuntu 24.04 主机 / 新虚拟机 |
-| source_env.sh | 加载 ROS 2 与 QianLi 工作区环境（自动检测 jazzy / humble） | Ubuntu |
+默认目标是原生 Ubuntu 22.04.5 + ROS 2 Humble，Python 3.10。
 
-> 开发虚拟机为 Ubuntu 24.04 + ROS 2 Jazzy（192.168.26.128），脚本在虚拟机内执行。
-> 连接虚拟机见 [docs/SSH.md](../../docs/SSH.md)（别名 `qianli-vm`，或 `bash scripts/tools/vm_ssh.sh`）。
+| 脚本 | 用途 |
+|---|---|
+| install_ros2_humble.sh | 校验系统后安装 Humble、colcon 和所需系统依赖 |
+| setup_python_envs.sh | 固定依赖，重建 .venv-ros 和隔离的 .venv-train |
+| source_env.sh | 当前 Bash shell 加载 Humble 与 ROS 虚拟环境，拒绝混入 Jazzy |
+| source_train.sh | 新 Bash shell 加载独立训练环境，拒绝混入 ROS |
+| install_device_rules.sh | 安装 CH343P 串口别名和用户组权限；需重新登录/插拔 |
+| install_ros2_jazzy.sh | 旧 Ubuntu 24.04 虚拟机的历史安装脚本 |
+
+[迁移与验收步骤](../../docs/UBUNTU22_MIGRATION.md)。不复制 Windows 虚拟环境。

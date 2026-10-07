@@ -24,6 +24,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -50,7 +52,7 @@ STATE = {
     'message': '等待 TF …',
     'mode': 'point',
 }
-CONFIG = {'out': '/tmp/tcp_calib.txt', 'json': '/tmp/tcp_marks_gui.json'}
+CONFIG = {'out': calibration_path('tcp_calib.txt'), 'json': calibration_path('tcp_marks_gui.json')}
 
 _last_pose = {'R': None, 'p': None, 'since': time.monotonic()}
 _rclpy_ok = {'value': True}
@@ -384,7 +386,7 @@ def main():
     ap.add_argument('--port', type=int, default=8099)
     ap.add_argument('--host', default='0.0.0.0')
     ap.add_argument('--mode', default='point', choices=['point', 'plane'])
-    ap.add_argument('--out', default='/tmp/tcp_calib.txt')
+    ap.add_argument('--out', default=calibration_path('tcp_calib.txt'))
     args = ap.parse_args()
 
     STATE['mode'] = args.mode

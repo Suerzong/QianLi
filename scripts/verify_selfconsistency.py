@@ -5,6 +5,8 @@
    若 RMS 大，左上也不准。
 3. 残差方向分解：每点残差的 (x,y) 分量，看系统性模式。
 """
+
+from project_paths import calibration_path, project_path
 import json
 import math
 import os
@@ -12,10 +14,10 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
-marks = json.load(open('/tmp/extrinsic_marks_merged.json'))
+marks = json.load(open(calibration_path('extrinsic_marks_merged.json')))
 model = GripperModel(stride=14)
 
 print('=== 1) 模型自洽检查: 用 joints 重算固定爪顶端 vs 记录的 contact_m ===')

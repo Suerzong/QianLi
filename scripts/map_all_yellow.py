@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """把当前画面所有大黄色块映射到棋盘坐标，判断哪个在棋盘上。"""
+
+from project_paths import default_camera, project_path
 import os
 
 import cv2
@@ -7,7 +9,7 @@ import json
 import numpy as np
 
 fr = json.load(open(os.path.expanduser(
-    '~/QianLi/qianli_ws/config/board_frame.json')))
+    project_path('config/board_frame.json'))))
 H = np.array(fr['H'])
 cols, rows = fr['cols'], fr['rows']
 cell = fr['cell_mm']
@@ -16,7 +18,7 @@ board_y = rows * cell
 print(f'棋盘范围 mm: x 0..{board_x:.0f}  y 0..{board_y:.0f} '
       f'({cols}x{rows}格, {cell}mm)')
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(20):
     ok, f = cap.read()
 ok, f = cap.read()

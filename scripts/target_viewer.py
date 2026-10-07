@@ -11,6 +11,10 @@
 用法: ~/mj/bin/python target_viewer.py --port 8099
      浏览器打开 http://<VM_IP>:8099
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, default_camera, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -23,15 +27,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import cv2
 import numpy as np
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
-CFG_DIR = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG_DIR = os.path.expanduser(project_path('config'))
 FRAME_JSON = os.path.join(CFG_DIR, 'board_frame.json')
 DRIVER = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 TABLE_Z = -0.06485
 
 SPEC = {'blue': [((95, 90, 60), (135, 255, 255))],
@@ -79,7 +82,7 @@ class Vision:
         self.p_fix = inner[int(np.argmax(inner[:, 2]))]
         self.bus = None
         try:
-            self.bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+            self.bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
         except Exception as exc:
             print('串口打开失败:', exc)
 
@@ -255,7 +258,7 @@ def main():
     vis = Vision(a.half_mm, a.clearance_mm, a.color)
 
     def loop():
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         while True:
             ok, img = cap.read()
             if not ok:

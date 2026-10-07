@@ -1,0 +1,219 @@
+{
+  "captured_from": "qianli_ws/log/vm_mirror/so101_bringup",
+  "verified_against_live_vm": true,
+  "files": {
+    "qianli_ws/src/qianli_arm/launch/ik_demo.launch.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/launch/ik_demo.launch.py",
+      "sha256": "2d6fb8faa8edbc5a425fc4a707ba8f160434384c939496300cdb9ebca85ff52b"
+    },
+    "qianli_ws/src/qianli_arm/config/ik_demo.rviz": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/config/ik_demo.rviz",
+      "sha256": "9f07746a6bddde7e4341cc749576a323d91557b55a3bbebcdd5a92aee012e686"
+    },
+    "qianli_ws/src/qianli_arm/config/servo_pid.yaml": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/config/servo_pid.yaml",
+      "sha256": "a839ef9629390691b54fd9cee7684e9d0afdfae7dc0be91eb3cb340f94f2a1c6"
+    },
+    "qianli_ws/src/qianli_arm/test/test_driver_math.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/test/test_driver_math.py",
+      "sha256": "c60f835f3720cc863e097d55fa513e1ad45ae95a017338a18140c4b28a06d823"
+    },
+    "qianli_ws/src/qianli_arm/test/test_position_ik.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/test/test_position_ik.py",
+      "sha256": "f156c962e3a6e352c46e718e27ab3a4f765926c5a9f11955f51d7bef60e15a33"
+    },
+    "qianli_ws/src/qianli_arm/test/test_servo_protocol.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/test/test_servo_protocol.py",
+      "sha256": "123d1a9914a940361d05dc9dbda098d70d7c5a514046c60e4e3dbbe244b366a1"
+    },
+    "qianli_ws/src/qianli_arm/so101_overlay/servo_protocol.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/so101_bringup/servo_protocol.py",
+      "sha256": "f546d355029d5b3bb2bc995e01a60b089949b7a34b73b8f721731079c210e0fe"
+    },
+    "qianli_ws/src/qianli_arm/so101_overlay/__init__.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/so101_bringup/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "qianli_ws/src/qianli_arm/so101_overlay/driver_node.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/so101_bringup/driver_node.py",
+      "sha256": "8164137319128a6aeac5c06723a5df4c923719ab70128fa8d8323285a5926fbc"
+    },
+    "qianli_ws/src/qianli_arm/so101_overlay/ik_node.py": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/so101_bringup/ik_node.py",
+      "sha256": "ebca749e2c6558c17bdc896e68433f06ccc318758cca31f16312e9fd2a4e3826"
+    },
+    "dual_twin/urdf/so101.urdf": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/so101.urdf",
+      "sha256": "651ea00a3efe02a3c984b21a1b52273bd1b320ed635b3eae92fd52e99d0a393b",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/base_motor_holder_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/base_motor_holder_so101_v1.stl",
+      "sha256": "8cd2f241037ea377af1191fffe0dd9d9006beea6dcc48543660ed41647072424",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/base_so101_v2.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/base_so101_v2.stl",
+      "sha256": "bb12b7026575e1f70ccc7240051f9d943553bf34e5128537de6cd86fae33924d",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/Handle_SO101.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/Handle_SO101.stl",
+      "sha256": "a69b004691392cf0130b32ed9da5cc0c5fee49c2c8abee6ca27bf88e2a11347d",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/motor_holder_so101_base_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/motor_holder_so101_base_v1.stl",
+      "sha256": "31242ae6fb59d8b15c66617b88ad8e9bded62d57c35d11c0c43a70d2f4caa95b",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/motor_holder_so101_wrist_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/motor_holder_so101_wrist_v1.stl",
+      "sha256": "887f92e6013cb64ea3a1ab8675e92da1e0beacfd5e001f972523540545e08011",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/moving_jaw_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/moving_jaw_so101_v1.stl",
+      "sha256": "785a9dded2f474bc1d869e0d3dae398a3dcd9c0c345640040472210d2861fa9d",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/rotation_pitch_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/rotation_pitch_so101_v1.stl",
+      "sha256": "9be900cc2a2bf718102841ef82ef8d2873842427648092c8ed2ca1e2ef4ffa34",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/sts3215_03a_no_horn_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/sts3215_03a_no_horn_v1.stl",
+      "sha256": "75ef3781b752e4065891aea855e34dc161a38a549549cd0970cedd07eae6f887",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/sts3215_03a_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/sts3215_03a_v1.stl",
+      "sha256": "a37c871fb502483ab96c256baf457d36f2e97afc9205313d9c5ab275ef941cd0",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/Trigger_SO101.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/Trigger_SO101.stl",
+      "sha256": "7122e0c476e69689eaf18441ecd36f5cf5cdca4d7033c15e5238a9b788e9d71a",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/under_arm_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/under_arm_so101_v1.stl",
+      "sha256": "d01d1f2de365651dcad9d6669e94ff87ff7652b5bb2d10752a66a456a86dbc71",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/upper_arm_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/upper_arm_so101_v1.stl",
+      "sha256": "475056e03a17e71919b82fd88ab9a0b898ab50164f2a7943652a6b2941bb2d4f",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/waveshare_mounting_plate_so101_v2.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/waveshare_mounting_plate_so101_v2.stl",
+      "sha256": "e197e24005a07d01bbc06a8c42311664eaeda415bf859f68fa247884d0f1a6e9",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/wrist_camera_mount_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/wrist_camera_mount_so101_v1.stl",
+      "sha256": "e17a626158951ac8cdf8d960962c1a3c8bf23b64635a02f88b62016fe895cef8",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/wrist_camera_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/wrist_camera_so101_v1.stl",
+      "sha256": "1147857bb136876c81f98d18b533342bae2383f0e23bec216064c9f093bd3577",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/wrist_roll_follower_so101_v1.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/wrist_roll_follower_so101_v1.stl",
+      "sha256": "4b17b410a12d64ec39554abc3e8054d8a97384b2dc4a8d95a5ecb2a93670f5f4",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/wrist_roll_pitch_so101_v2.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/wrist_roll_pitch_so101_v2.stl",
+      "sha256": "6c7ec5525b4d8b9e397a30ab4bb0037156a5d5f38a4adf2c7d943d6c56eda5ae",
+      "matches_mirror": true
+    },
+    "dual_twin/urdf/assets/Wrist_Roll_SO101.stl": {
+      "source": "qianli_ws/log/vm_mirror/so101_bringup/urdf/assets/Wrist_Roll_SO101.stl",
+      "sha256": "db20e6ac7c08cf8d75692a38db5a217011c97c0ab5d73c248296535df81e39b7",
+      "matches_mirror": true
+    }
+  },
+  "live_vm_verified_utc": "2026-10-07T09:48:20.015077+00:00",
+  "live_vm_bundle": "migration_assets/live-vm-20261007-full.zip",
+  "live_vm_bundle_sha256": "ff17483255fbc07a5784a73a9eb683aac51a70ce5154beae6a5e4a422a11d6f7",
+  "live_vm_verification": {
+    "so101_overlay/driver_node.py": {
+      "sha256": "8164137319128a6aeac5c06723a5df4c923719ab70128fa8d8323285a5926fbc",
+      "matches_original_capture": true
+    },
+    "so101_overlay/ik_node.py": {
+      "sha256": "ebca749e2c6558c17bdc896e68433f06ccc318758cca31f16312e9fd2a4e3826",
+      "matches_original_capture": true
+    },
+    "so101_overlay/servo_protocol.py": {
+      "sha256": "f546d355029d5b3bb2bc995e01a60b089949b7a34b73b8f721731079c210e0fe",
+      "matches_original_capture": true
+    },
+    "so101_overlay/driver_params.yaml": {
+      "sha256": "bbd177f25c14ccf91d7cea8e4f4fe2ca98db0f7a390882e62534196a9c2d50ab",
+      "matches_original_capture": null
+    }
+  },
+  "note": "Original source checksums precede migration edits. Live source/install driver parameters agree; no EEPROM writes were performed.",
+  "limit_merge": {
+    "rule": "intersection of pre-migration local and live VM windows; zero_raw/direction unchanged",
+    "local_raw_min": [
+      826,
+      842,
+      1974,
+      954,
+      244,
+      1944
+    ],
+    "local_raw_max": [
+      3276,
+      3118,
+      4061,
+      3116,
+      3885,
+      3168
+    ],
+    "live_raw_min": [
+      766,
+      806,
+      1911,
+      863,
+      142,
+      1929
+    ],
+    "live_raw_max": [
+      3273,
+      3155,
+      4064,
+      3165,
+      3947,
+      3253
+    ],
+    "result_raw_min": [
+      826,
+      842,
+      1974,
+      954,
+      244,
+      1944
+    ],
+    "result_raw_max": [
+      3273,
+      3118,
+      4061,
+      3116,
+      3885,
+      3168
+    ]
+  },
+  "ros_model": {
+    "source": "qianli_ws/src/qianli_description/urdf/so101.urdf",
+    "sha256": "c9db55fa04ceb36b548c3b2f3a0d909c5dee6416de22275d9dd638eebbc4805a",
+    "reason": "Existing fixed TCP frame required by GripperModel selftest and safety gate; arm joint transforms unchanged versus historical twin URDF."
+  }
+}

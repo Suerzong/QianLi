@@ -5,6 +5,8 @@
 （相机不动，该范围长期有效）。黄方块只挡住棋盘左中部，右侧子块仍完整，
 于是 findChessboardCorners 找子尺寸即可；用上面的范围反推它是哪一块。
 """
+
+from project_paths import calibration_path, default_camera
 import json
 import sys
 
@@ -20,7 +22,7 @@ KNOWN = (286.0, 475.0, 236.0, 364.0)     # xmin xmax ymin ymax
 def main():
     img = cv2.imread('/tmp/board_src.jpg')
     if img is None:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(default_camera())
         for _ in range(20):
             ok, f = cap.read()
             if ok:
@@ -83,7 +85,7 @@ def main():
         return 1
     json.dump({'H': H.tolist(), 'cell_mm': CELL, 'sub': list(size),
                'offset': list(off), 'match_err_px': float(err)},
-              open('/tmp/board_homography.json', 'w'), indent=2)
+              open(calibration_path('board_homography.json'), 'w'), indent=2)
     print('✅ 已写 /tmp/board_homography.json')
 
     # 顺带把黄方块定位出来

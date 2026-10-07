@@ -3,13 +3,15 @@
 
 输出: <x> <y> # px=... span=... size_mm=.. grid=.. on_board=.. radius=..
 """
+
+from project_paths import project_path
 import argparse
 import json
 import os
 
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--color', default='yellow')

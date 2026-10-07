@@ -15,6 +15,8 @@
 按键：q 退出 | s 保存结果 | r 重新框选 ROI
 """
 
+from project_paths import default_camera
+
 import cv2
 import numpy as np
 
@@ -32,7 +34,7 @@ def gray_mask_of(roi, s_max, v_min, v_max):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     if not cap.isOpened():
         print('无法打开相机')
         return

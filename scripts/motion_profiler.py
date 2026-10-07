@@ -7,6 +7,10 @@
   - 到位抖动 hold_jitter：稳定后的 std(mrad) —— D 增益的直接体现
   - 收敛时间 settle_ms：最后一次下发后到进入 ±10mrad 稳定带
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import json
 import math
 import os
@@ -17,14 +21,13 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from so101_bringup.servo_protocol import FeetechSerialBus
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
@@ -55,7 +58,7 @@ def raw_to_rad(raw):
     return (np.array(raw) - zero) * direction * 2 * math.pi / 4096
 
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.05)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.05)
 try:
     rd(lambda: (bus.set_torque(True), bus.read_torque_states())[1], tag='使能')
     time.sleep(0.4)

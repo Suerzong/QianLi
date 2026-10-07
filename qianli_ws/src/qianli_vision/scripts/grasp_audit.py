@@ -3,6 +3,8 @@
 
 No Node instances, ROS publishers/services or serial ports are created.
 """
+
+from project_paths import calibration_path, arm_source_path, driver_params_path
 import argparse
 import ast
 import json
@@ -203,9 +205,9 @@ def regressions():
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--image',type=Path,required=True)
-    ap.add_argument('--background',type=Path,default=Path('/tmp/board_bg.png'))
+    ap.add_argument('--background',type=Path,default=Path(calibration_path('board_bg.png')))
     ap.add_argument('--report-dir',type=Path,required=True)
-    ap.add_argument('--native-ik',type=Path,default=Path.home()/'legacy/arm/arm-final/ros2_ws/src/so101_bringup/so101_bringup/ik_node.py')
+    ap.add_argument('--native-ik',type=Path,default=Path(arm_source_path('so101_overlay/ik_node.py')))
     args = ap.parse_args()
     args.report_dir.mkdir(parents=True,exist_ok=True)
     report = dict(read_only=True,regressions=regressions())
@@ -222,7 +224,7 @@ def main():
         x,y,bw,bh,area,contour = detection
         gx,gy = cv2.perspectiveTransform(np.array([[[x,y]]],dtype=float),replay.H)[0,0]
         from grasp_guard import read_kv
-        ext = read_kv('/tmp/extrinsic.txt')
+        ext = read_kv(calibration_path('extrinsic.txt'))
         th = math.radians(float(ext['grid_theta_deg']))
         bx = float(ext['grid_origin_x'])+math.cos(th)*gx/100-math.sin(th)*gy/100
         by = float(ext['grid_origin_y'])+math.sin(th)*gx/100+math.cos(th)*gy/100
@@ -264,7 +266,7 @@ def main():
                 report['regressions'].append(f'native_ik:radius={math.hypot(*target[:2])*1000:.0f}mm:accepted={accepted}')
         report['native_ik_geometry'] = cases
         if hasattr(node,'_receive_hardware_limits'):
-            config = yaml.safe_load((Path.home()/'legacy/arm/arm-final/ros2_ws/src/so101_bringup/config/driver_params.yaml').read_text())['so101_driver']['ros__parameters']
+            config = yaml.safe_load(Path(driver_params_path()).read_text())['so101_driver']['ros__parameters']
             values = [SimpleNamespace(string_value='direct')]+[SimpleNamespace(integer_array_value=config[k]) for k in ('zero_raw','direction','raw_min','raw_max')]
             node._receive_hardware_limits(SimpleNamespace(result=lambda:SimpleNamespace(values=values)))
             assert node._hardware_limits_ready

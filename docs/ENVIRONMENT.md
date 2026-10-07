@@ -3,16 +3,17 @@
 > 记录 QianLi 开发环境检查结果、与目标平台的差异、缺失依赖与安装指引。
 > 原则：缺少大型依赖时**不盲目安装**，先记录于此文档，再决定安装方案。
 
-## 1. 目标平台（已定版）
+## 1. 当前目标平台（2026-10-07）
 
 | 项 | 值 |
 |---|---|
-| 操作系统 | Ubuntu 24.04 |
-| ROS | ROS 2 Jazzy |
-| 构建工具 | colcon、CMake（ROS 2 Jazzy 依赖 3.28） |
-| 语言 | C++（GCC）、Python 3.12 |
+| 系统 | 原生 Ubuntu 22.04.5 + HWE |
+| ROS | ROS 2 Humble |
+| Python | 3.10；ROS 和训练独立虚拟环境 |
+| GPU | RTX 5070 Ti Laptop，NVIDIA open 内核模块，PyTorch 2.8/cu128 |
+| 工作区 | 6 个实际 ROS 包；完整 so101_bringup 已纳入仓库 |
 
-> **2026-10-04 决策**：因开发虚拟机为 Ubuntu 24.04（"Ubuntu 24.04 ROS2 Jazzy"），项目目标平台由 Ubuntu 22.04 + Humble 调整为 **Ubuntu 24.04 + ROS 2 Jazzy**（见 [DEVLOG.md](DEVLOG.md)）。
+安装、固定依赖、设备变量、标定与验收见 [UBUNTU22_MIGRATION.md](UBUNTU22_MIGRATION.md)。下方为旧环境历史记录，不代表原生目标机已验收。Ubuntu 22.04 标准支持与 Humble 支持至 2027 年 5 月。
 
 ## 2. 开发环境实况（2026-10-04 更新）
 

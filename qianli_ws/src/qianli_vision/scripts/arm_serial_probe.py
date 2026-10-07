@@ -12,12 +12,14 @@ SO-101 舵机（Feetech STS3215）协议：
   3. ping ID 1~6，看是否有舵机响应（有响应=舵机已上电）
 """
 
+from project_paths import default_arm_port
+
 import sys
 import time
 
 import serial
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 BAUD = 1000000
 
 

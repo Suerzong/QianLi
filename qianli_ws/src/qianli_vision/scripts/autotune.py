@@ -13,6 +13,8 @@
   控制台：各候选参数组合的命中统计
 """
 
+from project_paths import default_camera
+
 import itertools
 import sys
 
@@ -26,7 +28,7 @@ AREA_MIN, AREA_MAX = 330, 350
 DIFF_MAX = 5
 SIZE_MIN, SIZE_MAX = 20, 50
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 if not cap.isOpened():
     print('无法打开相机')
     sys.exit(1)

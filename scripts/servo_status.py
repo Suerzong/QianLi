@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """读取当前舵机状态（位置/扭矩/夹爪载荷），不写任何寄存器。"""
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import math
 import os
 import sys
@@ -8,20 +12,19 @@ import numpy as np
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, os.path.expanduser('~/legacy/arm/arm-final/ros2_ws/src/so101_bringup'))
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(arm_source_path()))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero = np.array(cfg['zero_raw'])
 direction = np.array(cfg['direction'])
 
-bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.08)
+bus = FeetechSerialBus(default_arm_port(), timeout_s=0.08)
 raw = np.array(bus.read_positions())
 torque = bus.read_torque_states()
 load = bus.read_gripper_load()

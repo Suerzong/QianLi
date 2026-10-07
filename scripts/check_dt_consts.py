@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """检查 digital_twin 模块暴露的常量。"""
+
+from project_paths import project_path
 import os
 import sys
 
-sys.path.insert(0, '/home/ros/QianLi/qianli_ws/src/qianli_vision/scripts')
+sys.path.insert(0, project_path('qianli_ws/src/qianli_vision/scripts'))
 import digital_twin as dt
 
 print('digital_twin 模块路径:', dt.__file__)

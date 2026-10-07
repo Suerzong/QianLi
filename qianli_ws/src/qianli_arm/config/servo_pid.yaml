@@ -1,0 +1,9 @@
+# Verified on the six HX-30HM / STS-compatible servos on 2026-09-27.
+# These values are stored in each servo's EEPROM and survive power cycles.
+servo_ids: [1, 2, 3, 4, 5, 6]
+position_p: [32, 32, 32, 32, 32, 32]
+position_d: [32, 32, 32, 32, 32, 32]
+position_i: [0, 0, 0, 0, 0, 0]
+
+# Apply/verify deliberately, with the ROS driver stopped and the arm supported:
+# python3 tools/tune_servo_pid.py --port /dev/ttyACM0 --ids 1 2 3 4 5 6 --p 32

@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from project_paths import calibration_path, project_path
+
 import argparse
 import json
 import math
@@ -24,7 +26,7 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.expanduser('~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+sys.path.insert(0, os.path.expanduser(project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS, JAW_LINK, FLANGE_LINK
 
 BOARD_Z = -0.06859   # 桌面 -0.06909 + 棋盘纸 0.5mm
@@ -32,7 +34,7 @@ BOARD_Z = -0.06859   # 桌面 -0.06909 + 棋盘纸 0.5mm
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--marks', default='/tmp/extrinsic_marks.json')
+    ap.add_argument('--marks', default=calibration_path('extrinsic_marks.json'))
     ap.add_argument('--q', nargs=6, type=float, default=None)
     args = ap.parse_args()
 

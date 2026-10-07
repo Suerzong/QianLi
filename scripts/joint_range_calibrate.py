@@ -27,6 +27,10 @@
 
 from __future__ import annotations
 
+from project_paths import default_arm_port
+
+from project_paths import calibration_path
+
 import argparse
 import json
 import math
@@ -37,7 +41,7 @@ import time
 
 import serial
 
-PORT = '/dev/ttyACM0'
+PORT = default_arm_port()
 BAUD = 1_000_000
 JOINT_NAMES = ['shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex',
                'wrist_roll', 'gripper']
@@ -161,7 +165,7 @@ def main():
                     help='采样时长（秒）')
     ap.add_argument('--start-delay', type=float, default=8.0,
                     help='开始采样前的准备时间（秒）')
-    ap.add_argument('--json', default='/tmp/joint_ranges.json')
+    ap.add_argument('--json', default=calibration_path('joint_ranges.json'))
     args = ap.parse_args()
 
     for path in (PROGRESS_PATH, STOP_FLAG):

@@ -23,14 +23,16 @@
   frame    TCP 坐标系（默认 gripper_frame_link）
 """
 
+from project_paths import calibration_path
+
 import math
 import os
 import sys
 
 # 正式外参路径：任何工具都不许在这里写废弃值
-OFFICIAL_EXTRINSICS = '/tmp/extrinsic.txt'
+OFFICIAL_EXTRINSICS = calibration_path('extrinsic.txt')
 # 旧两点法的产物只能写到这个带后缀的路径，避免被下游误当成正式外参
-DEPRECATED_OUT = '/tmp/extrinsic_old_twopoint.txt'
+DEPRECATED_OUT = calibration_path('extrinsic_old_twopoint.txt')
 
 import rclpy
 from rclpy.node import Node

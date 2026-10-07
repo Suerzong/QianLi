@@ -9,6 +9,8 @@
   ~/QianLi/qianli_ws/config/board_frame.json
   ~/QianLi/qianli_ws/config/board_frame.npz   (单应矩阵)
 """
+
+from project_paths import default_camera, project_path
 import argparse
 import json
 import math
@@ -18,7 +20,7 @@ import sys
 import cv2
 import numpy as np
 
-CFG_DIR = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG_DIR = os.path.expanduser(project_path('config'))
 JSON_PATH = os.path.join(CFG_DIR, 'board_frame.json')
 NPZ_PATH = os.path.join(CFG_DIR, 'board_frame.npz')
 
@@ -51,7 +53,7 @@ def affine_from_marks():
 
 
 def grab(n=15):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(default_camera())
     img = None
     for _ in range(n):
         ok, f = cap.read()

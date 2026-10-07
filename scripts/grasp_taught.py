@@ -7,6 +7,10 @@
 
 无论成败，收尾都：张开爪子（若没夹住）-> 自动回到折叠位。
 """
+
+from project_paths import default_arm_port
+
+from project_paths import arm_source_path, driver_params_path, project_path
 import argparse
 import json
 import math
@@ -19,16 +23,15 @@ from scipy.optimize import least_squares
 import yaml
 from pathlib import Path
 
-sys.path.insert(0, '/home/ros/legacy/arm/arm-final/ros2_ws/src/so101_bringup')
+sys.path.insert(0, arm_source_path())
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from so101_bringup.servo_protocol import FeetechSerialBus
 from gripper_model import GripperModel, JOINTS, FLANGE_LINK
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+    driver_params_path())
+CFG = os.path.expanduser(project_path('config'))
 TABLE_Z = -0.06485
 
 
@@ -54,7 +57,7 @@ def main():
               * 2 * math.pi / 4096)
     q_home = np.clip(q_home, lo, hi)
 
-    bus = FeetechSerialBus('/dev/ttyACM0', timeout_s=0.15)
+    bus = FeetechSerialBus(default_arm_port(), timeout_s=0.15)
     model = GripperModel(stride=8)
     out = {'taught_raw': tg['raw']}
 

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """检测当前画面里棋盘的位置 vs 标定值。"""
+
+from project_paths import default_camera
 import os
 
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(8):
     ok, f = cap.read()
 cap.release()

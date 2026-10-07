@@ -22,6 +22,8 @@
 按键：q 退出 | s 保存 /tmp/final_tune.png | r 重框 ROI
 """
 
+from project_paths import default_camera
+
 import cv2
 import numpy as np
 
@@ -30,7 +32,7 @@ INIT = {'S_MAX': 127, 'V_MIN': 143, 'V_MAX': 167,
         'MIN_SIZE': 20, 'MAX_SIZE': 50, 'MIN_AREA': 330, 'MAX_AREA': 350,
         'MAX_DIFF': 5}
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 if not cap.isOpened():
     print('无法打开相机')
     exit(1)

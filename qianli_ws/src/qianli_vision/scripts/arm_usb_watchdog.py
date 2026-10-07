@@ -16,15 +16,18 @@
   setsid python3 arm_usb_watchdog.py &   # 后台运行
 """
 
-import fcntl
+import argparse
 import os
 import re
 import subprocess
 import time
+import sys
+from pathlib import Path
+from project_paths import default_arm_port
 
 LOG = '/tmp/ik_demo.log'
 WATCH_LOG = '/tmp/arm_watchdog.log'
-USB_INTF = '1-1:1.0'
+PORT = default_arm_port()
 USBDEVFS_RESET = 0x5514
 
 POLL_S = 8            # 检查间隔
@@ -33,19 +36,38 @@ FAIL_THRESHOLD = 3    # 连续失败次数阈值
 MIN_INTERVAL_S = 60   # 两次复位最小间隔
 
 
-def find_usb_node():
-    """动态查找串口设备的 /dev/bus/usb/BBB/DDD（设备号会随复位变化）。"""
-    vendor = '/sys/bus/usb/devices/1-1/idVendor'
-    try:
-        with open(vendor) as f:
-            if f.read().strip() != '1a86':
+def discover_usb_device(port=PORT, sys_root=Path('/sys'), dev_root=Path('/dev')):
+    """Discover the USB device behind this serial port; never reset another chip."""
+    tty = Path(port).resolve().name
+    path = (Path(sys_root) / 'class' / 'tty' / tty / 'device').resolve()
+    interface = None
+    for parent in (path, *path.parents):
+        if (parent / 'bInterfaceNumber').is_file():
+            interface = parent
+        if (parent / 'idVendor').is_file():
+            try:
+                vendor = (parent / 'idVendor').read_text().strip().lower()
+                product = (parent / 'idProduct').read_text().strip().lower()
+                if (vendor, product) != ('1a86', '55d3') or interface is None:
+                    return None
+                bus = int((parent / 'busnum').read_text().strip())
+                device = int((parent / 'devnum').read_text().strip())
+                if not (1 <= bus <= 999 and 1 <= device <= 999):
+                    return None
+                driver = (interface / 'driver').resolve()
+                expected = (Path(sys_root) / 'bus' / 'usb' / 'drivers').resolve()
+                if driver.parent != expected:
+                    return None
+                return {'node': Path(dev_root) / 'bus' / 'usb' / f'{bus:03d}' / f'{device:03d}',
+                        'interface': interface.name, 'driver': driver}
+            except (OSError, ValueError):
                 return None
-        bus = int(open('/sys/bus/usb/devices/1-1/busnum').read().strip())
-        dev = int(open('/sys/bus/usb/devices/1-1/devnum').read().strip())
-        path = f'/dev/bus/usb/{bus:03d}/{dev:03d}'
-        return path if os.path.exists(path) else None
-    except OSError:
-        return None
+    return None
+
+
+def find_usb_node():
+    info = discover_usb_device(PORT)
+    return str(info['node']) if info and info['node'].exists() else None
 
 
 def log(msg):
@@ -59,46 +81,44 @@ def log(msg):
 
 
 def usb_reset():
-    """USB 复位（可选）+ cdc_acm 驱动重绑（可靠兜底）。返回是否成功。"""
+    """Reset only the configured CH343P adapter and its discovered interface."""
+    info = discover_usb_device(PORT)
+    if not info:
+        log(f'找不到端口 {PORT} 对应的 CH343P USB 接口，拒绝复位')
+        return False
     ok = True
-    node = find_usb_node()
-    if node:
-        # 设备节点属 root，ioctl 需要 root 权限 → 用 sudo 跑
-        code = (
-            "import fcntl,sys\n"
-            f"fd=open('{node}','wb')\n"
-            "fcntl.ioctl(fd,0x5514,0)\n"
-            "fd.close()\n"
-            "print('ok')\n")
-        try:
-            r = subprocess.run(['sudo', 'python3', '-c', code],
-                               capture_output=True, text=True, timeout=15)
-            if 'ok' in (r.stdout or ''):
-                log(f'USB 复位指令已发送 ({node})')
-            else:
-                log(f'USB 复位失败 ({node}): {(r.stderr or "").strip()[:120]}')
-                ok = False
-        except Exception as e:
-            log(f'USB 复位异常 ({node}): {e}')
-            ok = False
-    else:
-        log('未找到 USB 设备节点，跳过 ioctl 复位，直接重绑驱动')
-    time.sleep(2)
-    for act in ('unbind', 'bind'):
+    node = info['node']
+    if node.exists():
         try:
             subprocess.run(
-                ['sudo', 'tee', f'/sys/bus/usb/drivers/cdc_acm/{act}'],
-                input=USB_INTF.encode(), stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL, check=False)
-            log(f'驱动 {act} 完成')
-        except Exception as e:
-            log(f'驱动 {act} 失败: {e}')
+                ['sudo', '-n', sys.executable, '-c',
+                 "import fcntl,sys; f=open(sys.argv[1],'wb'); fcntl.ioctl(f,0x5514,0); f.close()",
+                 str(node)], check=True, capture_output=True, timeout=15)
+            log(f'USB 复位已发送 ({node})')
+        except (OSError, subprocess.SubprocessError) as exc:
+            log(f'USB 复位失败: {exc}')
+            ok = False
+    for action in ('unbind', 'bind'):
+        try:
+            subprocess.run(['sudo', '-n', 'tee', str(info['driver'] / action)],
+                           input=(info['interface']+'\n').encode(),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                           check=True, timeout=15)
+            log(f"驱动 {action} 完成 ({info['interface']})")
+        except (OSError, subprocess.SubprocessError) as exc:
+            log(f'驱动 {action} 失败: {exc}')
             ok = False
         time.sleep(1)
     return ok
 
 
 def main():
+    global PORT, LOG
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', default=PORT)
+    parser.add_argument('--log', default=LOG)
+    args = parser.parse_args()
+    PORT, LOG = args.port, args.log
     log(f'看门狗启动：监控 {LOG}（阈值 {FAIL_THRESHOLD} 次 / '
         f'{POLL_S}s 间隔）')
     pos = 0

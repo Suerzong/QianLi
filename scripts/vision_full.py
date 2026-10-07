@@ -5,6 +5,8 @@
 2) 颜色分割找方块 -> 映射成棋盘坐标
 3) 用外参换算到 base_link（旧外参，仅作初值）
 """
+
+from project_paths import default_camera
 import math
 
 import cv2
@@ -28,7 +30,7 @@ def to_base(gx_cm, gy_cm):
             EXT_ORIGIN[1] + s * gx + c * gy)
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 for _ in range(12):
     ok, img = cap.read()
     if ok:

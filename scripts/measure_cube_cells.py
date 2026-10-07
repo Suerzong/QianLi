@@ -3,12 +3,14 @@
 
 不依赖任何单应/标定，纯粹"方块像素尺寸 / 格子像素尺寸 × 31.25mm"。
 """
+
+from project_paths import default_camera
 import cv2
 import numpy as np
 
 CELL_MM = 31.25          # 拖拽实测的棋盘格真实边长
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 img = None
 for _ in range(15):
     ok, f = cap.read()

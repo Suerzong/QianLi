@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """离线计算给定 raw 位置对应的姿态（不碰总线）。"""
+
+from project_paths import driver_params_path, project_path
 import math
 import os
 import sys
@@ -9,12 +11,11 @@ import yaml
 from pathlib import Path
 
 sys.path.insert(0, os.path.expanduser(
-    '~/QianLi/qianli_ws/src/qianli_vision/scripts'))
+    project_path('qianli_ws/src/qianli_vision/scripts')))
 from gripper_model import GripperModel, JOINTS
 
 CONFIG = os.path.expanduser(
-    '~/legacy/arm/arm-final/ros2_ws/install/so101_bringup/share/so101_bringup'
-    '/config/driver_params.yaml')
+    driver_params_path())
 cfg = yaml.safe_load(Path(CONFIG).read_text())['so101_driver']['ros__parameters']
 zero, direction = np.array(cfg['zero_raw']), np.array(cfg['direction'])
 

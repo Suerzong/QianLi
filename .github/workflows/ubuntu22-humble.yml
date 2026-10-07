@@ -1,0 +1,36 @@
+name: Ubuntu 22.04 Humble
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  ros:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base-jammy
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y build-essential cmake python3-venv python3-colcon-common-extensions python3-rosdep libgl1 libegl1 libglfw3
+          test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
+          rosdep update --rosdistro humble
+          rosdep install --from-paths qianli_ws/src --ignore-src --rosdistro humble -r -y
+          python3 -m venv --system-site-packages .venv-ros
+          .venv-ros/bin/python -m pip install pip==25.1.1 setuptools==69.5.1 wheel==0.45.1
+          .venv-ros/bin/python -m pip install -r scripts/setup/requirements/ros.txt
+          # Execute the MuJoCo/Gym migration regressions in this test environment.
+          .venv-ros/bin/python -m pip install gymnasium==1.4.0
+      - name: Build and verify simulated ROS
+        run: |
+          bash scripts/tools/build.sh
+          bash scripts/tools/validate_ubuntu22.sh
+      - name: Retain diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: humble-logs
+          path: qianli_ws/log

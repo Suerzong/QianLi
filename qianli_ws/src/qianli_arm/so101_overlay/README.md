@@ -1,32 +1,14 @@
-# so101_overlay — 机械臂驱动的 QianLi 改动层
+# SO-101 驱动源码与兼容包
 
-这里放的是 **SO-101 驱动栈在 QianLi 项目里的改动版本**，不是一份独立的 ROS 包。
+从 2026-10-07 起，上级 `qianli_arm/` 已是可直接 colcon 构建的完整 ROS 包，公开名称为 **so101_bringup**。本目录保存驱动、IK、协议和参数的唯一实现；`so101_bringup/` 是兼容导入命名空间。
 
-## 为什么是"改动层"而不是把整包搬进来
+launch、配置、测试、资源标记和 setup 文件均在上级包中。ROS 模型使用仓库 qianli_description 的现有 TCP URDF/网格，历史训练继续使用 dual_twin。构建不再依赖 VM 中的 legacy 工作区。
 
-真机驱动栈原本在虚拟机的另一个工作区里：
+原始来源、校验值和限位合并见上级 migration_provenance.json；有效参数由构建安装到 share/so101_bringup/config，也可用 QI_DRIVER_CONFIG 显式覆盖。默认 sim/allow_motion=false。迁移不写入舵机 EEPROM。
 
-```
-~/legacy/arm/arm-final/ros2_ws/src/so101_bringup/
-```
+[完整迁移与验收](../../../../../docs/UBUNTU22_MIGRATION.md)
 
-它带有 ~20 MB 的 STL 网格，并且是 `colcon --symlink-install` 的 egg-link 安装
-（`install/.../site-packages/so101-bringup.egg-link` 指向源码树），改源码即生效。
-把整包复制进本仓库会造成两份实现、互相漂移——正是"限位对不上"这类 bug 的温床。
-
-所以这里只保存 **被 QianLi 改过的文件**，作为版本记录与同步源。
-
-## 文件清单与同步目标
-
-| 本目录 | 同步到 |
-|---|---|
-| `driver_node.py` | `~/legacy/arm/arm-final/ros2_ws/src/so101_bringup/so101_bringup/driver_node.py` |
-| `ik_node.py` | `~/legacy/arm/arm-final/ros2_ws/src/so101_bringup/so101_bringup/ik_node.py` |
-| `driver_params.yaml` | 源树 `src/so101_bringup/config/` **和** `install/so101_bringup/share/so101_bringup/config/`（**install 那份是普通文件，不是软链，必须单独覆盖**） |
-
-`install` 里的 `driver_params.yaml` 不是软链接——launch 读的就是它。
-只改源码的话，`ros2 launch` 仍然用旧限位。`build/` 下若也有副本一并覆盖，
-免得下次 `colcon build` 又把它盖回去。
+以下为既有安全修复记录：
 
 ## 这次改了什么（2026-10-06）
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """调试：打印方块尺寸采样时每个候选的计算值。"""
+
+from project_paths import default_camera, project_path
 import json
 import os
 
 import cv2
 import numpy as np
 
-CFG = os.path.expanduser('~/QianLi/qianli_ws/config')
+CFG = os.path.expanduser(project_path('config'))
 H = np.array(json.load(open(os.path.join(CFG, 'board_frame.json')))['H'])
 
 
@@ -15,7 +17,7 @@ def g_of(p):
     return v[:2] / v[2] / 10.0
 
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(default_camera())
 ok, img = cap.read()
 cap.release()
 print('读帧', ok, None if img is None else img.shape)

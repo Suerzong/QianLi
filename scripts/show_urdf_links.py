@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """打印 URDF 里 gripper_link / moving_jaw 的 mesh 与 origin。"""
+
+from project_paths import so101_path
 import re
 import sys
 
-u = open('/home/ros/legacy/arm/arm-final/ros2_ws/install/so101_bringup/'
-         'share/so101_bringup/urdf/so101.urdf').read()
+u = open(so101_path('urdf/so101.urdf')).read()
 
 for name in ('gripper_link', 'moving_jaw_so101_v1_link', 'gripper_frame_link'):
     m = re.search(r'<link name="%s".*?</link>' % name, u, re.S)
