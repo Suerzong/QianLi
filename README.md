@@ -2,6 +2,20 @@
 
 千里之行，始于足下。
 
+## 分支与验证范围 · Branches
+
+下表描述各分支的实现范围（2026-10-09 核对）。Humble 是机械臂迁移基线；移动仿真实验仍使用 Jazzy，尚未完成跨分支集成。
+
+| 分支 | 用途 | 环境与边界 |
+|---|---|---|
+| [main](https://github.com/Suerzong/QianLi/tree/main) | 默认项目入口、机械臂历史实现与阶段视频 | 历史运行环境为 Ubuntu 24.04/Jazzy；文档更新不表示迁移或移动仿真代码已经合入 |
+| [codex/ubuntu22-humble](https://github.com/Suerzong/QianLi/tree/codex/ubuntu22-humble) | SO-101、视觉、MuJoCo 与训练的 Humble 迁移 | Ubuntu 22.04.5/Humble/Python 3.10 VM + Windows CUDA；原生 Linux 与新环境真机运动/抓取待验收 |
+| [codex/cloud-model-training](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training)（本分支） | Omni 移动仿真、教学楼场景、SLAM/Nav2、Frontier 与 CPU CEM 参数学习 | Ubuntu 24.04/Jazzy/Gazebo Harmonic；有独立仿真验证，Humble 兼容及整机集成尚未验收 |
+
+Humble 分支从 `main` 的 `7bc7154` 分出；移动仿真分支与它们的共同祖先为 `2f5c871`，两条开发线存在独立提交。各分支的包数量、算法与成绩分别记录：机械臂 PPO/BC 与移动避障 CPU CEM 不属于同一训练任务。切换分支后使用独立工作区或重新构建，避免混用旧 `build/install`；也不要在一个 shell 中混合 Humble 与 Jazzy。
+
+本 README 下方的依赖、运行命令及验证属于 **Jazzy 移动仿真分支**；机械臂 Humble 环境与验收使用迁移分支说明。
+
 An autonomous mobile manipulation robot for indoor exploration, semantic navigation and embodied task execution.
 
 ## 项目简介
@@ -43,6 +57,10 @@ QianLi（千里）是一个面向**室内复杂环境**的自主探索、语义�
 | 未来 | FAST-LIO2/LIO-SAM、学习型探索、YOLO、AprilTag、OCR、Semantic Mapping、VLM、LLM Agent、Behavior Tree、Multi-floor Navigation |
 
 > 注意：当前开发机为 Windows 11，ROS 2 工具链运行在 VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）中，详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
+
+## 机械臂阶段展示
+
+[SO-101 真机阶段视频（main 归档）](https://github.com/Suerzong/QianLi/blob/main/docs/STAGE_DEMO.md)。该视频的拍摄环境未核实，不计入本分支移动导航或 Humble 迁移验收。
 
 ## 目录结构
 
