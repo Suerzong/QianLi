@@ -6,7 +6,9 @@
 
 当前 ROS 基线统一为 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10，README、环境、连接、项目定义、硬件和路线图采用一致说明。已交付的是持久 Humble VM 与 Windows CUDA 训练环境；原生安装、Linux GPU及新环境真机运动/抓取仍待验收。以 2026-10-07 的持久 VM 记录为依据：六包构建、23 项 colcon 测试、36 项完整迁移回归，相机采集、六舵机状态与使能拒绝通过。旧 Jazzy 说明保留为历史，旧 SSH 脚本明确标记用途。
 
-归档用户提供的 SO-101 真机阶段演示，README 提供视频入口；视频拍摄环境与代码版本未核实，演示不替代迁移硬件验收或成功率统计。视频说明见 [STAGE_DEMO.md](STAGE_DEMO.md)。
+归档用户提供的 SO-101 真机阶段演示，README 提供视频入口；按用户选择将 1080p 播放版直接入库、4K 原片本地保留，并移除为该视频临时创建的 Release。视频拍摄环境与代码版本未核实，演示不替代迁移硬件验收或成功率统计。视频说明见 [STAGE_DEMO.md](STAGE_DEMO.md)。
+
+核对三个分支：Humble 迁移从 `main` 的 `7bc7154` 分出；移动仿真 `codex/cloud-model-training` 与主分支的共同祖先为 `2f5c871`，有独立的 Jazzy/Gazebo Harmonic、Omni、SLAM/Nav2、Frontier 与 CPU CEM 实现。README 将默认展示入口、机械臂 Humble 迁移和移动仿真研发分别列出，不将其他分支已有功能记为整个项目未开始，也不将其验证归到 Humble。
 
 下方较早日志中的 Jazzy、临时 chroot 和测试数量描述各自当时的环境，不作为当前 Humble 运行指引；最新状态见 [ENVIRONMENT.md](ENVIRONMENT.md) 与 [MIGRATION_VALIDATION.md](MIGRATION_VALIDATION.md)。
 

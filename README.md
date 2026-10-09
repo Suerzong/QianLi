@@ -18,6 +18,18 @@
 
 </div>
 
+## 分支与验证范围 · Branches
+
+下表描述各分支的实现范围（2026-10-09 核对）。Humble 是机械臂迁移基线；移动仿真实验仍使用 Jazzy，尚未完成跨分支集成。
+
+| 分支 | 用途 | 环境与边界 |
+|---|---|---|
+| [main](https://github.com/Suerzong/QianLi/tree/main) | 默认项目入口、机械臂历史实现与阶段视频 | 历史运行环境为 Ubuntu 24.04/Jazzy；文档更新不表示迁移或移动仿真代码已经合入 |
+| [codex/ubuntu22-humble](https://github.com/Suerzong/QianLi/tree/codex/ubuntu22-humble)（本分支） | SO-101、视觉、MuJoCo 与训练的 Humble 迁移 | Ubuntu 22.04.5/Humble/Python 3.10 VM + Windows CUDA；原生 Linux 与新环境真机运动/抓取待验收 |
+| [codex/cloud-model-training](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) | Omni 移动仿真、教学楼场景、SLAM/Nav2、Frontier 与 CPU CEM 参数学习 | Ubuntu 24.04/Jazzy/Gazebo Harmonic；有独立仿真验证，Humble 兼容及整机集成尚未验收 |
+
+Humble 分支从 `main` 的 `7bc7154` 分出；移动仿真分支与它们的共同祖先为 `2f5c871`，两条开发线存在独立提交。各分支的包数量、算法与成绩分别记录：机械臂 PPO/BC 与移动避障 CPU CEM 不属于同一训练任务。切换分支后使用独立工作区或重新构建，避免混用旧 `build/install`；也不要在一个 shell 中混合 Humble 与 Jazzy。
+
 ## 项目简介 · About
 
 **QianLi（千里）** 是一款面向**室内复杂环境**的自主移动操作机器人 —— 它探索未知的空间，理解世界的语义，并动手完成任务。
@@ -35,7 +47,7 @@
 
 ## 当前进展 · Current Status
 
-项目当前基线为 **Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10**。已安装并验证独立 Humble VM，GPU 训练在 Windows 宿主机运行；笔记本原生 Ubuntu 安装仍待实施。
+本分支当前基线为 **Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10**。已安装并验证独立 Humble VM，GPU 训练在 Windows 宿主机运行；笔记本原生 Ubuntu 安装仍待实施。
 
 | 迁移范围 | 当前结论（验收日期：2026-10-07） |
 |---|---|
@@ -60,7 +72,8 @@
 | 真机自主抓取 | ✅ 里程碑 | 真实机械臂自主抓取跑通至 **"抓起 + 抬升"**，视觉误检修复 + 运动安全闸门 |
 | 强化学习 / 行为克隆 | 🧪 实验 | 孪生环境中训练出可用抓取策略（孪生验证 100% 成功） |
 | 移动底盘 / 3D LiDAR | ⏳ 规划 | 四全向轮底盘、RS-LiDAR-16 / Livox Mid-360，先以仿真/Mock 模式推进 |
-| Nav2 / SLAM / 语义地图 | ⏳ 规划 | 2D SLAM → 3D LiDAR SLAM → Frontier Exploration → Semantic Map |
+| 移动仿真 / Nav2 / SLAM | ⏳ 本分支待集成 | Jazzy 软件原型与 Frontier 验证已在移动仿真分支实现；尚未迁入本分支 |
+| 语义地图 / Agent | ⏳ 规划 | Semantic Map 与高层任务规划仍属后续能力 |
 
 ## 系统架构 · Architecture
 
@@ -179,9 +192,9 @@ bash scripts/tools/validate_ubuntu22.sh
 
 ## 阶段成果 · Stage Demo
 
-[![SO-101 真机物块抓取阶段演示](docs/media/qianli-so101-stage-demo-20261009.jpg)](https://github.com/Suerzong/QianLi/releases/tag/stage-so101-grasp-20261009)
+[![SO-101 真机物块抓取阶段演示](docs/media/qianli-so101-stage-demo-20261009.jpg)](docs/media/qianli_so101_grasp_stage_demo_20261009_1080p.mp4)
 
-[观看 / 下载阶段演示视频](https://github.com/Suerzong/QianLi/releases/tag/stage-so101-grasp-20261009) · [视频说明与验收边界](docs/STAGE_DEMO.md)。2026-10-09 归档的真机演示作为阶段成果展示；拍摄环境与代码版本未核实，不计入 Humble 迁移或抓取成功率验收。
+[观看 / 下载阶段演示视频](docs/media/qianli_so101_grasp_stage_demo_20261009_1080p.mp4) · [视频说明与验收边界](docs/STAGE_DEMO.md)。完整 1080p 播放版直接入库，4K 原片本地保留。2026-10-09 归档的真机演示作为阶段成果展示；拍摄环境与代码版本未核实，不计入 Humble 迁移或抓取成功率验收。
 
 ## 文档索引 · Documentation
 

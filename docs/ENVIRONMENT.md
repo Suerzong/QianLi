@@ -1,6 +1,6 @@
 # ENVIRONMENT — 开发环境
 
-> 文档口径更新：2026-10-09。下述验收结果来自 2026-10-07 的记录；当前 ROS 基线为 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10。
+> 文档口径更新：2026-10-09。下述验收结果来自 2026-10-07 的记录；本分支 ROS 基线为 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10。各开发分支范围见 [README](../README.md)。
 
 ## 1. 当前运行环境与原生目标
 
@@ -69,7 +69,7 @@ python scripts/tools/train_smoke.py --device cpu --obj-size 0.04 --steps 1024
 
 ## 5. 后续依赖与旧环境
 
-当前迁移覆盖已有控制、视觉、MuJoCo 与训练实现。Nav2、SLAM、移动底盘和 MoveIt2 规划集成按后续里程碑引入；新依赖需按 Humble 选择并验证，不沿用旧 `ros-jazzy-*` 安装命令。现有机械臂仿真使用 MuJoCo，移动平台 Gazebo 路线仍属规划。
+当前迁移覆盖本分支已有控制、视觉、MuJoCo 与训练实现。[移动仿真分支](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) 已有 Jazzy/Gazebo Harmonic 的 Omni、SLAM、Nav2 与 Frontier 原型；它们尚未迁入或通过本分支 Humble 验收。后续集成依赖需按 Humble 选择并验证，不沿用 `ros-jazzy-*` 安装命令。MoveIt2 规划集成另按里程碑推进。
 
 旧 VM：`D:\Ubuntu-VM\ubuntu24-ros2.vmx`，Ubuntu 24.04/Jazzy，SSH 别名 `qianli-vm`，此前地址 `192.168.26.128`。`vm_ssh.sh` / `vm_check.sh` 是该旧 VM 的历史脚本。旧资产与环境扫描保留在 [DEVLOG.md](DEVLOG.md)，使用前核对实际运行状态。
 

@@ -42,6 +42,8 @@
 
 ## 并行路线 — 虚拟平台（无真实 LiDAR 不阻塞）
 
+以下清单表示本分支尚待集成的能力；[移动仿真分支](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) 已有 Jazzy/Gazebo Harmonic 的底盘、SLAM/Nav2、CEM 避障和 Frontier 原型及独立验证，不应记为整个项目尚未开始。跨分支合并与 Humble 适配仍待验收。
+
 - [ ] Gazebo 虚拟移动机器人（四全向轮，qianli_description / qianli_base / qianli_control）
 - [ ] 虚拟 LiDAR（Simulation / Mock 模式，qianli_slam）
 - [ ] SLAM（先 2D，真实 3D LiDAR 到位后切换 FAST-LIO2 / LIO-SAM）

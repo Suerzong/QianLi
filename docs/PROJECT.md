@@ -49,7 +49,7 @@ QianLi 是一个面向**室内复杂环境**的自主探索、语义认知与任
 
 ROS 开发基线：**Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10**（2026-10-07）。当前已验证独立 Humble VM 的构建、仿真和设备接入，CUDA 训练使用 Windows 宿主机。原生 Ubuntu 是后续部署目标，尚未安装或验收 Linux GPU；新 VM 的真机运动与抓取仍待合格标定及硬件验收。
 
-Ubuntu 24.04/Jazzy 仅作为旧环境和回退记录保留。当前安装与构建按 Humble 执行；范围与证据见 [环境说明](ENVIRONMENT.md)、[迁移验证记录](MIGRATION_VALIDATION.md) 和 [原生迁移步骤](UBUNTU22_MIGRATION.md)。
+本分支的旧机械臂 Ubuntu 24.04/Jazzy 环境保留用于回退；独立的 [移动仿真分支](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) 仍使用 Jazzy/Gazebo Harmonic，已实现 SLAM、Nav2 和 Frontier 软件原型，尚未迁入本分支。当前分支安装与构建按 Humble 执行；范围与证据见 [环境说明](ENVIRONMENT.md)、[迁移验证记录](MIGRATION_VALIDATION.md) 和 [原生迁移步骤](UBUNTU22_MIGRATION.md)。
 
 | 类别 | 技术 |
 |---|---|

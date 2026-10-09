@@ -1,6 +1,6 @@
 # 原生 Ubuntu 22.04 迁移与验收
 
-目标：当前 RTX 5070 Ti Laptop，Ubuntu 22.04.5 / HWE / ROS 2 Humble / Python 3.10。覆盖当前真机控制、视觉、MuJoCo 与 PPO 训练；Nav2、SLAM 等规划功能另行实现。
+目标：当前 RTX 5070 Ti Laptop，Ubuntu 22.04.5 / HWE / ROS 2 Humble / Python 3.10。覆盖本分支真机控制、视觉、MuJoCo 与 PPO 训练。[移动仿真分支](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) 的 Jazzy/Gazebo Harmonic、Nav2、SLAM 与 Frontier 原型尚未迁入，不纳入本次 Humble 验收。
 
 当前交付为独立 **Ubuntu 22.04/Humble VM + Windows CUDA 训练环境**，已完成软件及部分设备检查。笔记本原生 Ubuntu 尚未安装。本文的原生步骤是后续执行方案，不能据此认定 Linux GPU 或真机运动/抓取已通过；当前运行入口见 [VM_HUMBLE.md](VM_HUMBLE.md)，证据与剩余项见 [MIGRATION_VALIDATION.md](MIGRATION_VALIDATION.md)。
 
