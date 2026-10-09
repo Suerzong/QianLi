@@ -1,90 +1,39 @@
-# SSH — 连接开发虚拟机（权威指南）
+# SSH — 连接 QianLi 虚拟机
 
-> 本文件是连接 QianLi 开发虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）的**唯一权威入口**。
-> 任何"连不上 / 找不到虚拟机"的问题，先按 §4 排查。
-> 变更连接信息时，必须同步更新本文件与 [ENVIRONMENT.md](ENVIRONMENT.md) §2.2。
+> 当前开发 VM：Ubuntu 22.04.5 / ROS 2 Humble，别名 `qianli-humble`。旧 `qianli-vm` 对应保留的 Ubuntu 24.04/Jazzy VM。连接信息变更时同步更新 [ENVIRONMENT.md](ENVIRONMENT.md)。
 
-## 1. 快速连接（推荐）
+## 1. 打开与连接当前 VM
 
-在 **Windows 开发主机**（SUERZONG / sez18）上，SSH 别名已配置在
-`C:\Users\sez18\.ssh\config`（Host `qianli-vm`），可直接免密登录：
+Windows 桌面打开 **QianLi - Ubuntu22 Humble**，或在 VMware 打开：
 
-```bash
-ssh qianli-vm
+```text
+D:\VMs\QianLi-Ubuntu22-Humble\qianli-humble.vmx
 ```
 
-或使用项目自带的一键脚本（在主机或虚拟机内均可运行）：
+然后在 Windows PowerShell 执行：
 
-```bash
-# Windows 主机（PowerShell / CMD）
-bash scripts/tools/vm_ssh.sh
-
-# 或直接执行命令（等价）
-ssh qianli-vm
+```powershell
+ssh qianli-humble
+ssh -o BatchMode=yes -o ConnectTimeout=10 qianli-humble "hostname; cat /etc/os-release; ls /opt/ros"
 ```
 
-## 2. 连接信息
+项目位于 `/home/ros/QianLi`。桌面、构建、训练与设备操作见 [VM_HUMBLE.md](VM_HUMBLE.md)。
+
+## 2. 当前连接配置
 
 | 项 | 值 |
 |---|---|
-| 主机 | 192.168.26.128（VMware NAT，hostname `ros2-ubuntu`） |
-| 端口 | 22 |
-| 用户 | `ros` |
-| 密码 | `ros1234`（密码登录可用，但**推荐免密**） |
-| 免密 | 已授权公钥：`suerzong@outlook.com`（= 主机 `~/.ssh/id_ed25519`）、`ros2-vm` |
-| 别名 | `qianli-vm`（配置于主机 `C:\Users\sez18\.ssh\config`，IdentityFile = `~/.ssh/id_ed25519`） |
+| 地址 | `192.168.26.22`（本机 VMware NAT 安装记录，其他机器须核对） |
+| SSH 端口 / 用户 | `22` / `ros` |
+| 别名 | `qianli-humble`，Windows `C:\Users\sez18\.ssh\config` |
+| 认证 | 已配置的 `id_ed25519` 密钥；SSH 密码登录关闭 |
+| 客体本地登录 | 按用户要求移除本地密码并自动登录；与 SSH 密钥认证分别配置 |
 
-> 免密登录实测通过（2026-10-04）：主机私钥 `id_ed25519` 与 VM `~/.ssh/authorized_keys`
-> 中的 `suerzong@outlook.com` 匹配。
-
-## 3. 不用别名时的手动连接
-
-```bash
-# 方式 A：指定私钥（推荐）
-ssh -i C:/Users/sez18/.ssh/id_ed25519 ros@192.168.26.128
-
-# 方式 B：密码
-ssh ros@192.168.26.128     # 提示输入密码 ros1234
-```
-
-## 4. "连不上 / 找不到"排查清单
-
-按顺序检查，遇到哪一步失败就停在那一行：
-
-```bash
-# ① 虚拟机是否开机？（VMware 中确认 "Ubuntu 24.04 ROS2 Jazzy" 在运行）
-# ② 端口 22 是否可达（Windows 主机执行）
-Test-NetConnection 192.168.26.128 -Port 22     # TcpTestSucceeded 应为 True
-
-# ③ sshd 服务状态（VM 内执行，或经任意可用通道）
-systemctl is-enabled ssh    # 应为 enabled（开机自启）
-systemctl is-active ssh     # 应为 active（运行中）
-# 若 inactive：sudo systemctl start ssh；若 disabled：sudo systemctl enable ssh
-
-# ④ 免密是否可用（Windows 主机执行）
-ssh -o BatchMode=yes -o ConnectTimeout=10 qianli-vm "echo OK"
-# 若失败改用密码：ssh qianli-vm
-
-# ⑤ 别名是否存在于主机配置
-Get-Content "$env:USERPROFILE\.ssh\config" | Select-String qianli-vm
-```
-
-### 常见问题
-
-| 现象 | 原因 | 解决 |
-|---|---|---|
-| `No route to host` / ping 不通 | 虚拟机未开机，或 VMware NAT 未启动 | 打开虚拟机，确认 VMware 网络服务运行 |
-| `Connection refused` | sshd 未运行 | VM 内 `sudo systemctl start ssh` |
-| `Permission denied (publickey,password)` | 密钥不匹配或密码错误 | 用 `-i` 指定正确私钥，或改用密码 `ros1234` |
-| `Host key verification failed` | known_hosts 记录过期（VM 重装/重建） | `ssh-keygen -R 192.168.26.128` 后重连 |
-| 主机上找不到 `~/.ssh/config` | 配置文件缺失 | 将 §2 的别名块写入 `C:\Users\sez18\.ssh\config` |
-
-### 别名配置块（如需重建）
+如需重建 Windows 别名：
 
 ```sshconfig
-# === QianLi dev VM ===
-Host qianli-vm
-    HostName 192.168.26.128
+Host qianli-humble
+    HostName 192.168.26.22
     User ros
     IdentityFile C:/Users/sez18/.ssh/id_ed25519
     IdentitiesOnly yes
@@ -92,13 +41,23 @@ Host qianli-vm
     ServerAliveCountMax 3
 ```
 
-## 5. 健康检查
+## 3. 连接排查
 
-```bash
-# 一键健康检查：连通性 + sshd 状态 + 磁盘 + GPU + ROS
-bash scripts/tools/vm_check.sh
-```
+1. 确认上述 Humble VM 已开机，Ubuntu 已完成启动。
+2. Windows 执行 `Test-NetConnection 192.168.26.22 -Port 22`。地址变化时先从 VM 的 `hostname -I` 核对，再更新别名。
+3. VM 内执行 `systemctl is-enabled ssh`、`systemctl is-active ssh`；需要时执行 `sudo systemctl enable --now ssh`。
+4. 执行 `ssh -o BatchMode=yes -o ConnectTimeout=10 qianli-humble "true"`。认证失败时核对指定私钥及 VM 的 `authorized_keys`；当前 VM 没有密码 SSH 回退。
+5. 主机密钥变化时先在 VM 核实指纹；确认重装等原因后再更新相应 `known_hosts` 项。
 
-## 6. 更新记录
+连接健康不代表 GPU 或真机运动验收通过。Humble VM 使用虚拟显卡，CUDA 训练运行于 Windows 宿主机。
 
-- 2026-10-04：新建本文件，汇总连接信息、别名、排查清单；确认 sshd 已 `enabled`（开机自启）。
+## 4. 旧 VM 与历史脚本
+
+`qianli-vm` 对应旧 Ubuntu 24.04/Jazzy VM（此前地址 `192.168.26.128`，文件 `D:\Ubuntu-VM\ubuntu24-ros2.vmx`），仅用于资产核对和回退。
+
+仓库中的 `scripts/tools/vm_ssh.sh`、`vm_check.sh` 仍连接该旧 VM。连接当前 Humble VM 使用本文的 `ssh qianli-humble`，不套用旧脚本的地址或账户说明。
+
+## 5. 更新记录
+
+- 2026-10-09：将当前入口统一为 Humble VM，标记旧 VM 脚本用途，移除旧账户密码说明。
+- 2026-10-04：最初记录旧 Jazzy VM 的连接信息与检查流程。

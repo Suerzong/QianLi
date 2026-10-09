@@ -1,6 +1,6 @@
 # 环境安装脚本
 
-默认目标是原生 Ubuntu 22.04.5 + ROS 2 Humble，Python 3.10。
+默认安装基线是 Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10。当前已交付独立 Humble VM 与 Windows CUDA 环境；原生笔记本部署尚待安装及验收。
 
 | 脚本 | 用途 |
 |---|---|

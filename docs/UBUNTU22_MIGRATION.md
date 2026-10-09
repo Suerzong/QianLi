@@ -2,6 +2,8 @@
 
 目标：当前 RTX 5070 Ti Laptop，Ubuntu 22.04.5 / HWE / ROS 2 Humble / Python 3.10。覆盖当前真机控制、视觉、MuJoCo 与 PPO 训练；Nav2、SLAM 等规划功能另行实现。
 
+当前交付为独立 **Ubuntu 22.04/Humble VM + Windows CUDA 训练环境**，已完成软件及部分设备检查。笔记本原生 Ubuntu 尚未安装。本文的原生步骤是后续执行方案，不能据此认定 Linux GPU 或真机运动/抓取已通过；当前运行入口见 [VM_HUMBLE.md](VM_HUMBLE.md)，证据与剩余项见 [MIGRATION_VALIDATION.md](MIGRATION_VALIDATION.md)。
+
 仓库已补齐完整 `so101_bringup` 包。公开的包名、节点入口、关节名及消息接口保留；默认仍为 `driver_mode=sim`、`allow_motion=false`。原生硬件验收通过之前保留旧虚拟机。
 
 ## 资产与版本
@@ -92,7 +94,7 @@ MuJoCo 载入 ROS 模型时会将 `package://` 网格地址解析为所选模型
 
 `validate_ubuntu22.sh` 检查目标系统、安装模块、视觉自检、colcon 测试、模拟驱动的关节状态、TF 和安全闸门；启动参数固定为 `sim/allow_motion=false`。GitHub 工作流提供同样的 Humble 构建回归，不包含物理硬件验收。
 
-ROS 环境未安装 Gymnasium 时，pytest 会跳过仿真环境用例；必须继续执行下面训练环境的完整回归。CI 的测试环境额外安装 Gymnasium，以执行全部 17 项迁移用例。
+ROS 环境未安装 Gymnasium 时，pytest 会跳过仿真环境用例；必须继续执行下面训练环境的完整回归。CI 的测试环境额外安装 Gymnasium，运行整个 `tests/` 目录。2026-10-07 持久 VM 完整迁移回归为 36 项通过，另有 23 项 colcon 驱动测试；两套统计分别记录。
 
 从另一个新 shell 执行训练验收：
 
@@ -102,8 +104,10 @@ source scripts/setup/source_train.sh
 python scripts/tools/train_smoke.py --device cuda --obj-size 0.02 --steps 1024
 python scripts/tools/train_smoke.py --device cuda --obj-size 0.04 --steps 1024
 MUJOCO_GL=egl python scripts/tools/migration_check.py --target --render
-python -m pytest tests/test_migration.py -q
+env -u QI_SO101_PKG -u QI_PARTS_DIR python -m pytest tests -q
 ```
+
+完整回归同时包含驱动配置和两种模型；用 `env -u` 仅对该测试进程清除训练 shell 的历史模型覆盖，防止将驱动参数误解析到 `dual_twin/config/`。训练命令仍保留原有模型选择。
 
 短跑检查实际 CUDA 矩阵运算、两个 `spawn` 工作进程、PPO 权重更新、模型保存及加载后输出一致性。CPU 物理仿真仍由 MuJoCo 执行。20mm 与 40mm 的固定种子回归分别记录，旧成功率不能归给当前 40mm 场景。
 

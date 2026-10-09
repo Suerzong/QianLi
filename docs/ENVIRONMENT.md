@@ -1,101 +1,82 @@
 # ENVIRONMENT — 开发环境
 
-> 记录 QianLi 开发环境检查结果、与目标平台的差异、缺失依赖与安装指引。
-> 原则：缺少大型依赖时**不盲目安装**，先记录于此文档，再决定安装方案。
+> 文档口径更新：2026-10-09。下述验收结果来自 2026-10-07 的记录；当前 ROS 基线为 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10。
 
-## 1. 当前目标平台（2026-10-07）
+## 1. 当前运行环境与原生目标
+
+| 环境 | 用途与状态 |
+|---|---|
+| 独立 Ubuntu 22.04.5 / Humble VM | 已安装桌面、HWE 6.8.0-138、Humble；运行 ROS、视觉、MuJoCo 仿真与 CPU 训练 |
+| Windows 11 宿主机 | 编辑与 Git；独立 Python 3.10 / PyTorch 2.8.0+cu128 环境使用 RTX 5070 Ti Laptop 训练，实际 CUDA 运算已验证 |
+| 笔记本原生 Ubuntu 22.04.5 / HWE / Humble | 后续部署目标；尚未安装，Linux GPU、显示、网络及原生设备验收待完成 |
+| 旧 Ubuntu 24.04 / ROS 2 Jazzy VM | 保留资产与回退环境，不作为当前 Humble 构建基线 |
+
+VM 使用 VMware 虚拟显卡，CPU 训练通过不代表 Linux NVIDIA 驱动或 CUDA 已验收。ROS 与训练环境分别隔离；Windows 虚拟环境不能复制到 Linux 使用。
+
+## 2. 已安装的 Humble VM
 
 | 项 | 值 |
 |---|---|
-| 系统 | 原生 Ubuntu 22.04.5 + HWE |
-| ROS | ROS 2 Humble |
-| Python | 3.10；ROS 和训练独立虚拟环境 |
-| GPU | RTX 5070 Ti Laptop，NVIDIA open 内核模块，PyTorch 2.8/cu128 |
-| 工作区 | 6 个实际 ROS 包；完整 so101_bringup 已纳入仓库 |
+| VM 文件 | `D:\VMs\QianLi-Ubuntu22-Humble\qianli-humble.vmx` |
+| 系统 / ROS | Ubuntu 22.04.5 LTS（Jammy）/ `/opt/ros/humble` |
+| Python | 系统 Python 3.10；ROS `.venv-ros`、训练 `.venv-train` |
+| 资源 | 独立 120GB 磁盘、8GB 内存、8 vCPU |
+| 网络 / SSH | VMware NAT `192.168.26.22`；用户 `ros`；别名 `qianli-humble`，SSH 使用密钥 |
+| 项目 / 分支 | `/home/ros/QianLi` / `codex/ubuntu22-humble` |
+| 桌面 | 自动登录，模拟 RViz 自动启动；按用户要求关闭客体自动锁屏与休眠 |
+| 机械臂串口 | `/dev/qianli_arm`，CH343P；多个同型号设备应使用带序列号的 by-id 路径 |
+| 外置相机 | `/dev/v4l/by-id/usb-HD_Camera_Manufacturer_USB_2.0_Camera-video-index0`；xHCI、MJPG、640×480 |
+| 持久机器配置 | `~/.config/qianli/environment.sh`；标定默认存于项目 `calib/` |
 
-安装、固定依赖、设备变量、标定与验收见 [UBUNTU22_MIGRATION.md](UBUNTU22_MIGRATION.md)。下方为旧环境历史记录，不代表原生目标机已验收。Ubuntu 22.04 标准支持与 Humble 支持至 2027 年 5 月。
+Windows 桌面入口 **QianLi - Ubuntu22 Humble** 可打开 VM。SSH 与排查命令见 [SSH.md](SSH.md)，桌面、训练和设备入口见 [VM_HUMBLE.md](VM_HUMBLE.md)。IP 属于本机安装记录，复制到其他机器后应重新核对。
 
-## 2. 开发环境实况（2026-10-04 更新）
+## 3. 安装与日常构建
 
-### 2.1 主机（Windows 11，开发编辑机）
-
-| 检查项 | 结果 |
-|---|---|
-| 操作系统 | Windows 11 家庭版 中文版（10.0.26100，64 位） |
-| 主机名 / 用户 | SUERZONG / sez18，HOME = C:\Users\sez18 |
-| 磁盘 | C: 剩余 59.1 GB；D: 剩余 198.9 GB；E: 剩余 46.3 GB |
-| Git | 2.53.0.windows.2（E:\Git\cmd\git.exe），身份已配置 |
-| Python | 3.13.12（miniconda）+ 3.14.5（py） | 
-| CMake | 4.3.1（Windows 侧其他工程用） |
-| IDE | VS Code（E:\Applications\Microsoft VS Code）；CLion 2026.2.1 |
-| 嵌入式工具链 | STM32CubeIDE/MX/Programmer/CLT、Keil5、Arduino、OpenOCD |
-| 虚拟化 | VMware Workstation（运行 1 台虚拟机，见 §2.2） |
-
-> 主机不参与 ROS 2 构建；ROS 2 工具链全部在虚拟机内运行。
-
-### 2.1.1 SSH 快速连接（必读）
+新的 Ubuntu 22.04 环境按 [UBUNTU22_MIGRATION.md](UBUNTU22_MIGRATION.md) 安装 ROS、固定 Python 依赖和设备权限。已有环境的常用命令：
 
 ```bash
-# 主机（Windows）免密登录，别名已配好
-ssh qianli-vm
-
-# 或一键脚本
-bash scripts/tools/vm_ssh.sh
-
-# 健康检查
-bash scripts/tools/vm_check.sh
+cd ~/QianLi
+bash scripts/tools/build.sh
+source scripts/setup/source_env.sh
+bash scripts/tools/validate_ubuntu22.sh
 ```
 
-> 完整连接信息、排查清单与别名配置块见 **[SSH.md](SSH.md)**。
-> 连不上时按 SSH.md §4 排查（虚拟机开机 → 端口 22 → sshd → 免密 → 别名）。
+`source_env.sh` 默认加载 Humble，拒绝混入已经加载 Jazzy 的 shell。使用新的 Bash shell，并由项目脚本加载 `.venv-ros`；宿主机 Conda Python 3.13/3.14 不用于 ROS 构建。
 
-### 2.2 开发虚拟机（Ubuntu 24.04 + ROS 2 Jazzy）
+从另一个新 shell 使用独立训练环境：
 
-| 检查项 | 结果 |
+```bash
+cd ~/QianLi
+source scripts/setup/source_train.sh
+python scripts/tools/train_smoke.py --device cpu --obj-size 0.04 --steps 1024
+```
+
+当前 VM 使用 `--device cpu`。宿主机 GPU 命令见 [VM_HUMBLE.md](VM_HUMBLE.md)；原生 Ubuntu 安装后须独立验证 Linux CUDA，再执行 `--device cuda`。
+
+## 4. 验收结论与剩余项
+
+| 范围 | 2026-10-07 的验证结论 |
 |---|---|
-| VM 名称 | Ubuntu 24.04 ROS2 Jazzy（`D:\Ubuntu-VM\ubuntu24-ros2.vmx`） |
-| 系统 | Ubuntu 24.04.4 LTS（Noble Numbat），内核 7.0.0-34-generic |
-| 网络 | VMware NAT：**192.168.26.128**（hostname `ros2-ubuntu`，MAC 00:0c:29:bd:0b:9c） |
-| SSH | 22 端口开放；用户 `ros`；**免密已配好**（别名 `qianli-vm`），连接指南见 [SSH.md](SSH.md) |
-| sshd 自启 | ✅ enabled + active（2026-10-04 复核） |
-| ROS 2 | ✅ `/opt/ros/jazzy`，`.bashrc` 已自动 source |
-| colcon | ✅ /usr/bin/colcon |
-| Python | ✅ 3.12.3（系统） |
-| CMake | ✅ 3.28.3 |
-| Git | ✅ 2.43.0 |
-| 磁盘 | / 剩余约 **12 GB**（84% 已用）——注意空间，构建产物及时清理 |
-| GPU | ❌ 无（VMware 未直通，`nvidia-smi` 不存在）→ 深度学习训练需另配 GPU 云服务器 |
-| 内存 | 5.8 GiB 总 / 约 3.5 GiB 可用 |
-| 关键包 | ✅ urdf / xacro / rviz2 / robot-state-publisher / joint-state-publisher / ros2-control / moveit |
-| 待装包 | ⏳ nav2-bringup / robot-localization / gazebo-ros-pkgs（后续 Milestone 需要时再装） |
-| 工作区 | `~/QianLi`（与主机仓库同步）；`~/arm_ws`、`~/arm-final` 已不存在（2026-10-04 复核，模型已整合进 qianli_description） |
+| Humble 工作区 | 6 包构建成功；23 项 colcon 驱动/IK/协议测试通过 |
+| 软件回归 | VM 独立训练环境完整 36 项迁移回归通过；视觉自检、RViz、模拟 joint_states / TF / 安全闸门通过 |
+| 仿真 / 训练 | 20mm 与 40mm 分别完成两个 spawn 进程、1024 步 PPO、模型更新及保存/加载；VM EGL 渲染通过 |
+| 宿主机 CUDA | 两种尺寸短跑与实际 CUDA 运算通过；40mm 完整入口的 128 步短跑成功率为 0%，不代表抓取能力提升 |
+| VM 设备接入 | 相机连续 60 帧通过；六舵机位置/扭矩可读、扭矩均为 0；direct 状态/TF 与使能拒绝通过 |
+| VM 真机运动 / 抓取 | 未验收；最后手摆姿态部分关节超旧软限位，缺少合格几何外参，现场补采待进行 |
+| 原生部署 | 未验收；安装、Linux GPU、设备及完整软件/硬件回归均待执行 |
 
-## 3. 构建验证状态
+完整证据路径、测试统计口径和真机限制见 [MIGRATION_VALIDATION.md](MIGRATION_VALIDATION.md)。历史抓取成绩与迁移验收分别记录，20mm 的旧成绩不能归到当前 40mm 场景。
 
-- ✅ **Milestone 0 已在虚拟机内验证**：`colcon build --symlink-install` 通过（见 [DEVLOG.md](DEVLOG.md)）；
-- 构建命令：`source /opt/ros/jazzy/setup.bash && cd qianli_ws && colcon build --symlink-install`；
-- 辅助脚本：`bash scripts/tools/build.sh`（自动定位 qianli_ws）。
+## 5. 后续依赖与旧环境
 
-## 4. 缺失依赖清单（按需安装，不预装）
+当前迁移覆盖已有控制、视觉、MuJoCo 与训练实现。Nav2、SLAM、移动底盘和 MoveIt2 规划集成按后续里程碑引入；新依赖需按 Humble 选择并验证，不沿用旧 `ros-jazzy-*` 安装命令。现有机械臂仿真使用 MuJoCo，移动平台 Gazebo 路线仍属规划。
 
-| 依赖 | 目标环境 | 安装方式 | 引入时机 |
-|---|---|---|---|
-| nav2 全套 | Ubuntu 24.04 | `sudo apt install ros-jazzy-nav2-*`（按需子集） | 并行路线（虚拟底盘） |
-| robot_localization | Ubuntu 24.04 | `sudo apt install ros-jazzy-robot-localization` | 并行路线 |
-| gazebo / 仿真 | Ubuntu 24.04 | `sudo apt install ros-jazzy-gazebo-ros-pkgs` | 并行路线 |
-| MoveIt2 | ✅ 已装（ros-jazzy-moveit） | — | Milestone 3 |
-| 3D LiDAR 驱动 | 真实硬件到位后 | 按厂商 SDK | 真实 LiDAR 到位 |
+旧 VM：`D:\Ubuntu-VM\ubuntu24-ros2.vmx`，Ubuntu 24.04/Jazzy，SSH 别名 `qianli-vm`，此前地址 `192.168.26.128`。`vm_ssh.sh` / `vm_check.sh` 是该旧 VM 的历史脚本。旧资产与环境扫描保留在 [DEVLOG.md](DEVLOG.md)，使用前核对实际运行状态。
 
-> 新依赖加入前，先在本文档登记，再安装。
-
-## 5. 本机/虚拟机环境注意事项
-
-- 主机 conda Python（3.13/3.14）**不要**用于 ROS 工具；虚拟机内使用系统 Python 3.12；
-- 虚拟机磁盘紧张（剩 13 GB），构建后及时 `bash scripts/tools/clean.sh` 清理；
-- 虚拟机无 VMware hgfs 共享文件夹，仓库通过 **scp / git** 同步；
-- D:\projects 下已有其他项目（如 TALOS26 秋季招新考核题），QianLi 独立 Git 仓库，互不影响；
-- 虚拟机内已有机械臂相关工作区（~/arm_ws 等），与本项目隔离。
+Ubuntu 22.04 标准安全维护与 Humble 支持均至 **2027 年 5 月**；Ubuntu 的延长安全维护是另一种覆盖，不能视为 Humble 支持延期。[Ubuntu 生命周期](https://ubuntu.com/about/release-cycle)、[REP 2000](https://github.com/ros-infrastructure/rep/blob/master/rep-2000.rst)。
 
 ## 6. 更新记录
 
-- 2026-10-04：首次环境扫描（Windows 11 主机）；随后接入 VMware 虚拟机（Ubuntu 24.04 + Jazzy），目标平台定版为 24.04/Jazzy，Milestone 0 构建验证通过。
+- 2026-10-09：统一当前 22.04/Humble 基线、VM 与宿主机 CUDA 分工，以及原生部署待验收边界。
+- 2026-10-07：安装独立 Humble VM 和 Windows CUDA 训练环境，完成上述软件与只读硬件检查。
+- 2026-10-04：首次在旧 Ubuntu 24.04/Jazzy VM 构建；当时的环境决定保留为历史记录。

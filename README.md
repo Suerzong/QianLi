@@ -35,7 +35,16 @@
 
 ## 当前进展 · Current Status
 
-> 当前阶段从 **Phase 0 — Foundation** 起步，已完成真实机械臂接入与"视觉定位 → 逆解 → 抓取"全链路打通。
+项目当前基线为 **Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10**。已安装并验证独立 Humble VM，GPU 训练在 Windows 宿主机运行；笔记本原生 Ubuntu 安装仍待实施。
+
+| 迁移范围 | 当前结论（验收日期：2026-10-07） |
+|---|---|
+| Humble VM 软件 | 6 包构建、23 项 colcon 测试、36 项迁移回归通过；RViz、模拟 TF、视觉自检和 CPU 训练短跑通过 |
+| 宿主机 GPU | Windows / RTX 5070 Ti / PyTorch 2.8.0+cu128 实际运算及训练短跑通过；VM 使用虚拟显卡 |
+| VM 真机接入 | 相机采集、六舵机状态读取及运动使能拒绝通过；合格外参、限位内姿态与运动/抓取验收待完成 |
+| 原生 Ubuntu | Linux GPU、显示/网络/USB及完整硬件验收待完成 |
+
+下表保留机械臂研发的历史进展；旧环境的标定与抓取成果须在新环境重新验收。详细边界见 [迁移验证记录](docs/MIGRATION_VALIDATION.md)。
 
 | 领域 | 状态 | 说明 |
 |---|---|---|
@@ -113,7 +122,9 @@ Agent: find(vending_machine)        # 查询 Semantic Map → 坐标
 
 | 类别 | 技术 |
 |---|---|
-| 目标平台 | Ubuntu 22.04.5 + ROS 2 Humble |
+| ROS 基线 | Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10 |
+| 当前运行环境 | Ubuntu 22.04/Humble VM（ROS、视觉、CPU 仿真）+ Windows（CUDA 训练） |
+| 原生部署目标 | 同一笔记本上的 Ubuntu 22.04.5 + HWE；Linux GPU 与硬件验收待完成 |
 | 主要语言 | C++ / Python |
 | 中间件 | ROS 2（Topic / Service / Action） |
 | 建模与可视化 | URDF / Xacro / TF2 / RViz2 |
@@ -141,18 +152,36 @@ QianLi/
 
 ## 快速开始 · Quick Start
 
-目标为原生 Ubuntu 22.04.5 + ROS 2 Humble。旧 Ubuntu 24.04/Jazzy 虚拟机保留用于回退；完整步骤、资产与硬件验收见 [迁移说明](docs/UBUNTU22_MIGRATION.md)。
+### 已安装环境
 
-当前已安装独立 Ubuntu 22.04/Humble VM 和 Windows CUDA 训练环境，可直接使用桌面入口；打开方式与命令见 [运行说明](docs/VM_HUMBLE.md)，实测结果见 [验证记录](docs/MIGRATION_VALIDATION.md)。
+Windows 桌面打开 **QianLi - Ubuntu22 Humble**，或通过 `ssh qianli-humble` 连接。在 VM 中执行：
 
 ```bash
-# 在新安装的原生 Ubuntu 22.04 中执行
+cd ~/QianLi
+bash scripts/tools/qianli.sh sim
+# 自检、相机、设备及训练入口见运行说明
+```
+
+GPU 训练使用 Windows 桌面的 **QianLi - GPU Training**。环境详情见 [运行说明](docs/VM_HUMBLE.md)，连接排查见 [SSH 指南](docs/SSH.md)。
+
+### 新安装 Ubuntu 22.04
+
+以下脚本用于准备新的 Ubuntu 22.04/Humble 环境；原生笔记本的安装与硬件验收见 [迁移说明](docs/UBUNTU22_MIGRATION.md)。旧 Ubuntu 24.04/Jazzy VM 保留用于回退。
+
+```bash
+cd ~/QianLi
 bash scripts/setup/install_ros2_humble.sh
 bash scripts/setup/setup_python_envs.sh
 bash scripts/tools/build.sh
 source scripts/setup/source_env.sh
 bash scripts/tools/validate_ubuntu22.sh
 ```
+
+## 阶段成果 · Stage Demo
+
+[![SO-101 真机物块抓取阶段演示](docs/media/qianli-so101-stage-demo-20261009.jpg)](https://github.com/Suerzong/QianLi/releases/tag/stage-so101-grasp-20261009)
+
+[观看 / 下载阶段演示视频](https://github.com/Suerzong/QianLi/releases/tag/stage-so101-grasp-20261009) · [视频说明与验收边界](docs/STAGE_DEMO.md)。2026-10-09 归档的真机演示作为阶段成果展示；拍摄环境与代码版本未核实，不计入 Humble 迁移或抓取成功率验收。
 
 ## 文档索引 · Documentation
 

@@ -5,10 +5,12 @@
 | build.sh | colcon build 封装（--symlink-install，支持指定包与 CMake 参数） |
 | clean.sh | 清理 qianli_ws 的 build / install；保留含回滚资产的 log |
 | status.sh | 工作区健康检查（git status + 可构建 package 列表） |
-| vm_ssh.sh | 一键 SSH 连接开发虚拟机（别名 qianli-vm，见 [docs/SSH.md](../../docs/SSH.md)） |
-| vm_check.sh | 虚拟机健康检查：连通性 / sshd / 磁盘 / GPU / ROS / conda |
+| vm_ssh.sh | 历史入口：连接保留的旧 Jazzy VM（别名 qianli-vm） |
+| vm_check.sh | 历史入口：检查旧 Jazzy VM 的 SSH / 磁盘 / GPU / ROS |
+| open_humble_vm.ps1 | Windows 打开当前 Ubuntu 22.04/Humble VM |
+| qianli.sh | 当前 Humble VM 的仿真、自检、相机、设备与训练入口 |
 
-> 构建与验收目标为 Ubuntu 22.04 + ROS 2 Humble。SSH 脚本用于保留的旧虚拟机。
+> 构建与验收基线为 Ubuntu 22.04 + ROS 2 Humble；当前连接使用 `ssh qianli-humble`。原生部署待验收，SSH 历史脚本用于保留的旧虚拟机。
 > 连接虚拟机（SSH）相关，先读 [docs/SSH.md](../../docs/SSH.md)。
 
 | 迁移工具 | 用途 |

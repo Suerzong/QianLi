@@ -1,6 +1,6 @@
 # Ubuntu 22.04 迁移验证记录
 
-日期：2026-10-07。实施步骤见 [原生迁移与验收](UBUNTU22_MIGRATION.md)。已经另行安装持久 Ubuntu 22.04/Humble 虚拟机，运行入口见 [VM 使用说明](VM_HUMBLE.md)。笔记本尚未安装原生 Ubuntu，原生 Linux GPU及真机运动/抓取验收仍未完成。
+验收日期：2026-10-07；文档口径更新：2026-10-09。当前开发基线为 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10，已安装持久 VM，CUDA 训练在 Windows 宿主机运行。笔记本尚未安装原生 Ubuntu，原生 Linux GPU及新环境真机运动/抓取验收仍未完成。实施步骤见 [原生迁移与验收](UBUNTU22_MIGRATION.md)，运行入口见 [VM 使用说明](VM_HUMBLE.md)。
 
 ## 持久 VM 与生产 CUDA 环境
 
@@ -9,8 +9,8 @@
 | 实际环境 | 验收结果 |
 |---|---|
 | 独立 Ubuntu 22.04.5 VM / Humble / Python 3.10 | 六包构建成功；colcon 23 项测试全部通过；ROS 安装模块、视觉离线自检、模拟关节/TF/闸门消息通过；`allow_motion=false`、`calibrated=false` |
-| 同一 VM 的隔离训练环境 | 原 17 项迁移回归加 6 项只读报告/外参接口回归，共 23 项通过；20mm/40mm 各两个 spawn 进程、1024 步 PPO、权重更新与模型保存/加载通过；EGL 128×128 渲染通过 |
-| Windows 生产 `.venv-train-win` / RTX 5070 Ti / 591.74 / Torch 2.8.0+cu128 | 20mm/40mm 均通过实际 CUDA 运算、1024 步更新、保存/加载；25 项迁移/协议测试通过，1 项 Linux sysfs 用例在 Windows 跳过、在 VM 通过 |
+| 同一 VM 的隔离训练环境 | 最终完整 36 项迁移回归通过（原 17 项 + 6 项只读报告/外参接口 + 13 项标定会话）；20mm/40mm 各两个 spawn 进程、1024 步 PPO、权重更新与模型保存/加载通过；EGL 128×128 渲染通过 |
+| Windows 生产 `.venv-train-win` / RTX 5070 Ti / 591.74 / Torch 2.8.0+cu128 | 20mm/40mm 均通过实际 CUDA 运算、1024 步更新、保存/加载；早期迁移/协议组合 25 项通过、1 项跳过，后续迁移目录 22 项通过、1 项 Linux sysfs 用例跳过；与 VM 最终 36 项测试范围不同 |
 | VM CPU 与 Windows CUDA，原有两个策略归档 | `bc_policy.zip` 和 `ppo_bc_final.zip` 均可加载和预测；另存后重新加载的动作输出、全部策略权重与加载前一致；原归档未覆盖 |
 | Windows 生产环境的完整 `train.py` | 40mm / 两环境 / 128 步 / BC 热启动成功，生成 64/128 步 checkpoint 与最终模型；短跑成功率 0%，不代表抓取能力提升 |
 | 新 VM 的外置 UVC 相机 | xHCI + MJPG，640×480 连续 60 帧通过，实际图片无损坏条带；已配置稳定 by-id 路径；未执行新的几何标定 |
@@ -38,9 +38,9 @@ ROS 在线 GitHub 下载在 guest 内发生 TLS 断开，安装已通过宿主�
 - 资源从项目位置、ROS 安装或显式覆盖解析；标定写入持久目录，串口/相机接受稳定设备路径，USB 看门狗发现实际接口。
 - 修复未知棋盘导致的仿真初始化错误，以及 MuJoCo 不能直接读取 ROS `package://` 网格的问题。真机抓取继续要求质量合格、有限数值的外参。
 - 训练分别记录 20mm/40mm 场景，检查 CUDA 运算、多个工作进程、模型更新及保存/加载；输出目录拒绝混用不同场景。
-- 添加 `.github/workflows/ubuntu22-humble.yml`。本次没有推送或触发 GitHub Actions。
+- 添加 `.github/workflows/ubuntu22-humble.yml`，使用 Jammy/Humble 容器构建并运行软件回归；2026-10-07 本地验收时未触发 GitHub Actions。远端 CI 结果须另外核对，不代替硬件验收。
 
-## 实际验证
+## 早期隔离验证（历史记录）
 
 | 环境 | 执行内容 | 结果与边界 |
 |---|---|---|
@@ -71,11 +71,14 @@ Humble 验证使用官方 Ubuntu Base 22.04.5 amd64 镜像，在旧 Ubuntu 24.04
 | `migration_assets/current-project-assets-20261007.zip` | 当前驱动、ROS/历史模型、配置和可用标定的迁移资产包；代码工作区须另行复制 |
 | `qianli_ws/src/qianli_arm/migration_provenance.json` | 驱动原始文件校验值、模型来源、VM 核对及限位合并记录 |
 | `migration_assets/humble-validation-20261007.zip` | 12 个日志/证据文件，含构建、最终 17 项回归、colcon XML、ROS 状态/TF/闸门与依赖解析记录；内部逐文件 SHA256 已复核 |
+| `migration_assets/persistent-humble-acceptance-20261007.zip` | 持久 VM 的 65 个证据文件；含最终 36 项回归、桌面、设备和 direct 使能拒绝记录；对应提交 `7d000158668e300d2caf0357e3f128a032da5fb9` |
 | `migration_assets/gpu-smoke-20mm.json`、`gpu-smoke-40mm.json` | 两个尺寸的固定版本 CUDA 短跑结果 |
 | `migration_assets/trainer-check/native_40mm/` | 完整训练入口的元数据、策略、checkpoint 和日志 |
 | `.venv-migration-check/resolved-requirements.txt` | 本次 Windows Python 3.10 验证环境的实际解析版本 |
 
 Humble 证据 ZIP 的 SHA256：`f7c9b253718abd8c837e1d828b692802a89e5b96beda4c132dc71f30dd63473f`。
+
+持久 VM 证据 ZIP 的 SHA256：`d2dfc6c05fe9f9d5b2dc097148b37dd72df39a4d530bc35bed16fc62bc7c429c`。该归档描述 2026-10-07 的检查状态；后续文档或演示视频不改变其硬件验收结论。
 
 旧 VM 和本地原始限位均已保留。迁移默认参数采用两者交集，只将本地 `shoulder_pan` 上限进一步收紧至 3273；零位与方向不变，没有写入舵机 EEPROM。旧 VM 的实际运行参数另存为 `config/driver_params.previous_vm.yaml`，可通过 `QI_DRIVER_CONFIG` 选择；其窗口比交集更宽，不必因操作系统迁移重新标定限位。
 

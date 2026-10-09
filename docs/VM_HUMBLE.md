@@ -1,6 +1,6 @@
 # 已安装的 QianLi Ubuntu 22.04 / Humble 虚拟机
 
-这台 VM 独立安装在 `D:\VMs\QianLi-Ubuntu22-Humble`，不是临时 chroot。旧 `D:\Ubuntu-VM` 和另外两台已有 VM 均保留。
+这台 Ubuntu 22.04.5 / ROS 2 Humble / Python 3.10 VM 独立安装在 `D:\VMs\QianLi-Ubuntu22-Humble`，是当前已安装的 ROS 运行环境。CUDA 训练运行于 Windows 宿主机；笔记本原生 Ubuntu 尚未安装或验收。旧 `D:\Ubuntu-VM` 和另外两台已有 VM 均保留。本文运行与验收记录来自 2026-10-07，文档口径于 2026-10-09 统一。
 
 ## 打开与运行
 

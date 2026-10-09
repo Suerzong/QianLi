@@ -8,9 +8,12 @@
 |---|---|---|---|
 | 机械臂 | **SO-ARM101**（6 DOF：shoulder_pan/lift、elbow_flex、wrist_flex/roll、gripper） | 舵机总线（Feetech SCS/STS 兼容），USB 芯片 CH343P → /dev/ttyACM0 | ✅ 在役 |
 | 机械臂舵机 | HX-30HM ×6（Model 777，映射 STS3215，12V，1 Mbps） | 串口总线（SYNC_WRITE 0x83 / GroupSyncRead 0x84） | ✅ 在役 |
-| 开发上位机 | 开发机（Windows 11）→ 开发虚拟机（Ubuntu 24.04 + Jazzy，192.168.26.128） | SSH | ✅ 使用中 |
+| 开发上位机 | Windows 11（CUDA 训练）+ Ubuntu 22.04.5/Humble VM（ROS，`ssh qianli-humble`） | SSH / VMware USB | ✅ 已安装；原生 Ubuntu 部署待验收 |
+| 外置 RGB 相机 | USB UVC（`05a3:9230`），640×480 / MJPG | 稳定 V4L2 by-id 路径 | ✅ Humble VM 连续采集通过；新几何外参待补采 |
 
-### 机械臂关键参数（实测，详见 [mechanical_arm/docs/joint_limits.md](../hardware/mechanical_arm/docs/joint_limits.md)）
+### 机械臂关键参数（历史实测，详见 [mechanical_arm/docs/joint_limits.md](../hardware/mechanical_arm/docs/joint_limits.md)）
+
+新 Humble VM 已完成位置/扭矩读取及运动使能拒绝检查；旧限位可复用，当前姿态、合格外参与运动/抓取验收仍待完成。[迁移验收边界](MIGRATION_VALIDATION.md)。
 
 - 舵机 raw 0–4095，中心 2048；角度换算 `(raw-2048)×360/4096`；
 - 6 关节 ±10° 往返全部通过，跟随误差 0.2°–1.6°（gripper 齿轮间隙正常）；
@@ -24,7 +27,7 @@
 | 3D LiDAR | RoboSense RS-LiDAR-16 / Livox Mid-360（或其他） | SLAM / 建图 | ⏳ 缺失，先 Simulation/Mock |
 | 移动底盘 | 四全向轮 | 全向移动 | ⏳ 待接入 |
 | 底层控制器 | STM32 | 电机实时控制 / PID / 安全 | ⏳ 待接入 |
-| RGB / RGB-D Camera | [待补充] | 视觉感知（AprilTag / YOLO） | ⏳ 待接入 |
+| RGB-D Camera | [待补充] | 后续深度感知；当前 RGB 相机见上表 | ⏳ 待接入 |
 | IMU | [待补充] | 里程计融合（EKF） | ⏳ 待接入 |
 | 编码器 | 底盘轮毂编码器 | 轮式里程计 | ⏳ 待接入 |
 | 下视 ToF | [待补充] | 悬崖检测（安全） | ⏳ 待接入 |
