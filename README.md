@@ -18,6 +18,18 @@
 
 </div>
 
+## 分支与验证范围 · Branches
+
+下表描述各分支的实现范围（2026-10-09 核对）。Humble 是机械臂迁移基线；移动仿真实验仍使用 Jazzy，尚未完成跨分支集成。
+
+| 分支 | 用途 | 环境与边界 |
+|---|---|---|
+| [main](https://github.com/Suerzong/QianLi/tree/main)（本分支） | 默认项目入口、机械臂历史实现与阶段视频 | 历史运行环境为 Ubuntu 24.04/Jazzy；文档更新不表示迁移或移动仿真代码已经合入 |
+| [codex/ubuntu22-humble](https://github.com/Suerzong/QianLi/tree/codex/ubuntu22-humble) | SO-101、视觉、MuJoCo 与训练的 Humble 迁移 | Ubuntu 22.04.5/Humble/Python 3.10 VM + Windows CUDA；原生 Linux 与新环境真机运动/抓取待验收 |
+| [codex/cloud-model-training](https://github.com/Suerzong/QianLi/tree/codex/cloud-model-training) | Omni 移动仿真、教学楼场景、SLAM/Nav2、Frontier 与 CPU CEM 参数学习 | Ubuntu 24.04/Jazzy/Gazebo Harmonic；有独立仿真验证，Humble 兼容及整机集成尚未验收 |
+
+Humble 分支从 `main` 的 `7bc7154` 分出；移动仿真分支与它们的共同祖先为 `2f5c871`，两条开发线存在独立提交。各分支的包数量、算法与成绩分别记录：机械臂 PPO/BC 与移动避障 CPU CEM 不属于同一训练任务。切换分支后使用独立工作区或重新构建，避免混用旧 `build/install`；也不要在一个 shell 中混合 Humble 与 Jazzy。
+
 ## 项目简介 · About
 
 **QianLi（千里）** 是一款面向**室内复杂环境**的自主移动操作机器人 —— 它探索未知的空间，理解世界的语义，并动手完成任务。
@@ -35,11 +47,11 @@
 
 ## 当前进展 · Current Status
 
-> 当前阶段从 **Phase 0 — Foundation** 起步，已完成真实机械臂接入与"视觉定位 → 逆解 → 抓取"全链路打通。
+本分支保留迁移前的机械臂实现；下表为历史研发成果，不能作为 Humble 或移动仿真分支的验收结论。当前机械臂开发与环境复现请使用 [Humble 迁移分支](https://github.com/Suerzong/QianLi/tree/codex/ubuntu22-humble)。
 
 | 领域 | 状态 | 说明 |
 |---|---|---|
-| ROS 2 工作区 | ✅ 完成 | 17 个 packages，Ubuntu 24.04 + ROS 2 Jazzy 下 `colcon build` 通过 |
+| ROS 2 工作区 | ✅ 已建立 | 本分支有 5 个实际 ROS 包；其余为规划占位目录，完整 so101_bringup 在 Humble 分支 |
 | 机械臂建模 | ✅ 完成 | **SO-ARM101** 6-DOF + 夹爪 URDF 建模，STL 网格资产整合，RViz 显示 |
 | 真实机械臂驱动 | ✅ 完成 | Feetech 舵机总线（SYNC_WRITE / GroupSyncRead），关节状态、限位与健康检查 |
 | 机械限位实测重标定 | ✅ 完成 | 实测各关节机械死点，**找回被静默吞掉的 71.2°** 腕部行程 |
@@ -51,7 +63,8 @@
 | 真机自主抓取 | ✅ 里程碑 | 真实机械臂自主抓取跑通至 **"抓起 + 抬升"**，视觉误检修复 + 运动安全闸门 |
 | 强化学习 / 行为克隆 | 🧪 实验 | 孪生环境中训练出可用抓取策略（孪生验证 100% 成功） |
 | 移动底盘 / 3D LiDAR | ⏳ 规划 | 四全向轮底盘、RS-LiDAR-16 / Livox Mid-360，先以仿真/Mock 模式推进 |
-| Nav2 / SLAM / 语义地图 | ⏳ 规划 | 2D SLAM → 3D LiDAR SLAM → Frontier Exploration → Semantic Map |
+| 移动仿真 / Nav2 / SLAM | 🚧 独立分支 | Jazzy/Gazebo Harmonic 原型与 Frontier 验证见移动仿真分支；未合入 main |
+| 语义地图 / Agent | ⏳ 规划 | Semantic Map 与高层任务规划仍属后续能力 |
 
 ## 系统架构 · Architecture
 
@@ -113,7 +126,8 @@ Agent: find(vending_machine)        # 查询 Semantic Map → 坐标
 
 | 类别 | 技术 |
 |---|---|
-| 目标平台 | Ubuntu 24.04 + ROS 2 Jazzy |
+| 本分支历史环境 | Ubuntu 24.04 + ROS 2 Jazzy |
+| 机械臂迁移基线 | Ubuntu 22.04.5 + ROS 2 Humble + Python 3.10，见迁移分支 |
 | 主要语言 | C++ / Python |
 | 中间件 | ROS 2（Topic / Service / Action） |
 | 建模与可视化 | URDF / Xacro / TF2 / RViz2 |
@@ -136,10 +150,23 @@ QianLi/
 ├── datasets/      # 数据集（不纳入版本控制）
 ├── scripts/       # 辅助脚本（setup / tools / vm）
 └── qianli_ws/     # ROS 2 工作区（colcon）
-    └── src/       # 17 个 ROS 2 packages
+    └── src/       # 5 个实际 ROS 包及规划占位目录
 ```
 
 ## 快速开始 · Quick Start
+
+机械臂 Humble 运行使用 [迁移分支 README](https://github.com/Suerzong/QianLi/blob/codex/ubuntu22-humble/README.md)；本机已安装环境可通过 `ssh qianli-humble` 连接。需要新副本时在独立目录克隆该分支：
+
+```bash
+git clone --branch codex/ubuntu22-humble git@github.com:Suerzong/QianLi.git QianLi-humble
+cd QianLi-humble
+```
+
+[Humble 安装与验收](https://github.com/Suerzong/QianLi/blob/codex/ubuntu22-humble/docs/UBUNTU22_MIGRATION.md) · [VM 运行说明](https://github.com/Suerzong/QianLi/blob/codex/ubuntu22-humble/docs/VM_HUMBLE.md)。原生 Ubuntu 与 Linux GPU 尚未验收。
+
+### main 历史环境
+
+下列原有命令仅用于本分支 Jazzy 历史环境：
 
 > 开发环境为 Windows 11 + VMware 虚拟机（Ubuntu 24.04 + ROS 2 Jazzy，`192.168.26.128`），详见 [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)。
 
@@ -154,6 +181,12 @@ bash scripts/tools/build.sh
 # 3. 加载工作区环境
 source scripts/setup/source_env.sh
 ```
+
+## 阶段成果 · Stage Demo
+
+[![SO-101 真机物块抓取阶段演示](docs/media/qianli-so101-stage-demo-20261009.jpg)](docs/media/qianli_so101_grasp_stage_demo_20261009_1080p.mp4)
+
+[观看 / 下载阶段演示视频](docs/media/qianli_so101_grasp_stage_demo_20261009_1080p.mp4) · [视频说明与验收边界](docs/STAGE_DEMO.md)。完整 1080p 播放版直接入库，4K 原片本地保留。2026-10-09 归档的真机演示作为阶段成果展示；拍摄环境与代码版本未核实，不计入 Humble 迁移或抓取成功率验收。
 
 ## 文档索引 · Documentation
 
@@ -184,7 +217,7 @@ M3  MoveIt2 ⏳ ───────→  M4  Camera + AprilTag 🚧
 远期：Semantic Map → LLM Agent → 多楼层导航 → 电梯交互
 ```
 
-详细里程碑定义见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+本分支历史里程碑定义见 [docs/ROADMAP.md](docs/ROADMAP.md)；移动仿真已在独立分支推进，最新实现与成绩见该分支文档。
 
 ## 许可证 · License
 
